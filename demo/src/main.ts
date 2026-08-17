@@ -27,8 +27,7 @@ const container = document.querySelector<HTMLDivElement>('#pivotick-container')!
 const themeToggle = document.querySelector<HTMLButtonElement>('#theme-toggle')!
 const dropzone = document.querySelector<HTMLDivElement>('#dropzone')!
 const fileInput = document.querySelector<HTMLInputElement>('#file-input')!
-const pasteToggle = document.querySelector<HTMLButtonElement>('#paste-toggle')!
-const pasteJson = document.querySelector<HTMLDivElement>('#paste-json')!
+const pasteJson = document.querySelector<HTMLDetailsElement>('#paste-json')!
 const pasteTextarea = document.querySelector<HTMLTextAreaElement>('#paste-textarea')!
 const pasteLoadBtn = document.querySelector<HTMLButtonElement>('#paste-load-btn')!
 
@@ -231,11 +230,8 @@ fileInput.addEventListener('change', () => {
 
 // ── Paste JSON ────────────────────────────────────────────────────────
 
-pasteToggle.addEventListener('click', () => {
-  const expanded = pasteToggle.getAttribute('aria-expanded') === 'true'
-  pasteToggle.setAttribute('aria-expanded', String(!expanded))
-  pasteJson.hidden = expanded
-  if (!expanded) pasteTextarea.focus()
+pasteJson.addEventListener('toggle', () => {
+  if (pasteJson.open) pasteTextarea.focus()
 })
 pasteLoadBtn.addEventListener('click', () => {
   const text = pasteTextarea.value.trim()

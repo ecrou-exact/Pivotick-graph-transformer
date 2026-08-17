@@ -51,13 +51,14 @@
           <input type="file" id="file-input" accept="application/json,.json" hidden />
         </div>
 
-        <button type="button" id="paste-toggle" aria-expanded="false" aria-controls="paste-json">Paste JSON</button>
+        <details id="paste-json">
+          <summary>Paste JSON</summary>
+          <div id="paste-json-body">
+            <textarea id="paste-textarea" placeholder="Paste a MISP Event/Object JSON here…" rows="8" spellcheck="false"></textarea>
+            <button type="button" id="paste-load-btn">Load</button>
+          </div>
+        </details>
       </form>
-
-      <div id="paste-json" hidden>
-        <textarea id="paste-textarea" placeholder="Paste a MISP Event/Object JSON here…" rows="8" spellcheck="false"></textarea>
-        <button type="button" id="paste-load-btn">Load</button>
-      </div>
 
       <p id="status" role="status"></p>
 

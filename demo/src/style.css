@@ -261,27 +261,41 @@ main {
   text-decoration: underline;
 }
 
-#paste-toggle {
+/* Collapsed: a small button-like trigger that sits at the toolbar's
+   right edge, right after the dropzone (both follow #dropzone's
+   margin-left: auto as one right-aligned group). Expanded: drops to its
+   own full-width row within the wrapping toolbar instead of squeezing a
+   textarea into the row. */
+#paste-json > summary {
   padding: 0.5rem 0.9rem;
   border: 1px solid var(--vp-c-border);
   border-radius: 6px;
   background: var(--vp-c-bg);
   color: var(--vp-c-text-2);
-  font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
+  list-style: none;
 }
 
-#paste-toggle:hover,
-#paste-toggle[aria-expanded='true'] {
+#paste-json > summary::-webkit-details-marker {
+  display: none;
+}
+
+#paste-json > summary:hover,
+#paste-json[open] > summary {
   border-color: var(--vp-c-brand-1);
   color: var(--vp-c-text-1);
 }
 
-#paste-json {
+#paste-json[open] {
+  flex-basis: 100%;
+}
+
+#paste-json-body {
   display: flex;
   gap: 0.6rem;
   align-items: stretch;
+  margin-top: 0.6rem;
   padding: 0.75rem;
   background: var(--vp-c-bg-soft);
   border: 1px solid var(--vp-c-divider);
