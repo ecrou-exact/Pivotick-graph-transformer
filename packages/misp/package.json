@@ -12,10 +12,11 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "ATTRIBUTION.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && cp src/styles.json dist/styles.json",
     "lint": "eslint 'src/**/*.ts'",
     "lint_fix": "eslint --fix 'src/**/*.ts'"
   },

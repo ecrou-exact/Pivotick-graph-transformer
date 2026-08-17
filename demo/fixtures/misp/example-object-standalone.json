@@ -1,0 +1,26 @@
+{
+  "Object": {
+    "uuid": "5f6a1a30-0000-4000-8000-000000000040",
+    "name": "domain-ip",
+    "meta-category": "network",
+    "description": "Standalone Object export, not attached to any Event",
+    "Attribute": [
+      {
+        "uuid": "5f6a1a30-0000-4000-8000-000000000041",
+        "type": "domain",
+        "category": "Network activity",
+        "value": "standalone-example.test",
+        "to_ids": true,
+        "object_id": "1"
+      },
+      {
+        "uuid": "5f6a1a30-0000-4000-8000-000000000042",
+        "type": "ip-dst",
+        "category": "Network activity",
+        "value": "203.0.113.99",
+        "to_ids": true,
+        "object_id": "1"
+      }
+    ]
+  }
+}

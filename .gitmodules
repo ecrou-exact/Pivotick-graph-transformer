@@ -1,0 +1,6 @@
+[submodule "packages/misp/vendor/misp-iconify"]
+	path = packages/misp/vendor/misp-iconify
+	url = https://github.com/MISP/misp-iconify.git
+[submodule "packages/misp/vendor/misp-taxonomies"]
+	path = packages/misp/vendor/misp-taxonomies
+	url = https://github.com/MISP/misp-taxonomies.git

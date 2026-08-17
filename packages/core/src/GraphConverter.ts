@@ -52,9 +52,26 @@ export abstract class GraphConverter<TInput = unknown> {
   /**
    * Optional: a default per-type style map, matching Pivotick's
    * `RendererOptions.nodeStyleMap`, so consumers get a readable graph
-   * without configuring styles themselves.
+   * without configuring styles themselves. Consumers who want something
+   * different can override individual entries after the fact: `{
+   * ...render, nodeStyleMap: { ...render.nodeStyleMap, myType: { color:
+   * 'red' } } }`.
    */
   getDefaultStyleMap?(): NodeStyleMap
+
+  /**
+   * Optional: a default edge style, matching Pivotick's
+   * `RendererOptions.defaultEdgeStyle` — typically a `styleCb(edge)` that
+   * varies color/dash/etc. by whatever the converter recorded on
+   * `edge.data` (e.g. a `kind` field) to tell relation types apart.
+   */
+  getDefaultEdgeStyle?(): Record<string, unknown>
+
+  /**
+   * Optional: overrides for Pivotick's built-in edge markers, matching
+   * `RendererOptions.markerStyleMap` — e.g. a smaller `'arrow'`.
+   */
+  getMarkerStyleMap?(): Record<string, unknown>
 
   /**
    * Convenience entry point for consumers: converts `input` and bundles it
@@ -65,12 +82,16 @@ export abstract class GraphConverter<TInput = unknown> {
     const data = this.convert(input, options)
     const nodeTypeAccessor = this.getNodeTypeAccessor?.()
     const nodeStyleMap = this.getDefaultStyleMap?.()
+    const defaultEdgeStyle = this.getDefaultEdgeStyle?.()
+    const markerStyleMap = this.getMarkerStyleMap?.()
 
     return {
       data,
       render: {
         ...(nodeTypeAccessor ? { nodeTypeAccessor } : {}),
         ...(nodeStyleMap ? { nodeStyleMap } : {}),
+        ...(defaultEdgeStyle ? { defaultEdgeStyle } : {}),
+        ...(markerStyleMap ? { markerStyleMap } : {}),
       },
     }
   }

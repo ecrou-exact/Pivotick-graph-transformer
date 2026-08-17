@@ -1,0 +1,3556 @@
+{
+  "Event": {
+    "uuid": "event-icon-showcase",
+    "info": "misp-iconify showcase — 50 attribute, 213 object and 131 galaxy icons Pivotick Graph Transformer ships by default",
+    "date": "2026-08-17",
+    "Attribute": [
+      {
+        "uuid": "attr-as",
+        "type": "as",
+        "category": "Other",
+        "value": "as"
+      },
+      {
+        "uuid": "attr-attachment",
+        "type": "attachment",
+        "category": "Other",
+        "value": "attachment"
+      },
+      {
+        "uuid": "attr-btc",
+        "type": "btc",
+        "category": "Other",
+        "value": "btc"
+      },
+      {
+        "uuid": "attr-campaign-name",
+        "type": "campaign-name",
+        "category": "Other",
+        "value": "campaign-name"
+      },
+      {
+        "uuid": "attr-cc-number",
+        "type": "cc-number",
+        "category": "Other",
+        "value": "cc-number"
+      },
+      {
+        "uuid": "attr-comment",
+        "type": "comment",
+        "category": "Other",
+        "value": "comment"
+      },
+      {
+        "uuid": "attr-cookie",
+        "type": "cookie",
+        "category": "Other",
+        "value": "cookie"
+      },
+      {
+        "uuid": "attr-cpe",
+        "type": "cpe",
+        "category": "Other",
+        "value": "cpe"
+      },
+      {
+        "uuid": "attr-datetime",
+        "type": "datetime",
+        "category": "Other",
+        "value": "datetime"
+      },
+      {
+        "uuid": "attr-domain",
+        "type": "domain",
+        "category": "Other",
+        "value": "domain"
+      },
+      {
+        "uuid": "attr-domain-ip",
+        "type": "domain-ip",
+        "category": "Other",
+        "value": "domain-ip"
+      },
+      {
+        "uuid": "attr-email",
+        "type": "email",
+        "category": "Other",
+        "value": "email"
+      },
+      {
+        "uuid": "attr-email-dst",
+        "type": "email-dst",
+        "category": "Other",
+        "value": "email-dst"
+      },
+      {
+        "uuid": "attr-email-src",
+        "type": "email-src",
+        "category": "Other",
+        "value": "email-src"
+      },
+      {
+        "uuid": "attr-filename",
+        "type": "filename",
+        "category": "Other",
+        "value": "filename"
+      },
+      {
+        "uuid": "attr-filename-md5",
+        "type": "filename-md5",
+        "category": "Other",
+        "value": "filename-md5"
+      },
+      {
+        "uuid": "attr-filename-sha256",
+        "type": "filename-sha256",
+        "category": "Other",
+        "value": "filename-sha256"
+      },
+      {
+        "uuid": "attr-full-name",
+        "type": "full-name",
+        "category": "Other",
+        "value": "full-name"
+      },
+      {
+        "uuid": "attr-github-username",
+        "type": "github-username",
+        "category": "Other",
+        "value": "github-username"
+      },
+      {
+        "uuid": "attr-hostname",
+        "type": "hostname",
+        "category": "Other",
+        "value": "hostname"
+      },
+      {
+        "uuid": "attr-iban",
+        "type": "iban",
+        "category": "Other",
+        "value": "iban"
+      },
+      {
+        "uuid": "attr-ip-dst",
+        "type": "ip-dst",
+        "category": "Other",
+        "value": "ip-dst"
+      },
+      {
+        "uuid": "attr-ip-dst-port",
+        "type": "ip-dst-port",
+        "category": "Other",
+        "value": "ip-dst-port"
+      },
+      {
+        "uuid": "attr-ip-src",
+        "type": "ip-src",
+        "category": "Other",
+        "value": "ip-src"
+      },
+      {
+        "uuid": "attr-link",
+        "type": "link",
+        "category": "Other",
+        "value": "link"
+      },
+      {
+        "uuid": "attr-mac-address",
+        "type": "mac-address",
+        "category": "Other",
+        "value": "mac-address"
+      },
+      {
+        "uuid": "attr-malware-sample",
+        "type": "malware-sample",
+        "category": "Other",
+        "value": "malware-sample"
+      },
+      {
+        "uuid": "attr-md5",
+        "type": "md5",
+        "category": "Other",
+        "value": "md5"
+      },
+      {
+        "uuid": "attr-mutex",
+        "type": "mutex",
+        "category": "Other",
+        "value": "mutex"
+      },
+      {
+        "uuid": "attr-pattern-in-file",
+        "type": "pattern-in-file",
+        "category": "Other",
+        "value": "pattern-in-file"
+      },
+      {
+        "uuid": "attr-pgp-public-key",
+        "type": "pgp-public-key",
+        "category": "Other",
+        "value": "pgp-public-key"
+      },
+      {
+        "uuid": "attr-phone-number",
+        "type": "phone-number",
+        "category": "Other",
+        "value": "phone-number"
+      },
+      {
+        "uuid": "attr-port",
+        "type": "port",
+        "category": "Other",
+        "value": "port"
+      },
+      {
+        "uuid": "attr-regkey",
+        "type": "regkey",
+        "category": "Other",
+        "value": "regkey"
+      },
+      {
+        "uuid": "attr-sha1",
+        "type": "sha1",
+        "category": "Other",
+        "value": "sha1"
+      },
+      {
+        "uuid": "attr-sha256",
+        "type": "sha256",
+        "category": "Other",
+        "value": "sha256"
+      },
+      {
+        "uuid": "attr-sigma",
+        "type": "sigma",
+        "category": "Other",
+        "value": "sigma"
+      },
+      {
+        "uuid": "attr-snort",
+        "type": "snort",
+        "category": "Other",
+        "value": "snort"
+      },
+      {
+        "uuid": "attr-ssh-fingerprint",
+        "type": "ssh-fingerprint",
+        "category": "Other",
+        "value": "ssh-fingerprint"
+      },
+      {
+        "uuid": "attr-text",
+        "type": "text",
+        "category": "Other",
+        "value": "text"
+      },
+      {
+        "uuid": "attr-threat-actor",
+        "type": "threat-actor",
+        "category": "Other",
+        "value": "threat-actor"
+      },
+      {
+        "uuid": "attr-twitter-id",
+        "type": "twitter-id",
+        "category": "Other",
+        "value": "twitter-id"
+      },
+      {
+        "uuid": "attr-uri",
+        "type": "uri",
+        "category": "Other",
+        "value": "uri"
+      },
+      {
+        "uuid": "attr-url",
+        "type": "url",
+        "category": "Other",
+        "value": "url"
+      },
+      {
+        "uuid": "attr-user-agent",
+        "type": "user-agent",
+        "category": "Other",
+        "value": "user-agent"
+      },
+      {
+        "uuid": "attr-vulnerability",
+        "type": "vulnerability",
+        "category": "Other",
+        "value": "vulnerability"
+      },
+      {
+        "uuid": "attr-windows-scheduled-task",
+        "type": "windows-scheduled-task",
+        "category": "Other",
+        "value": "windows-scheduled-task"
+      },
+      {
+        "uuid": "attr-windows-service-name",
+        "type": "windows-service-name",
+        "category": "Other",
+        "value": "windows-service-name"
+      },
+      {
+        "uuid": "attr-x509-fingerprint-sha1",
+        "type": "x509-fingerprint-sha1",
+        "category": "Other",
+        "value": "x509-fingerprint-sha1"
+      },
+      {
+        "uuid": "attr-yara",
+        "type": "yara",
+        "category": "Other",
+        "value": "yara"
+      }
+    ],
+    "Object": [
+      {
+        "uuid": "obj-android-app",
+        "name": "android-app",
+        "meta-category": "misc",
+        "description": "android-app"
+      },
+      {
+        "uuid": "obj-android-permission",
+        "name": "android-permission",
+        "meta-category": "misc",
+        "description": "android-permission"
+      },
+      {
+        "uuid": "obj-annotation",
+        "name": "annotation",
+        "meta-category": "misc",
+        "description": "annotation"
+      },
+      {
+        "uuid": "obj-apk",
+        "name": "apk",
+        "meta-category": "misc",
+        "description": "apk"
+      },
+      {
+        "uuid": "obj-artifact",
+        "name": "artifact",
+        "meta-category": "misc",
+        "description": "artifact"
+      },
+      {
+        "uuid": "obj-asn",
+        "name": "asn",
+        "meta-category": "misc",
+        "description": "asn"
+      },
+      {
+        "uuid": "obj-attack-pattern",
+        "name": "attack-pattern",
+        "meta-category": "misc",
+        "description": "attack-pattern"
+      },
+      {
+        "uuid": "obj-av-signature",
+        "name": "av-signature",
+        "meta-category": "misc",
+        "description": "av-signature"
+      },
+      {
+        "uuid": "obj-bank-account",
+        "name": "bank-account",
+        "meta-category": "misc",
+        "description": "bank-account"
+      },
+      {
+        "uuid": "obj-blog",
+        "name": "blog",
+        "meta-category": "misc",
+        "description": "blog"
+      },
+      {
+        "uuid": "obj-btc-transaction",
+        "name": "btc-transaction",
+        "meta-category": "misc",
+        "description": "btc-transaction"
+      },
+      {
+        "uuid": "obj-btc-wallet",
+        "name": "btc-wallet",
+        "meta-category": "misc",
+        "description": "btc-wallet"
+      },
+      {
+        "uuid": "obj-c2-list",
+        "name": "c2-list",
+        "meta-category": "misc",
+        "description": "c2-list"
+      },
+      {
+        "uuid": "obj-chat-message",
+        "name": "chat-message",
+        "meta-category": "misc",
+        "description": "chat-message"
+      },
+      {
+        "uuid": "obj-coin-address",
+        "name": "coin-address",
+        "meta-category": "misc",
+        "description": "coin-address"
+      },
+      {
+        "uuid": "obj-command",
+        "name": "command",
+        "meta-category": "misc",
+        "description": "command"
+      },
+      {
+        "uuid": "obj-command-line",
+        "name": "command-line",
+        "meta-category": "misc",
+        "description": "command-line"
+      },
+      {
+        "uuid": "obj-cookie",
+        "name": "cookie",
+        "meta-category": "misc",
+        "description": "cookie"
+      },
+      {
+        "uuid": "obj-course-of-action",
+        "name": "course-of-action",
+        "meta-category": "misc",
+        "description": "course-of-action"
+      },
+      {
+        "uuid": "obj-cpe-asset",
+        "name": "cpe-asset",
+        "meta-category": "misc",
+        "description": "cpe-asset"
+      },
+      {
+        "uuid": "obj-credential",
+        "name": "credential",
+        "meta-category": "misc",
+        "description": "credential"
+      },
+      {
+        "uuid": "obj-credit-card",
+        "name": "credit-card",
+        "meta-category": "misc",
+        "description": "credit-card"
+      },
+      {
+        "uuid": "obj-crypto-material",
+        "name": "crypto-material",
+        "meta-category": "misc",
+        "description": "crypto-material"
+      },
+      {
+        "uuid": "obj-data-url",
+        "name": "data-url",
+        "meta-category": "misc",
+        "description": "data-url"
+      },
+      {
+        "uuid": "obj-ddos",
+        "name": "ddos",
+        "meta-category": "misc",
+        "description": "ddos"
+      },
+      {
+        "uuid": "obj-ddos-config",
+        "name": "ddos-config",
+        "meta-category": "misc",
+        "description": "ddos-config"
+      },
+      {
+        "uuid": "obj-decoded-barcode",
+        "name": "decoded-barcode",
+        "meta-category": "misc",
+        "description": "decoded-barcode"
+      },
+      {
+        "uuid": "obj-decoded-qrcode",
+        "name": "decoded-qrcode",
+        "meta-category": "misc",
+        "description": "decoded-qrcode"
+      },
+      {
+        "uuid": "obj-device",
+        "name": "device",
+        "meta-category": "misc",
+        "description": "device"
+      },
+      {
+        "uuid": "obj-diamond",
+        "name": "diamond",
+        "meta-category": "misc",
+        "description": "diamond"
+      },
+      {
+        "uuid": "obj-directory",
+        "name": "directory",
+        "meta-category": "misc",
+        "description": "directory"
+      },
+      {
+        "uuid": "obj-dkim",
+        "name": "dkim",
+        "meta-category": "misc",
+        "description": "dkim"
+      },
+      {
+        "uuid": "obj-dns-record",
+        "name": "dns-record",
+        "meta-category": "misc",
+        "description": "dns-record"
+      },
+      {
+        "uuid": "obj-domain-ip",
+        "name": "domain-ip",
+        "meta-category": "misc",
+        "description": "domain-ip"
+      },
+      {
+        "uuid": "obj-elf",
+        "name": "elf",
+        "meta-category": "misc",
+        "description": "elf"
+      },
+      {
+        "uuid": "obj-email",
+        "name": "email",
+        "meta-category": "misc",
+        "description": "email"
+      },
+      {
+        "uuid": "obj-employee",
+        "name": "employee",
+        "meta-category": "misc",
+        "description": "employee"
+      },
+      {
+        "uuid": "obj-event",
+        "name": "event",
+        "meta-category": "misc",
+        "description": "event"
+      },
+      {
+        "uuid": "obj-exploit",
+        "name": "exploit",
+        "meta-category": "misc",
+        "description": "exploit"
+      },
+      {
+        "uuid": "obj-exploit-poc",
+        "name": "exploit-poc",
+        "meta-category": "misc",
+        "description": "exploit-poc"
+      },
+      {
+        "uuid": "obj-facebook-account",
+        "name": "facebook-account",
+        "meta-category": "misc",
+        "description": "facebook-account"
+      },
+      {
+        "uuid": "obj-facebook-group",
+        "name": "facebook-group",
+        "meta-category": "misc",
+        "description": "facebook-group"
+      },
+      {
+        "uuid": "obj-facebook-page",
+        "name": "facebook-page",
+        "meta-category": "misc",
+        "description": "facebook-page"
+      },
+      {
+        "uuid": "obj-facebook-post",
+        "name": "facebook-post",
+        "meta-category": "misc",
+        "description": "facebook-post"
+      },
+      {
+        "uuid": "obj-facebook-reaction",
+        "name": "facebook-reaction",
+        "meta-category": "misc",
+        "description": "facebook-reaction"
+      },
+      {
+        "uuid": "obj-favicon",
+        "name": "favicon",
+        "meta-category": "misc",
+        "description": "favicon"
+      },
+      {
+        "uuid": "obj-file",
+        "name": "file",
+        "meta-category": "misc",
+        "description": "file"
+      },
+      {
+        "uuid": "obj-file-7z",
+        "name": "file-7z",
+        "meta-category": "misc",
+        "description": "file-7z"
+      },
+      {
+        "uuid": "obj-file-apk",
+        "name": "file-apk",
+        "meta-category": "misc",
+        "description": "file-apk"
+      },
+      {
+        "uuid": "obj-file-bat",
+        "name": "file-bat",
+        "meta-category": "misc",
+        "description": "file-bat"
+      },
+      {
+        "uuid": "obj-file-css",
+        "name": "file-css",
+        "meta-category": "misc",
+        "description": "file-css"
+      },
+      {
+        "uuid": "obj-file-csv",
+        "name": "file-csv",
+        "meta-category": "misc",
+        "description": "file-csv"
+      },
+      {
+        "uuid": "obj-file-dll",
+        "name": "file-dll",
+        "meta-category": "misc",
+        "description": "file-dll"
+      },
+      {
+        "uuid": "obj-file-doc",
+        "name": "file-doc",
+        "meta-category": "misc",
+        "description": "file-doc"
+      },
+      {
+        "uuid": "obj-file-docx",
+        "name": "file-docx",
+        "meta-category": "misc",
+        "description": "file-docx"
+      },
+      {
+        "uuid": "obj-file-elf",
+        "name": "file-elf",
+        "meta-category": "misc",
+        "description": "file-elf"
+      },
+      {
+        "uuid": "obj-file-eml",
+        "name": "file-eml",
+        "meta-category": "misc",
+        "description": "file-eml"
+      },
+      {
+        "uuid": "obj-file-exe",
+        "name": "file-exe",
+        "meta-category": "misc",
+        "description": "file-exe"
+      },
+      {
+        "uuid": "obj-file-gif",
+        "name": "file-gif",
+        "meta-category": "misc",
+        "description": "file-gif"
+      },
+      {
+        "uuid": "obj-file-gz",
+        "name": "file-gz",
+        "meta-category": "misc",
+        "description": "file-gz"
+      },
+      {
+        "uuid": "obj-file-html",
+        "name": "file-html",
+        "meta-category": "misc",
+        "description": "file-html"
+      },
+      {
+        "uuid": "obj-file-iso",
+        "name": "file-iso",
+        "meta-category": "misc",
+        "description": "file-iso"
+      },
+      {
+        "uuid": "obj-file-jar",
+        "name": "file-jar",
+        "meta-category": "misc",
+        "description": "file-jar"
+      },
+      {
+        "uuid": "obj-file-jpg",
+        "name": "file-jpg",
+        "meta-category": "misc",
+        "description": "file-jpg"
+      },
+      {
+        "uuid": "obj-file-js",
+        "name": "file-js",
+        "meta-category": "misc",
+        "description": "file-js"
+      },
+      {
+        "uuid": "obj-file-json",
+        "name": "file-json",
+        "meta-category": "misc",
+        "description": "file-json"
+      },
+      {
+        "uuid": "obj-file-lnk",
+        "name": "file-lnk",
+        "meta-category": "misc",
+        "description": "file-lnk"
+      },
+      {
+        "uuid": "obj-file-mp3",
+        "name": "file-mp3",
+        "meta-category": "misc",
+        "description": "file-mp3"
+      },
+      {
+        "uuid": "obj-file-mp4",
+        "name": "file-mp4",
+        "meta-category": "misc",
+        "description": "file-mp4"
+      },
+      {
+        "uuid": "obj-file-msg",
+        "name": "file-msg",
+        "meta-category": "misc",
+        "description": "file-msg"
+      },
+      {
+        "uuid": "obj-file-pcap",
+        "name": "file-pcap",
+        "meta-category": "misc",
+        "description": "file-pcap"
+      },
+      {
+        "uuid": "obj-file-pdf",
+        "name": "file-pdf",
+        "meta-category": "misc",
+        "description": "file-pdf"
+      },
+      {
+        "uuid": "obj-file-png",
+        "name": "file-png",
+        "meta-category": "misc",
+        "description": "file-png"
+      },
+      {
+        "uuid": "obj-file-ppt",
+        "name": "file-ppt",
+        "meta-category": "misc",
+        "description": "file-ppt"
+      },
+      {
+        "uuid": "obj-file-pptx",
+        "name": "file-pptx",
+        "meta-category": "misc",
+        "description": "file-pptx"
+      },
+      {
+        "uuid": "obj-file-ps1",
+        "name": "file-ps1",
+        "meta-category": "misc",
+        "description": "file-ps1"
+      },
+      {
+        "uuid": "obj-file-py",
+        "name": "file-py",
+        "meta-category": "misc",
+        "description": "file-py"
+      },
+      {
+        "uuid": "obj-file-rar",
+        "name": "file-rar",
+        "meta-category": "misc",
+        "description": "file-rar"
+      },
+      {
+        "uuid": "obj-file-rtf",
+        "name": "file-rtf",
+        "meta-category": "misc",
+        "description": "file-rtf"
+      },
+      {
+        "uuid": "obj-file-sh",
+        "name": "file-sh",
+        "meta-category": "misc",
+        "description": "file-sh"
+      },
+      {
+        "uuid": "obj-file-svg",
+        "name": "file-svg",
+        "meta-category": "misc",
+        "description": "file-svg"
+      },
+      {
+        "uuid": "obj-file-txt",
+        "name": "file-txt",
+        "meta-category": "misc",
+        "description": "file-txt"
+      },
+      {
+        "uuid": "obj-file-vbs",
+        "name": "file-vbs",
+        "meta-category": "misc",
+        "description": "file-vbs"
+      },
+      {
+        "uuid": "obj-file-xls",
+        "name": "file-xls",
+        "meta-category": "misc",
+        "description": "file-xls"
+      },
+      {
+        "uuid": "obj-file-xlsx",
+        "name": "file-xlsx",
+        "meta-category": "misc",
+        "description": "file-xlsx"
+      },
+      {
+        "uuid": "obj-file-xml",
+        "name": "file-xml",
+        "meta-category": "misc",
+        "description": "file-xml"
+      },
+      {
+        "uuid": "obj-file-zip",
+        "name": "file-zip",
+        "meta-category": "misc",
+        "description": "file-zip"
+      },
+      {
+        "uuid": "obj-forensic-case",
+        "name": "forensic-case",
+        "meta-category": "misc",
+        "description": "forensic-case"
+      },
+      {
+        "uuid": "obj-forensic-evidence",
+        "name": "forensic-evidence",
+        "meta-category": "misc",
+        "description": "forensic-evidence"
+      },
+      {
+        "uuid": "obj-forged-document",
+        "name": "forged-document",
+        "meta-category": "misc",
+        "description": "forged-document"
+      },
+      {
+        "uuid": "obj-geojson",
+        "name": "geojson",
+        "meta-category": "misc",
+        "description": "geojson"
+      },
+      {
+        "uuid": "obj-geolocation",
+        "name": "geolocation",
+        "meta-category": "misc",
+        "description": "geolocation"
+      },
+      {
+        "uuid": "obj-ghidra-function",
+        "name": "ghidra-function",
+        "meta-category": "misc",
+        "description": "ghidra-function"
+      },
+      {
+        "uuid": "obj-github-action",
+        "name": "github-action",
+        "meta-category": "misc",
+        "description": "github-action"
+      },
+      {
+        "uuid": "obj-github-repo",
+        "name": "github-repo",
+        "meta-category": "misc",
+        "description": "github-repo"
+      },
+      {
+        "uuid": "obj-github-user",
+        "name": "github-user",
+        "meta-category": "misc",
+        "description": "github-user"
+      },
+      {
+        "uuid": "obj-gitlab-user",
+        "name": "gitlab-user",
+        "meta-category": "misc",
+        "description": "gitlab-user"
+      },
+      {
+        "uuid": "obj-google-account",
+        "name": "google-account",
+        "meta-category": "misc",
+        "description": "google-account"
+      },
+      {
+        "uuid": "obj-google-threat-intelligence-report",
+        "name": "google-threat-intelligence-report",
+        "meta-category": "misc",
+        "description": "google-threat-intelligence-report"
+      },
+      {
+        "uuid": "obj-gpx",
+        "name": "gpx",
+        "meta-category": "misc",
+        "description": "gpx"
+      },
+      {
+        "uuid": "obj-http-request",
+        "name": "http-request",
+        "meta-category": "misc",
+        "description": "http-request"
+      },
+      {
+        "uuid": "obj-identity",
+        "name": "identity",
+        "meta-category": "misc",
+        "description": "identity"
+      },
+      {
+        "uuid": "obj-image",
+        "name": "image",
+        "meta-category": "misc",
+        "description": "image"
+      },
+      {
+        "uuid": "obj-impersonation",
+        "name": "impersonation",
+        "meta-category": "misc",
+        "description": "impersonation"
+      },
+      {
+        "uuid": "obj-incident",
+        "name": "incident",
+        "meta-category": "misc",
+        "description": "incident"
+      },
+      {
+        "uuid": "obj-infrastructure",
+        "name": "infrastructure",
+        "meta-category": "misc",
+        "description": "infrastructure"
+      },
+      {
+        "uuid": "obj-instagram-account",
+        "name": "instagram-account",
+        "meta-category": "misc",
+        "description": "instagram-account"
+      },
+      {
+        "uuid": "obj-instant-message",
+        "name": "instant-message",
+        "meta-category": "misc",
+        "description": "instant-message"
+      },
+      {
+        "uuid": "obj-intelligence-report",
+        "name": "intelligence-report",
+        "meta-category": "misc",
+        "description": "intelligence-report"
+      },
+      {
+        "uuid": "obj-intrusion-set",
+        "name": "intrusion-set",
+        "meta-category": "misc",
+        "description": "intrusion-set"
+      },
+      {
+        "uuid": "obj-iot-device",
+        "name": "iot-device",
+        "meta-category": "misc",
+        "description": "iot-device"
+      },
+      {
+        "uuid": "obj-iot-firmware",
+        "name": "iot-firmware",
+        "meta-category": "misc",
+        "description": "iot-firmware"
+      },
+      {
+        "uuid": "obj-ip-port",
+        "name": "ip-port",
+        "meta-category": "misc",
+        "description": "ip-port"
+      },
+      {
+        "uuid": "obj-irc",
+        "name": "irc",
+        "meta-category": "misc",
+        "description": "irc"
+      },
+      {
+        "uuid": "obj-ja3",
+        "name": "ja3",
+        "meta-category": "misc",
+        "description": "ja3"
+      },
+      {
+        "uuid": "obj-keybase-account",
+        "name": "keybase-account",
+        "meta-category": "misc",
+        "description": "keybase-account"
+      },
+      {
+        "uuid": "obj-leaked-document",
+        "name": "leaked-document",
+        "meta-category": "misc",
+        "description": "leaked-document"
+      },
+      {
+        "uuid": "obj-legal-entity",
+        "name": "legal-entity",
+        "meta-category": "misc",
+        "description": "legal-entity"
+      },
+      {
+        "uuid": "obj-lnk",
+        "name": "lnk",
+        "meta-category": "misc",
+        "description": "lnk"
+      },
+      {
+        "uuid": "obj-macho",
+        "name": "macho",
+        "meta-category": "misc",
+        "description": "macho"
+      },
+      {
+        "uuid": "obj-malicious-website",
+        "name": "malicious-website",
+        "meta-category": "misc",
+        "description": "malicious-website"
+      },
+      {
+        "uuid": "obj-malware",
+        "name": "malware",
+        "meta-category": "misc",
+        "description": "malware"
+      },
+      {
+        "uuid": "obj-malware-analysis",
+        "name": "malware-analysis",
+        "meta-category": "misc",
+        "description": "malware-analysis"
+      },
+      {
+        "uuid": "obj-malware-config",
+        "name": "malware-config",
+        "meta-category": "misc",
+        "description": "malware-config"
+      },
+      {
+        "uuid": "obj-microblog",
+        "name": "microblog",
+        "meta-category": "misc",
+        "description": "microblog"
+      },
+      {
+        "uuid": "obj-mutex",
+        "name": "mutex",
+        "meta-category": "misc",
+        "description": "mutex"
+      },
+      {
+        "uuid": "obj-netflow",
+        "name": "netflow",
+        "meta-category": "misc",
+        "description": "netflow"
+      },
+      {
+        "uuid": "obj-network-connection",
+        "name": "network-connection",
+        "meta-category": "misc",
+        "description": "network-connection"
+      },
+      {
+        "uuid": "obj-network-data",
+        "name": "network-data",
+        "meta-category": "misc",
+        "description": "network-data"
+      },
+      {
+        "uuid": "obj-network-profile",
+        "name": "network-profile",
+        "meta-category": "misc",
+        "description": "network-profile"
+      },
+      {
+        "uuid": "obj-network-socket",
+        "name": "network-socket",
+        "meta-category": "misc",
+        "description": "network-socket"
+      },
+      {
+        "uuid": "obj-network-traffic",
+        "name": "network-traffic",
+        "meta-category": "misc",
+        "description": "network-traffic"
+      },
+      {
+        "uuid": "obj-news-agency",
+        "name": "news-agency",
+        "meta-category": "misc",
+        "description": "news-agency"
+      },
+      {
+        "uuid": "obj-news-media",
+        "name": "news-media",
+        "meta-category": "misc",
+        "description": "news-media"
+      },
+      {
+        "uuid": "obj-nse-script",
+        "name": "nse-script",
+        "meta-category": "misc",
+        "description": "nse-script"
+      },
+      {
+        "uuid": "obj-organization",
+        "name": "organization",
+        "meta-category": "misc",
+        "description": "organization"
+      },
+      {
+        "uuid": "obj-passive-dns",
+        "name": "passive-dns",
+        "meta-category": "misc",
+        "description": "passive-dns"
+      },
+      {
+        "uuid": "obj-passive-dns-dnsdbflex",
+        "name": "passive-dns-dnsdbflex",
+        "meta-category": "misc",
+        "description": "passive-dns-dnsdbflex"
+      },
+      {
+        "uuid": "obj-passive-ssh",
+        "name": "passive-ssh",
+        "meta-category": "misc",
+        "description": "passive-ssh"
+      },
+      {
+        "uuid": "obj-paste",
+        "name": "paste",
+        "meta-category": "misc",
+        "description": "paste"
+      },
+      {
+        "uuid": "obj-pe",
+        "name": "pe",
+        "meta-category": "misc",
+        "description": "pe"
+      },
+      {
+        "uuid": "obj-pe-section",
+        "name": "pe-section",
+        "meta-category": "misc",
+        "description": "pe-section"
+      },
+      {
+        "uuid": "obj-person",
+        "name": "person",
+        "meta-category": "misc",
+        "description": "person"
+      },
+      {
+        "uuid": "obj-personification",
+        "name": "personification",
+        "meta-category": "misc",
+        "description": "personification"
+      },
+      {
+        "uuid": "obj-phishing",
+        "name": "phishing",
+        "meta-category": "misc",
+        "description": "phishing"
+      },
+      {
+        "uuid": "obj-phishing-kit",
+        "name": "phishing-kit",
+        "meta-category": "misc",
+        "description": "phishing-kit"
+      },
+      {
+        "uuid": "obj-phone",
+        "name": "phone",
+        "meta-category": "misc",
+        "description": "phone"
+      },
+      {
+        "uuid": "obj-phone-number",
+        "name": "phone-number",
+        "meta-category": "misc",
+        "description": "phone-number"
+      },
+      {
+        "uuid": "obj-physical-impact",
+        "name": "physical-impact",
+        "meta-category": "misc",
+        "description": "physical-impact"
+      },
+      {
+        "uuid": "obj-postal-address",
+        "name": "postal-address",
+        "meta-category": "misc",
+        "description": "postal-address"
+      },
+      {
+        "uuid": "obj-process",
+        "name": "process",
+        "meta-category": "misc",
+        "description": "process"
+      },
+      {
+        "uuid": "obj-query",
+        "name": "query",
+        "meta-category": "misc",
+        "description": "query"
+      },
+      {
+        "uuid": "obj-reddit-account",
+        "name": "reddit-account",
+        "meta-category": "misc",
+        "description": "reddit-account"
+      },
+      {
+        "uuid": "obj-reddit-comment",
+        "name": "reddit-comment",
+        "meta-category": "misc",
+        "description": "reddit-comment"
+      },
+      {
+        "uuid": "obj-reddit-post",
+        "name": "reddit-post",
+        "meta-category": "misc",
+        "description": "reddit-post"
+      },
+      {
+        "uuid": "obj-reddit-subreddit",
+        "name": "reddit-subreddit",
+        "meta-category": "misc",
+        "description": "reddit-subreddit"
+      },
+      {
+        "uuid": "obj-regexp",
+        "name": "regexp",
+        "meta-category": "misc",
+        "description": "regexp"
+      },
+      {
+        "uuid": "obj-registry-key",
+        "name": "registry-key",
+        "meta-category": "misc",
+        "description": "registry-key"
+      },
+      {
+        "uuid": "obj-registry-key-value",
+        "name": "registry-key-value",
+        "meta-category": "misc",
+        "description": "registry-key-value"
+      },
+      {
+        "uuid": "obj-report",
+        "name": "report",
+        "meta-category": "misc",
+        "description": "report"
+      },
+      {
+        "uuid": "obj-risk-assessment-report",
+        "name": "risk-assessment-report",
+        "meta-category": "misc",
+        "description": "risk-assessment-report"
+      },
+      {
+        "uuid": "obj-sandbox-report",
+        "name": "sandbox-report",
+        "meta-category": "misc",
+        "description": "sandbox-report"
+      },
+      {
+        "uuid": "obj-scan-result",
+        "name": "scan-result",
+        "meta-category": "misc",
+        "description": "scan-result"
+      },
+      {
+        "uuid": "obj-scheduled-event",
+        "name": "scheduled-event",
+        "meta-category": "misc",
+        "description": "scheduled-event"
+      },
+      {
+        "uuid": "obj-scheduled-task",
+        "name": "scheduled-task",
+        "meta-category": "misc",
+        "description": "scheduled-task"
+      },
+      {
+        "uuid": "obj-script",
+        "name": "script",
+        "meta-category": "misc",
+        "description": "script"
+      },
+      {
+        "uuid": "obj-service",
+        "name": "service",
+        "meta-category": "misc",
+        "description": "service"
+      },
+      {
+        "uuid": "obj-shell-commands",
+        "name": "shell-commands",
+        "meta-category": "misc",
+        "description": "shell-commands"
+      },
+      {
+        "uuid": "obj-shortened-link",
+        "name": "shortened-link",
+        "meta-category": "misc",
+        "description": "shortened-link"
+      },
+      {
+        "uuid": "obj-software",
+        "name": "software",
+        "meta-category": "misc",
+        "description": "software"
+      },
+      {
+        "uuid": "obj-software-package",
+        "name": "software-package",
+        "meta-category": "misc",
+        "description": "software-package"
+      },
+      {
+        "uuid": "obj-spearphishing-attachment",
+        "name": "spearphishing-attachment",
+        "meta-category": "misc",
+        "description": "spearphishing-attachment"
+      },
+      {
+        "uuid": "obj-spearphishing-campaign",
+        "name": "spearphishing-campaign",
+        "meta-category": "misc",
+        "description": "spearphishing-campaign"
+      },
+      {
+        "uuid": "obj-spearphishing-link",
+        "name": "spearphishing-link",
+        "meta-category": "misc",
+        "description": "spearphishing-link"
+      },
+      {
+        "uuid": "obj-splunk",
+        "name": "splunk",
+        "meta-category": "misc",
+        "description": "splunk"
+      },
+      {
+        "uuid": "obj-ssh-authorized-keys",
+        "name": "ssh-authorized-keys",
+        "meta-category": "misc",
+        "description": "ssh-authorized-keys"
+      },
+      {
+        "uuid": "obj-stix2-pattern",
+        "name": "stix2-pattern",
+        "meta-category": "misc",
+        "description": "stix2-pattern"
+      },
+      {
+        "uuid": "obj-suricata",
+        "name": "suricata",
+        "meta-category": "misc",
+        "description": "suricata"
+      },
+      {
+        "uuid": "obj-task",
+        "name": "task",
+        "meta-category": "misc",
+        "description": "task"
+      },
+      {
+        "uuid": "obj-telegram-account",
+        "name": "telegram-account",
+        "meta-category": "misc",
+        "description": "telegram-account"
+      },
+      {
+        "uuid": "obj-telegram-bot",
+        "name": "telegram-bot",
+        "meta-category": "misc",
+        "description": "telegram-bot"
+      },
+      {
+        "uuid": "obj-temporal-event",
+        "name": "temporal-event",
+        "meta-category": "misc",
+        "description": "temporal-event"
+      },
+      {
+        "uuid": "obj-terminal-output",
+        "name": "terminal-output",
+        "meta-category": "misc",
+        "description": "terminal-output"
+      },
+      {
+        "uuid": "obj-timestamp",
+        "name": "timestamp",
+        "meta-category": "misc",
+        "description": "timestamp"
+      },
+      {
+        "uuid": "obj-tor-hiddenservice",
+        "name": "tor-hiddenservice",
+        "meta-category": "misc",
+        "description": "tor-hiddenservice"
+      },
+      {
+        "uuid": "obj-tor-node",
+        "name": "tor-node",
+        "meta-category": "misc",
+        "description": "tor-node"
+      },
+      {
+        "uuid": "obj-transaction",
+        "name": "transaction",
+        "meta-category": "misc",
+        "description": "transaction"
+      },
+      {
+        "uuid": "obj-translation",
+        "name": "translation",
+        "meta-category": "misc",
+        "description": "translation"
+      },
+      {
+        "uuid": "obj-transport-ticket",
+        "name": "transport-ticket",
+        "meta-category": "misc",
+        "description": "transport-ticket"
+      },
+      {
+        "uuid": "obj-twitter-account",
+        "name": "twitter-account",
+        "meta-category": "misc",
+        "description": "twitter-account"
+      },
+      {
+        "uuid": "obj-twitter-list",
+        "name": "twitter-list",
+        "meta-category": "misc",
+        "description": "twitter-list"
+      },
+      {
+        "uuid": "obj-twitter-post",
+        "name": "twitter-post",
+        "meta-category": "misc",
+        "description": "twitter-post"
+      },
+      {
+        "uuid": "obj-uav",
+        "name": "uav",
+        "meta-category": "misc",
+        "description": "uav"
+      },
+      {
+        "uuid": "obj-url",
+        "name": "url",
+        "meta-category": "misc",
+        "description": "url"
+      },
+      {
+        "uuid": "obj-user-account",
+        "name": "user-account",
+        "meta-category": "misc",
+        "description": "user-account"
+      },
+      {
+        "uuid": "obj-user-action",
+        "name": "user-action",
+        "meta-category": "misc",
+        "description": "user-action"
+      },
+      {
+        "uuid": "obj-vehicle",
+        "name": "vehicle",
+        "meta-category": "misc",
+        "description": "vehicle"
+      },
+      {
+        "uuid": "obj-victim",
+        "name": "victim",
+        "meta-category": "misc",
+        "description": "victim"
+      },
+      {
+        "uuid": "obj-virustotal-graph",
+        "name": "virustotal-graph",
+        "meta-category": "misc",
+        "description": "virustotal-graph"
+      },
+      {
+        "uuid": "obj-virustotal-report",
+        "name": "virustotal-report",
+        "meta-category": "misc",
+        "description": "virustotal-report"
+      },
+      {
+        "uuid": "obj-virustotal-submission",
+        "name": "virustotal-submission",
+        "meta-category": "misc",
+        "description": "virustotal-submission"
+      },
+      {
+        "uuid": "obj-vulnerability",
+        "name": "vulnerability",
+        "meta-category": "misc",
+        "description": "vulnerability"
+      },
+      {
+        "uuid": "obj-weakness",
+        "name": "weakness",
+        "meta-category": "misc",
+        "description": "weakness"
+      },
+      {
+        "uuid": "obj-whois",
+        "name": "whois",
+        "meta-category": "misc",
+        "description": "whois"
+      },
+      {
+        "uuid": "obj-wifi-connection",
+        "name": "wifi-connection",
+        "meta-category": "misc",
+        "description": "wifi-connection"
+      },
+      {
+        "uuid": "obj-windows-service",
+        "name": "windows-service",
+        "meta-category": "misc",
+        "description": "windows-service"
+      },
+      {
+        "uuid": "obj-x-header",
+        "name": "x-header",
+        "meta-category": "misc",
+        "description": "x-header"
+      },
+      {
+        "uuid": "obj-x509",
+        "name": "x509",
+        "meta-category": "misc",
+        "description": "x509"
+      },
+      {
+        "uuid": "obj-yara",
+        "name": "yara",
+        "meta-category": "misc",
+        "description": "yara"
+      },
+      {
+        "uuid": "obj-youtube-channel",
+        "name": "youtube-channel",
+        "meta-category": "misc",
+        "description": "youtube-channel"
+      },
+      {
+        "uuid": "obj-youtube-comment",
+        "name": "youtube-comment",
+        "meta-category": "misc",
+        "description": "youtube-comment"
+      },
+      {
+        "uuid": "obj-youtube-playlist",
+        "name": "youtube-playlist",
+        "meta-category": "misc",
+        "description": "youtube-playlist"
+      },
+      {
+        "uuid": "obj-youtube-video",
+        "name": "youtube-video",
+        "meta-category": "misc",
+        "description": "youtube-video"
+      }
+    ],
+    "Galaxy": [
+      {
+        "id": "galaxy-360net",
+        "uuid": "galaxy-360net",
+        "name": "360net",
+        "type": "360net",
+        "description": "360net",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-360net",
+            "uuid": "cluster-360net",
+            "value": "360net",
+            "description": "360net"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-agent-threat-rules",
+        "uuid": "galaxy-agent-threat-rules",
+        "name": "agent-threat-rules",
+        "type": "agent-threat-rules",
+        "description": "agent-threat-rules",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-agent-threat-rules",
+            "uuid": "cluster-agent-threat-rules",
+            "value": "agent-threat-rules",
+            "description": "agent-threat-rules"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-ammunitions",
+        "uuid": "galaxy-ammunitions",
+        "name": "ammunitions",
+        "type": "ammunitions",
+        "description": "ammunitions",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-ammunitions",
+            "uuid": "cluster-ammunitions",
+            "value": "ammunitions",
+            "description": "ammunitions"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-android",
+        "uuid": "galaxy-android",
+        "name": "android",
+        "type": "android",
+        "description": "android",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-android",
+            "uuid": "cluster-android",
+            "value": "android",
+            "description": "android"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-atrm",
+        "uuid": "galaxy-atrm",
+        "name": "atrm",
+        "type": "atrm",
+        "description": "atrm",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-atrm",
+            "uuid": "cluster-atrm",
+            "value": "atrm",
+            "description": "atrm"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-attck4fraud",
+        "uuid": "galaxy-attck4fraud",
+        "name": "attck4fraud",
+        "type": "attck4fraud",
+        "description": "attck4fraud",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-attck4fraud",
+            "uuid": "cluster-attck4fraud",
+            "value": "attck4fraud",
+            "description": "attck4fraud"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-backdoor",
+        "uuid": "galaxy-backdoor",
+        "name": "backdoor",
+        "type": "backdoor",
+        "description": "backdoor",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-backdoor",
+            "uuid": "cluster-backdoor",
+            "value": "backdoor",
+            "description": "backdoor"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-banker",
+        "uuid": "galaxy-banker",
+        "name": "banker",
+        "type": "banker",
+        "description": "banker",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-banker",
+            "uuid": "cluster-banker",
+            "value": "banker",
+            "description": "banker"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-bhadra-framework",
+        "uuid": "galaxy-bhadra-framework",
+        "name": "bhadra-framework",
+        "type": "bhadra-framework",
+        "description": "bhadra-framework",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-bhadra-framework",
+            "uuid": "cluster-bhadra-framework",
+            "value": "bhadra-framework",
+            "description": "bhadra-framework"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-bitns",
+        "uuid": "galaxy-bitns",
+        "name": "bitns",
+        "type": "bitns",
+        "description": "bitns",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-bitns",
+            "uuid": "cluster-bitns",
+            "value": "bitns",
+            "description": "bitns"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-botnet",
+        "uuid": "galaxy-botnet",
+        "name": "botnet",
+        "type": "botnet",
+        "description": "botnet",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-botnet",
+            "uuid": "cluster-botnet",
+            "value": "botnet",
+            "description": "botnet"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-branded-vulnerability",
+        "uuid": "galaxy-branded-vulnerability",
+        "name": "branded-vulnerability",
+        "type": "branded-vulnerability",
+        "description": "branded-vulnerability",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-branded-vulnerability",
+            "uuid": "cluster-branded-vulnerability",
+            "value": "branded-vulnerability",
+            "description": "branded-vulnerability"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-cancer",
+        "uuid": "galaxy-cancer",
+        "name": "cancer",
+        "type": "cancer",
+        "description": "cancer",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-cancer",
+            "uuid": "cluster-cancer",
+            "value": "cancer",
+            "description": "cancer"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-cert-eu-govsector",
+        "uuid": "galaxy-cert-eu-govsector",
+        "name": "cert-eu-govsector",
+        "type": "cert-eu-govsector",
+        "description": "cert-eu-govsector",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-cert-eu-govsector",
+            "uuid": "cluster-cert-eu-govsector",
+            "value": "cert-eu-govsector",
+            "description": "cert-eu-govsector"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-china-defence-universities",
+        "uuid": "galaxy-china-defence-universities",
+        "name": "china-defence-universities",
+        "type": "china-defence-universities",
+        "description": "china-defence-universities",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-china-defence-universities",
+            "uuid": "cluster-china-defence-universities",
+            "value": "china-defence-universities",
+            "description": "china-defence-universities"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-cloak",
+        "uuid": "galaxy-cloak",
+        "name": "cloak",
+        "type": "cloak",
+        "description": "cloak",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-cloak",
+            "uuid": "cluster-cloak",
+            "value": "cloak",
+            "description": "cloak"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-cmtmf-attack-pattern",
+        "uuid": "galaxy-cmtmf-attack-pattern",
+        "name": "cmtmf-attack-pattern",
+        "type": "cmtmf-attack-pattern",
+        "description": "cmtmf-attack-pattern",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-cmtmf-attack-pattern",
+            "uuid": "cluster-cmtmf-attack-pattern",
+            "value": "cmtmf-attack-pattern",
+            "description": "cmtmf-attack-pattern"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-country",
+        "uuid": "galaxy-country",
+        "name": "country",
+        "type": "country",
+        "description": "country",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-country",
+            "uuid": "cluster-country",
+            "value": "country",
+            "description": "country"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-cryptominers",
+        "uuid": "galaxy-cryptominers",
+        "name": "cryptominers",
+        "type": "cryptominers",
+        "description": "cryptominers",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-cryptominers",
+            "uuid": "cluster-cryptominers",
+            "value": "cryptominers",
+            "description": "cryptominers"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-cti-cmm-1-3",
+        "uuid": "galaxy-cti-cmm-1-3",
+        "name": "cti-cmm-1-3",
+        "type": "cti-cmm-1-3",
+        "description": "cti-cmm-1-3",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-cti-cmm-1-3",
+            "uuid": "cluster-cti-cmm-1-3",
+            "value": "cti-cmm-1-3",
+            "description": "cti-cmm-1-3"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-cyfun-assurance-requirements-2023",
+        "uuid": "galaxy-cyfun-assurance-requirements-2023",
+        "name": "cyfun-assurance-requirements-2023",
+        "type": "cyfun-assurance-requirements-2023",
+        "description": "cyfun-assurance-requirements-2023",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-cyfun-assurance-requirements-2023",
+            "uuid": "cluster-cyfun-assurance-requirements-2023",
+            "value": "cyfun-assurance-requirements-2023",
+            "description": "cyfun-assurance-requirements-2023"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-cyfun-control-catalogue-2023",
+        "uuid": "galaxy-cyfun-control-catalogue-2023",
+        "name": "cyfun-control-catalogue-2023",
+        "type": "cyfun-control-catalogue-2023",
+        "description": "cyfun-control-catalogue-2023",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-cyfun-control-catalogue-2023",
+            "uuid": "cluster-cyfun-control-catalogue-2023",
+            "value": "cyfun-control-catalogue-2023",
+            "description": "cyfun-control-catalogue-2023"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-dima-techniques",
+        "uuid": "galaxy-dima-techniques",
+        "name": "dima-techniques",
+        "type": "dima-techniques",
+        "description": "dima-techniques",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-dima-techniques",
+            "uuid": "cluster-dima-techniques",
+            "value": "dima-techniques",
+            "description": "dima-techniques"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-disarm-actortypes",
+        "uuid": "galaxy-disarm-actortypes",
+        "name": "disarm-actortypes",
+        "type": "disarm-actortypes",
+        "description": "disarm-actortypes",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-disarm-actortypes",
+            "uuid": "cluster-disarm-actortypes",
+            "value": "disarm-actortypes",
+            "description": "disarm-actortypes"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-disarm-countermeasures",
+        "uuid": "galaxy-disarm-countermeasures",
+        "name": "disarm-countermeasures",
+        "type": "disarm-countermeasures",
+        "description": "disarm-countermeasures",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-disarm-countermeasures",
+            "uuid": "cluster-disarm-countermeasures",
+            "value": "disarm-countermeasures",
+            "description": "disarm-countermeasures"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-disarm-detections",
+        "uuid": "galaxy-disarm-detections",
+        "name": "disarm-detections",
+        "type": "disarm-detections",
+        "description": "disarm-detections",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-disarm-detections",
+            "uuid": "cluster-disarm-detections",
+            "value": "disarm-detections",
+            "description": "disarm-detections"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-disarm-techniques",
+        "uuid": "galaxy-disarm-techniques",
+        "name": "disarm-techniques",
+        "type": "disarm-techniques",
+        "description": "disarm-techniques",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-disarm-techniques",
+            "uuid": "cluster-disarm-techniques",
+            "value": "disarm-techniques",
+            "description": "disarm-techniques"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-election-guidelines",
+        "uuid": "galaxy-election-guidelines",
+        "name": "election-guidelines",
+        "type": "election-guidelines",
+        "description": "election-guidelines",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-election-guidelines",
+            "uuid": "cluster-election-guidelines",
+            "value": "election-guidelines",
+            "description": "election-guidelines"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-entity",
+        "uuid": "galaxy-entity",
+        "name": "entity",
+        "type": "entity",
+        "description": "entity",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-entity",
+            "uuid": "cluster-entity",
+            "value": "entity",
+            "description": "entity"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-exercise-world",
+        "uuid": "galaxy-exercise-world",
+        "name": "exercise-world",
+        "type": "exercise-world",
+        "description": "exercise-world",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-exercise-world",
+            "uuid": "cluster-exercise-world",
+            "value": "exercise-world",
+            "description": "exercise-world"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-exploit-kit",
+        "uuid": "galaxy-exploit-kit",
+        "name": "exploit-kit",
+        "type": "exploit-kit",
+        "description": "exploit-kit",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-exploit-kit",
+            "uuid": "cluster-exploit-kit",
+            "value": "exploit-kit",
+            "description": "exploit-kit"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-firearms",
+        "uuid": "galaxy-firearms",
+        "name": "firearms",
+        "type": "firearms",
+        "description": "firearms",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-firearms",
+            "uuid": "cluster-firearms",
+            "value": "firearms",
+            "description": "firearms"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-first-csirt-services-framework",
+        "uuid": "galaxy-first-csirt-services-framework",
+        "name": "first-csirt-services-framework",
+        "type": "first-csirt-services-framework",
+        "description": "first-csirt-services-framework",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-first-csirt-services-framework",
+            "uuid": "cluster-first-csirt-services-framework",
+            "value": "first-csirt-services-framework",
+            "description": "first-csirt-services-framework"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-first-dns",
+        "uuid": "galaxy-first-dns",
+        "name": "first-dns",
+        "type": "first-dns",
+        "description": "first-dns",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-first-dns",
+            "uuid": "cluster-first-dns",
+            "value": "first-dns",
+            "description": "first-dns"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-gsma-motif",
+        "uuid": "galaxy-gsma-motif",
+        "name": "gsma-motif",
+        "type": "gsma-motif",
+        "description": "gsma-motif",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-gsma-motif",
+            "uuid": "cluster-gsma-motif",
+            "value": "gsma-motif",
+            "description": "gsma-motif"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-handicap",
+        "uuid": "galaxy-handicap",
+        "name": "handicap",
+        "type": "handicap",
+        "description": "handicap",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-handicap",
+            "uuid": "cluster-handicap",
+            "value": "handicap",
+            "description": "handicap"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-human-kill-chain",
+        "uuid": "galaxy-human-kill-chain",
+        "name": "human-kill-chain",
+        "type": "human-kill-chain",
+        "description": "human-kill-chain",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-human-kill-chain",
+            "uuid": "cluster-human-kill-chain",
+            "value": "human-kill-chain",
+            "description": "human-kill-chain"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-intelligence-agencies",
+        "uuid": "galaxy-intelligence-agencies",
+        "name": "intelligence-agencies",
+        "type": "intelligence-agencies",
+        "description": "intelligence-agencies",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-intelligence-agencies",
+            "uuid": "cluster-intelligence-agencies",
+            "value": "intelligence-agencies",
+            "description": "intelligence-agencies"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-interpol-dwva",
+        "uuid": "galaxy-interpol-dwva",
+        "name": "interpol-dwva",
+        "type": "interpol-dwva",
+        "description": "interpol-dwva",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-interpol-dwva",
+            "uuid": "cluster-interpol-dwva",
+            "value": "interpol-dwva",
+            "description": "interpol-dwva"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-it-infrastructure-equipment",
+        "uuid": "galaxy-it-infrastructure-equipment",
+        "name": "it-infrastructure-equipment",
+        "type": "it-infrastructure-equipment",
+        "description": "it-infrastructure-equipment",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-it-infrastructure-equipment",
+            "uuid": "cluster-it-infrastructure-equipment",
+            "value": "it-infrastructure-equipment",
+            "description": "it-infrastructure-equipment"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-malpedia",
+        "uuid": "galaxy-malpedia",
+        "name": "malpedia",
+        "type": "malpedia",
+        "description": "malpedia",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-malpedia",
+            "uuid": "cluster-malpedia",
+            "value": "malpedia",
+            "description": "malpedia"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-microsoft-activity-group",
+        "uuid": "galaxy-microsoft-activity-group",
+        "name": "microsoft-activity-group",
+        "type": "microsoft-activity-group",
+        "description": "microsoft-activity-group",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-microsoft-activity-group",
+            "uuid": "cluster-microsoft-activity-group",
+            "value": "microsoft-activity-group",
+            "description": "microsoft-activity-group"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-misinfosec-amitt-misinformation-pattern",
+        "uuid": "galaxy-misinfosec-amitt-misinformation-pattern",
+        "name": "misinfosec-amitt-misinformation-pattern",
+        "type": "misinfosec-amitt-misinformation-pattern",
+        "description": "misinfosec-amitt-misinformation-pattern",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-misinfosec-amitt-misinformation-pattern",
+            "uuid": "cluster-misinfosec-amitt-misinformation-pattern",
+            "value": "misinfosec-amitt-misinformation-pattern",
+            "description": "misinfosec-amitt-misinformation-pattern"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-analytic",
+        "uuid": "galaxy-mitre-analytic",
+        "name": "mitre-analytic",
+        "type": "mitre-analytic",
+        "description": "mitre-analytic",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-analytic",
+            "uuid": "cluster-mitre-analytic",
+            "value": "mitre-analytic",
+            "description": "mitre-analytic"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-atlas-attack-pattern",
+        "uuid": "galaxy-mitre-atlas-attack-pattern",
+        "name": "mitre-atlas-attack-pattern",
+        "type": "mitre-atlas-attack-pattern",
+        "description": "mitre-atlas-attack-pattern",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-atlas-attack-pattern",
+            "uuid": "cluster-mitre-atlas-attack-pattern",
+            "value": "mitre-atlas-attack-pattern",
+            "description": "mitre-atlas-attack-pattern"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-atlas-course-of-action",
+        "uuid": "galaxy-mitre-atlas-course-of-action",
+        "name": "mitre-atlas-course-of-action",
+        "type": "mitre-atlas-course-of-action",
+        "description": "mitre-atlas-course-of-action",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-atlas-course-of-action",
+            "uuid": "cluster-mitre-atlas-course-of-action",
+            "value": "mitre-atlas-course-of-action",
+            "description": "mitre-atlas-course-of-action"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-attack-pattern",
+        "uuid": "galaxy-mitre-attack-pattern",
+        "name": "mitre-attack-pattern",
+        "type": "mitre-attack-pattern",
+        "description": "mitre-attack-pattern",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-attack-pattern",
+            "uuid": "cluster-mitre-attack-pattern",
+            "value": "mitre-attack-pattern",
+            "description": "mitre-attack-pattern"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-course-of-action",
+        "uuid": "galaxy-mitre-course-of-action",
+        "name": "mitre-course-of-action",
+        "type": "mitre-course-of-action",
+        "description": "mitre-course-of-action",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-course-of-action",
+            "uuid": "cluster-mitre-course-of-action",
+            "value": "mitre-course-of-action",
+            "description": "mitre-course-of-action"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-d3fend",
+        "uuid": "galaxy-mitre-d3fend",
+        "name": "mitre-d3fend",
+        "type": "mitre-d3fend",
+        "description": "mitre-d3fend",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-d3fend",
+            "uuid": "cluster-mitre-d3fend",
+            "value": "mitre-d3fend",
+            "description": "mitre-d3fend"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-data-component",
+        "uuid": "galaxy-mitre-data-component",
+        "name": "mitre-data-component",
+        "type": "mitre-data-component",
+        "description": "mitre-data-component",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-data-component",
+            "uuid": "cluster-mitre-data-component",
+            "value": "mitre-data-component",
+            "description": "mitre-data-component"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-data-source",
+        "uuid": "galaxy-mitre-data-source",
+        "name": "mitre-data-source",
+        "type": "mitre-data-source",
+        "description": "mitre-data-source",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-data-source",
+            "uuid": "cluster-mitre-data-source",
+            "value": "mitre-data-source",
+            "description": "mitre-data-source"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-detection-strategy",
+        "uuid": "galaxy-mitre-detection-strategy",
+        "name": "mitre-detection-strategy",
+        "type": "mitre-detection-strategy",
+        "description": "mitre-detection-strategy",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-detection-strategy",
+            "uuid": "cluster-mitre-detection-strategy",
+            "value": "mitre-detection-strategy",
+            "description": "mitre-detection-strategy"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-engage-framework",
+        "uuid": "galaxy-mitre-engage-framework",
+        "name": "mitre-engage-framework",
+        "type": "mitre-engage-framework",
+        "description": "mitre-engage-framework",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-engage-framework",
+            "uuid": "cluster-mitre-engage-framework",
+            "value": "mitre-engage-framework",
+            "description": "mitre-engage-framework"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-enterprise-attack-attack-pattern",
+        "uuid": "galaxy-mitre-enterprise-attack-attack-pattern",
+        "name": "mitre-enterprise-attack-attack-pattern",
+        "type": "mitre-enterprise-attack-attack-pattern",
+        "description": "mitre-enterprise-attack-attack-pattern",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-enterprise-attack-attack-pattern",
+            "uuid": "cluster-mitre-enterprise-attack-attack-pattern",
+            "value": "mitre-enterprise-attack-attack-pattern",
+            "description": "mitre-enterprise-attack-attack-pattern"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-enterprise-attack-course-of-action",
+        "uuid": "galaxy-mitre-enterprise-attack-course-of-action",
+        "name": "mitre-enterprise-attack-course-of-action",
+        "type": "mitre-enterprise-attack-course-of-action",
+        "description": "mitre-enterprise-attack-course-of-action",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-enterprise-attack-course-of-action",
+            "uuid": "cluster-mitre-enterprise-attack-course-of-action",
+            "value": "mitre-enterprise-attack-course-of-action",
+            "description": "mitre-enterprise-attack-course-of-action"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-enterprise-attack-intrusion-set",
+        "uuid": "galaxy-mitre-enterprise-attack-intrusion-set",
+        "name": "mitre-enterprise-attack-intrusion-set",
+        "type": "mitre-enterprise-attack-intrusion-set",
+        "description": "mitre-enterprise-attack-intrusion-set",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-enterprise-attack-intrusion-set",
+            "uuid": "cluster-mitre-enterprise-attack-intrusion-set",
+            "value": "mitre-enterprise-attack-intrusion-set",
+            "description": "mitre-enterprise-attack-intrusion-set"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-enterprise-attack-malware",
+        "uuid": "galaxy-mitre-enterprise-attack-malware",
+        "name": "mitre-enterprise-attack-malware",
+        "type": "mitre-enterprise-attack-malware",
+        "description": "mitre-enterprise-attack-malware",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-enterprise-attack-malware",
+            "uuid": "cluster-mitre-enterprise-attack-malware",
+            "value": "mitre-enterprise-attack-malware",
+            "description": "mitre-enterprise-attack-malware"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-enterprise-attack-tool",
+        "uuid": "galaxy-mitre-enterprise-attack-tool",
+        "name": "mitre-enterprise-attack-tool",
+        "type": "mitre-enterprise-attack-tool",
+        "description": "mitre-enterprise-attack-tool",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-enterprise-attack-tool",
+            "uuid": "cluster-mitre-enterprise-attack-tool",
+            "value": "mitre-enterprise-attack-tool",
+            "description": "mitre-enterprise-attack-tool"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-fraud-framework",
+        "uuid": "galaxy-mitre-fraud-framework",
+        "name": "mitre-fraud-framework",
+        "type": "mitre-fraud-framework",
+        "description": "mitre-fraud-framework",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-fraud-framework",
+            "uuid": "cluster-mitre-fraud-framework",
+            "value": "mitre-fraud-framework",
+            "description": "mitre-fraud-framework"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-ics-assets",
+        "uuid": "galaxy-mitre-ics-assets",
+        "name": "mitre-ics-assets",
+        "type": "mitre-ics-assets",
+        "description": "mitre-ics-assets",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-ics-assets",
+            "uuid": "cluster-mitre-ics-assets",
+            "value": "mitre-ics-assets",
+            "description": "mitre-ics-assets"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-ics-groups",
+        "uuid": "galaxy-mitre-ics-groups",
+        "name": "mitre-ics-groups",
+        "type": "mitre-ics-groups",
+        "description": "mitre-ics-groups",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-ics-groups",
+            "uuid": "cluster-mitre-ics-groups",
+            "value": "mitre-ics-groups",
+            "description": "mitre-ics-groups"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-ics-levels",
+        "uuid": "galaxy-mitre-ics-levels",
+        "name": "mitre-ics-levels",
+        "type": "mitre-ics-levels",
+        "description": "mitre-ics-levels",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-ics-levels",
+            "uuid": "cluster-mitre-ics-levels",
+            "value": "mitre-ics-levels",
+            "description": "mitre-ics-levels"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-ics-software",
+        "uuid": "galaxy-mitre-ics-software",
+        "name": "mitre-ics-software",
+        "type": "mitre-ics-software",
+        "description": "mitre-ics-software",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-ics-software",
+            "uuid": "cluster-mitre-ics-software",
+            "value": "mitre-ics-software",
+            "description": "mitre-ics-software"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-ics-tactics",
+        "uuid": "galaxy-mitre-ics-tactics",
+        "name": "mitre-ics-tactics",
+        "type": "mitre-ics-tactics",
+        "description": "mitre-ics-tactics",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-ics-tactics",
+            "uuid": "cluster-mitre-ics-tactics",
+            "value": "mitre-ics-tactics",
+            "description": "mitre-ics-tactics"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-ics-techniques",
+        "uuid": "galaxy-mitre-ics-techniques",
+        "name": "mitre-ics-techniques",
+        "type": "mitre-ics-techniques",
+        "description": "mitre-ics-techniques",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-ics-techniques",
+            "uuid": "cluster-mitre-ics-techniques",
+            "value": "mitre-ics-techniques",
+            "description": "mitre-ics-techniques"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-intrusion-set",
+        "uuid": "galaxy-mitre-intrusion-set",
+        "name": "mitre-intrusion-set",
+        "type": "mitre-intrusion-set",
+        "description": "mitre-intrusion-set",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-intrusion-set",
+            "uuid": "cluster-mitre-intrusion-set",
+            "value": "mitre-intrusion-set",
+            "description": "mitre-intrusion-set"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-malware",
+        "uuid": "galaxy-mitre-malware",
+        "name": "mitre-malware",
+        "type": "mitre-malware",
+        "description": "mitre-malware",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-malware",
+            "uuid": "cluster-mitre-malware",
+            "value": "mitre-malware",
+            "description": "mitre-malware"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-mobile-attack-attack-pattern",
+        "uuid": "galaxy-mitre-mobile-attack-attack-pattern",
+        "name": "mitre-mobile-attack-attack-pattern",
+        "type": "mitre-mobile-attack-attack-pattern",
+        "description": "mitre-mobile-attack-attack-pattern",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-mobile-attack-attack-pattern",
+            "uuid": "cluster-mitre-mobile-attack-attack-pattern",
+            "value": "mitre-mobile-attack-attack-pattern",
+            "description": "mitre-mobile-attack-attack-pattern"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-mobile-attack-course-of-action",
+        "uuid": "galaxy-mitre-mobile-attack-course-of-action",
+        "name": "mitre-mobile-attack-course-of-action",
+        "type": "mitre-mobile-attack-course-of-action",
+        "description": "mitre-mobile-attack-course-of-action",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-mobile-attack-course-of-action",
+            "uuid": "cluster-mitre-mobile-attack-course-of-action",
+            "value": "mitre-mobile-attack-course-of-action",
+            "description": "mitre-mobile-attack-course-of-action"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-mobile-attack-intrusion-set",
+        "uuid": "galaxy-mitre-mobile-attack-intrusion-set",
+        "name": "mitre-mobile-attack-intrusion-set",
+        "type": "mitre-mobile-attack-intrusion-set",
+        "description": "mitre-mobile-attack-intrusion-set",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-mobile-attack-intrusion-set",
+            "uuid": "cluster-mitre-mobile-attack-intrusion-set",
+            "value": "mitre-mobile-attack-intrusion-set",
+            "description": "mitre-mobile-attack-intrusion-set"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-mobile-attack-malware",
+        "uuid": "galaxy-mitre-mobile-attack-malware",
+        "name": "mitre-mobile-attack-malware",
+        "type": "mitre-mobile-attack-malware",
+        "description": "mitre-mobile-attack-malware",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-mobile-attack-malware",
+            "uuid": "cluster-mitre-mobile-attack-malware",
+            "value": "mitre-mobile-attack-malware",
+            "description": "mitre-mobile-attack-malware"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-mobile-attack-tool",
+        "uuid": "galaxy-mitre-mobile-attack-tool",
+        "name": "mitre-mobile-attack-tool",
+        "type": "mitre-mobile-attack-tool",
+        "description": "mitre-mobile-attack-tool",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-mobile-attack-tool",
+            "uuid": "cluster-mitre-mobile-attack-tool",
+            "value": "mitre-mobile-attack-tool",
+            "description": "mitre-mobile-attack-tool"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-pre-attack-attack-pattern",
+        "uuid": "galaxy-mitre-pre-attack-attack-pattern",
+        "name": "mitre-pre-attack-attack-pattern",
+        "type": "mitre-pre-attack-attack-pattern",
+        "description": "mitre-pre-attack-attack-pattern",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-pre-attack-attack-pattern",
+            "uuid": "cluster-mitre-pre-attack-attack-pattern",
+            "value": "mitre-pre-attack-attack-pattern",
+            "description": "mitre-pre-attack-attack-pattern"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-pre-attack-intrusion-set",
+        "uuid": "galaxy-mitre-pre-attack-intrusion-set",
+        "name": "mitre-pre-attack-intrusion-set",
+        "type": "mitre-pre-attack-intrusion-set",
+        "description": "mitre-pre-attack-intrusion-set",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-pre-attack-intrusion-set",
+            "uuid": "cluster-mitre-pre-attack-intrusion-set",
+            "value": "mitre-pre-attack-intrusion-set",
+            "description": "mitre-pre-attack-intrusion-set"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-mitre-tool",
+        "uuid": "galaxy-mitre-tool",
+        "name": "mitre-tool",
+        "type": "mitre-tool",
+        "description": "mitre-tool",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-mitre-tool",
+            "uuid": "cluster-mitre-tool",
+            "value": "mitre-tool",
+            "description": "mitre-tool"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-nace",
+        "uuid": "galaxy-nace",
+        "name": "nace",
+        "type": "nace",
+        "description": "nace",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-nace",
+            "uuid": "cluster-nace",
+            "value": "nace",
+            "description": "nace"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-naics",
+        "uuid": "galaxy-naics",
+        "name": "naics",
+        "type": "naics",
+        "description": "naics",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-naics",
+            "uuid": "cluster-naics",
+            "value": "naics",
+            "description": "naics"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-nato",
+        "uuid": "galaxy-nato",
+        "name": "nato",
+        "type": "nato",
+        "description": "nato",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-nato",
+            "uuid": "cluster-nato",
+            "value": "nato",
+            "description": "nato"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-nice-framework-competency-areas",
+        "uuid": "galaxy-nice-framework-competency-areas",
+        "name": "nice-framework-competency-areas",
+        "type": "nice-framework-competency-areas",
+        "description": "nice-framework-competency-areas",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-nice-framework-competency-areas",
+            "uuid": "cluster-nice-framework-competency-areas",
+            "value": "nice-framework-competency-areas",
+            "description": "nice-framework-competency-areas"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-nice-framework-knowledges",
+        "uuid": "galaxy-nice-framework-knowledges",
+        "name": "nice-framework-knowledges",
+        "type": "nice-framework-knowledges",
+        "description": "nice-framework-knowledges",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-nice-framework-knowledges",
+            "uuid": "cluster-nice-framework-knowledges",
+            "value": "nice-framework-knowledges",
+            "description": "nice-framework-knowledges"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-nice-framework-opm-codes",
+        "uuid": "galaxy-nice-framework-opm-codes",
+        "name": "nice-framework-opm-codes",
+        "type": "nice-framework-opm-codes",
+        "description": "nice-framework-opm-codes",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-nice-framework-opm-codes",
+            "uuid": "cluster-nice-framework-opm-codes",
+            "value": "nice-framework-opm-codes",
+            "description": "nice-framework-opm-codes"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-nice-framework-skills",
+        "uuid": "galaxy-nice-framework-skills",
+        "name": "nice-framework-skills",
+        "type": "nice-framework-skills",
+        "description": "nice-framework-skills",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-nice-framework-skills",
+            "uuid": "cluster-nice-framework-skills",
+            "value": "nice-framework-skills",
+            "description": "nice-framework-skills"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-nice-framework-tasks",
+        "uuid": "galaxy-nice-framework-tasks",
+        "name": "nice-framework-tasks",
+        "type": "nice-framework-tasks",
+        "description": "nice-framework-tasks",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-nice-framework-tasks",
+            "uuid": "cluster-nice-framework-tasks",
+            "value": "nice-framework-tasks",
+            "description": "nice-framework-tasks"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-nice-framework-work-roles",
+        "uuid": "galaxy-nice-framework-work-roles",
+        "name": "nice-framework-work-roles",
+        "type": "nice-framework-work-roles",
+        "description": "nice-framework-work-roles",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-nice-framework-work-roles",
+            "uuid": "cluster-nice-framework-work-roles",
+            "value": "nice-framework-work-roles",
+            "description": "nice-framework-work-roles"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-o365-exchange-techniques",
+        "uuid": "galaxy-o365-exchange-techniques",
+        "name": "o365-exchange-techniques",
+        "type": "o365-exchange-techniques",
+        "description": "o365-exchange-techniques",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-o365-exchange-techniques",
+            "uuid": "cluster-o365-exchange-techniques",
+            "value": "o365-exchange-techniques",
+            "description": "o365-exchange-techniques"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-online-service",
+        "uuid": "galaxy-online-service",
+        "name": "online-service",
+        "type": "online-service",
+        "description": "online-service",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-online-service",
+            "uuid": "cluster-online-service",
+            "value": "online-service",
+            "description": "online-service"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-operating-system",
+        "uuid": "galaxy-operating-system",
+        "name": "operating-system",
+        "type": "operating-system",
+        "description": "operating-system",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-operating-system",
+            "uuid": "cluster-operating-system",
+            "value": "operating-system",
+            "description": "operating-system"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-plot4ai",
+        "uuid": "galaxy-plot4ai",
+        "name": "plot4ai",
+        "type": "plot4ai",
+        "description": "plot4ai",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-plot4ai",
+            "uuid": "cluster-plot4ai",
+            "value": "plot4ai",
+            "description": "plot4ai"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-preventive-measure",
+        "uuid": "galaxy-preventive-measure",
+        "name": "preventive-measure",
+        "type": "preventive-measure",
+        "description": "preventive-measure",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-preventive-measure",
+            "uuid": "cluster-preventive-measure",
+            "value": "preventive-measure",
+            "description": "preventive-measure"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-producer",
+        "uuid": "galaxy-producer",
+        "name": "producer",
+        "type": "producer",
+        "description": "producer",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-producer",
+            "uuid": "cluster-producer",
+            "value": "producer",
+            "description": "producer"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-ransomware",
+        "uuid": "galaxy-ransomware",
+        "name": "ransomware",
+        "type": "ransomware",
+        "description": "ransomware",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-ransomware",
+            "uuid": "cluster-ransomware",
+            "value": "ransomware",
+            "description": "ransomware"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-rat",
+        "uuid": "galaxy-rat",
+        "name": "rat",
+        "type": "rat",
+        "description": "rat",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-rat",
+            "uuid": "cluster-rat",
+            "value": "rat",
+            "description": "rat"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-region",
+        "uuid": "galaxy-region",
+        "name": "region",
+        "type": "region",
+        "description": "region",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-region",
+            "uuid": "cluster-region",
+            "value": "region",
+            "description": "region"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-rmm-tool",
+        "uuid": "galaxy-rmm-tool",
+        "name": "rmm-tool",
+        "type": "rmm-tool",
+        "description": "rmm-tool",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-rmm-tool",
+            "uuid": "cluster-rmm-tool",
+            "value": "rmm-tool",
+            "description": "rmm-tool"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-rsit",
+        "uuid": "galaxy-rsit",
+        "name": "rsit",
+        "type": "rsit",
+        "description": "rsit",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-rsit",
+            "uuid": "cluster-rsit",
+            "value": "rsit",
+            "description": "rsit"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-scor-about",
+        "uuid": "galaxy-scor-about",
+        "name": "scor-about",
+        "type": "scor-about",
+        "description": "scor-about",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-scor-about",
+            "uuid": "cluster-scor-about",
+            "value": "scor-about",
+            "description": "scor-about"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-scor-attack-paths",
+        "uuid": "galaxy-scor-attack-paths",
+        "name": "scor-attack-paths",
+        "type": "scor-attack-paths",
+        "description": "scor-attack-paths",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-scor-attack-paths",
+            "uuid": "cluster-scor-attack-paths",
+            "value": "scor-attack-paths",
+            "description": "scor-attack-paths"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-scor-detection-signatures",
+        "uuid": "galaxy-scor-detection-signatures",
+        "name": "scor-detection-signatures",
+        "type": "scor-detection-signatures",
+        "description": "scor-detection-signatures",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-scor-detection-signatures",
+            "uuid": "cluster-scor-detection-signatures",
+            "value": "scor-detection-signatures",
+            "description": "scor-detection-signatures"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-scor-exposure-domain",
+        "uuid": "galaxy-scor-exposure-domain",
+        "name": "scor-exposure-domain",
+        "type": "scor-exposure-domain",
+        "description": "scor-exposure-domain",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-scor-exposure-domain",
+            "uuid": "cluster-scor-exposure-domain",
+            "value": "scor-exposure-domain",
+            "description": "scor-exposure-domain"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-scor-incidents",
+        "uuid": "galaxy-scor-incidents",
+        "name": "scor-incidents",
+        "type": "scor-incidents",
+        "description": "scor-incidents",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-scor-incidents",
+            "uuid": "cluster-scor-incidents",
+            "value": "scor-incidents",
+            "description": "scor-incidents"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-scor-resilience-measures",
+        "uuid": "galaxy-scor-resilience-measures",
+        "name": "scor-resilience-measures",
+        "type": "scor-resilience-measures",
+        "description": "scor-resilience-measures",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-scor-resilience-measures",
+            "uuid": "cluster-scor-resilience-measures",
+            "value": "scor-resilience-measures",
+            "description": "scor-resilience-measures"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-scor-tens",
+        "uuid": "galaxy-scor-tens",
+        "name": "scor-tens",
+        "type": "scor-tens",
+        "description": "scor-tens",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-scor-tens",
+            "uuid": "cluster-scor-tens",
+            "value": "scor-tens",
+            "description": "scor-tens"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-sector",
+        "uuid": "galaxy-sector",
+        "name": "sector",
+        "type": "sector",
+        "description": "sector",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-sector",
+            "uuid": "cluster-sector",
+            "value": "sector",
+            "description": "sector"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-sigma-rules",
+        "uuid": "galaxy-sigma-rules",
+        "name": "sigma-rules",
+        "type": "sigma-rules",
+        "description": "sigma-rules",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-sigma-rules",
+            "uuid": "cluster-sigma-rules",
+            "value": "sigma-rules",
+            "description": "sigma-rules"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-social-dark-patterns",
+        "uuid": "galaxy-social-dark-patterns",
+        "name": "social-dark-patterns",
+        "type": "social-dark-patterns",
+        "description": "social-dark-patterns",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-social-dark-patterns",
+            "uuid": "cluster-social-dark-patterns",
+            "value": "social-dark-patterns",
+            "description": "social-dark-patterns"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-sod-matrix",
+        "uuid": "galaxy-sod-matrix",
+        "name": "sod-matrix",
+        "type": "sod-matrix",
+        "description": "sod-matrix",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-sod-matrix",
+            "uuid": "cluster-sod-matrix",
+            "value": "sod-matrix",
+            "description": "sod-matrix"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-software-vendor",
+        "uuid": "galaxy-software-vendor",
+        "name": "software-vendor",
+        "type": "software-vendor",
+        "description": "software-vendor",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-software-vendor",
+            "uuid": "cluster-software-vendor",
+            "value": "software-vendor",
+            "description": "software-vendor"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-sparta-mitigations",
+        "uuid": "galaxy-sparta-mitigations",
+        "name": "sparta-mitigations",
+        "type": "sparta-mitigations",
+        "description": "sparta-mitigations",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-sparta-mitigations",
+            "uuid": "cluster-sparta-mitigations",
+            "value": "sparta-mitigations",
+            "description": "sparta-mitigations"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-sparta-tactics",
+        "uuid": "galaxy-sparta-tactics",
+        "name": "sparta-tactics",
+        "type": "sparta-tactics",
+        "description": "sparta-tactics",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-sparta-tactics",
+            "uuid": "cluster-sparta-tactics",
+            "value": "sparta-tactics",
+            "description": "sparta-tactics"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-sparta-techniques",
+        "uuid": "galaxy-sparta-techniques",
+        "name": "sparta-techniques",
+        "type": "sparta-techniques",
+        "description": "sparta-techniques",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-sparta-techniques",
+            "uuid": "cluster-sparta-techniques",
+            "value": "sparta-techniques",
+            "description": "sparta-techniques"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-stalkerware",
+        "uuid": "galaxy-stalkerware",
+        "name": "stalkerware",
+        "type": "stalkerware",
+        "description": "stalkerware",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-stalkerware",
+            "uuid": "cluster-stalkerware",
+            "value": "stalkerware",
+            "description": "stalkerware"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-stealer",
+        "uuid": "galaxy-stealer",
+        "name": "stealer",
+        "type": "stealer",
+        "description": "stealer",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-stealer",
+            "uuid": "cluster-stealer",
+            "value": "stealer",
+            "description": "stealer"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-surveillance-vendor",
+        "uuid": "galaxy-surveillance-vendor",
+        "name": "surveillance-vendor",
+        "type": "surveillance-vendor",
+        "description": "surveillance-vendor",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-surveillance-vendor",
+            "uuid": "cluster-surveillance-vendor",
+            "value": "surveillance-vendor",
+            "description": "surveillance-vendor"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-target-information",
+        "uuid": "galaxy-target-information",
+        "name": "target-information",
+        "type": "target-information",
+        "description": "target-information",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-target-information",
+            "uuid": "cluster-target-information",
+            "value": "target-information",
+            "description": "target-information"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-taxonomy-of-fraud",
+        "uuid": "galaxy-taxonomy-of-fraud",
+        "name": "taxonomy-of-fraud",
+        "type": "taxonomy-of-fraud",
+        "description": "taxonomy-of-fraud",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-taxonomy-of-fraud",
+            "uuid": "cluster-taxonomy-of-fraud",
+            "value": "taxonomy-of-fraud",
+            "description": "taxonomy-of-fraud"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-tds",
+        "uuid": "galaxy-tds",
+        "name": "tds",
+        "type": "tds",
+        "description": "tds",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-tds",
+            "uuid": "cluster-tds",
+            "value": "tds",
+            "description": "tds"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-tea-matrix",
+        "uuid": "galaxy-tea-matrix",
+        "name": "tea-matrix",
+        "type": "tea-matrix",
+        "description": "tea-matrix",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-tea-matrix",
+            "uuid": "cluster-tea-matrix",
+            "value": "tea-matrix",
+            "description": "tea-matrix"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-terrorist-groups",
+        "uuid": "galaxy-terrorist-groups",
+        "name": "terrorist-groups",
+        "type": "terrorist-groups",
+        "description": "terrorist-groups",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-terrorist-groups",
+            "uuid": "cluster-terrorist-groups",
+            "value": "terrorist-groups",
+            "description": "terrorist-groups"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-threat-actor",
+        "uuid": "galaxy-threat-actor",
+        "name": "threat-actor",
+        "type": "threat-actor",
+        "description": "threat-actor",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-threat-actor",
+            "uuid": "cluster-threat-actor",
+            "value": "threat-actor",
+            "description": "threat-actor"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-tidal-campaigns",
+        "uuid": "galaxy-tidal-campaigns",
+        "name": "tidal-campaigns",
+        "type": "tidal-campaigns",
+        "description": "tidal-campaigns",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-tidal-campaigns",
+            "uuid": "cluster-tidal-campaigns",
+            "value": "tidal-campaigns",
+            "description": "tidal-campaigns"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-tidal-groups",
+        "uuid": "galaxy-tidal-groups",
+        "name": "tidal-groups",
+        "type": "tidal-groups",
+        "description": "tidal-groups",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-tidal-groups",
+            "uuid": "cluster-tidal-groups",
+            "value": "tidal-groups",
+            "description": "tidal-groups"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-tidal-references",
+        "uuid": "galaxy-tidal-references",
+        "name": "tidal-references",
+        "type": "tidal-references",
+        "description": "tidal-references",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-tidal-references",
+            "uuid": "cluster-tidal-references",
+            "value": "tidal-references",
+            "description": "tidal-references"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-tidal-software",
+        "uuid": "galaxy-tidal-software",
+        "name": "tidal-software",
+        "type": "tidal-software",
+        "description": "tidal-software",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-tidal-software",
+            "uuid": "cluster-tidal-software",
+            "value": "tidal-software",
+            "description": "tidal-software"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-tidal-tactic",
+        "uuid": "galaxy-tidal-tactic",
+        "name": "tidal-tactic",
+        "type": "tidal-tactic",
+        "description": "tidal-tactic",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-tidal-tactic",
+            "uuid": "cluster-tidal-tactic",
+            "value": "tidal-tactic",
+            "description": "tidal-tactic"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-tidal-technique",
+        "uuid": "galaxy-tidal-technique",
+        "name": "tidal-technique",
+        "type": "tidal-technique",
+        "description": "tidal-technique",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-tidal-technique",
+            "uuid": "cluster-tidal-technique",
+            "value": "tidal-technique",
+            "description": "tidal-technique"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-tmss",
+        "uuid": "galaxy-tmss",
+        "name": "tmss",
+        "type": "tmss",
+        "description": "tmss",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-tmss",
+            "uuid": "cluster-tmss",
+            "value": "tmss",
+            "description": "tmss"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-tool",
+        "uuid": "galaxy-tool",
+        "name": "tool",
+        "type": "tool",
+        "description": "tool",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-tool",
+            "uuid": "cluster-tool",
+            "value": "tool",
+            "description": "tool"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-uavs",
+        "uuid": "galaxy-uavs",
+        "name": "uavs",
+        "type": "uavs",
+        "description": "uavs",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-uavs",
+            "uuid": "cluster-uavs",
+            "value": "uavs",
+            "description": "uavs"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-ukhsa-culture-collections",
+        "uuid": "galaxy-ukhsa-culture-collections",
+        "name": "ukhsa-culture-collections",
+        "type": "ukhsa-culture-collections",
+        "description": "ukhsa-culture-collections",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-ukhsa-culture-collections",
+            "uuid": "cluster-ukhsa-culture-collections",
+            "value": "ukhsa-culture-collections",
+            "description": "ukhsa-culture-collections"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-veris-framework",
+        "uuid": "galaxy-veris-framework",
+        "name": "veris-framework",
+        "type": "veris-framework",
+        "description": "veris-framework",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-veris-framework",
+            "uuid": "cluster-veris-framework",
+            "value": "veris-framework",
+            "description": "veris-framework"
+          }
+        ]
+      },
+      {
+        "id": "galaxy-wiper",
+        "uuid": "galaxy-wiper",
+        "name": "wiper",
+        "type": "wiper",
+        "description": "wiper",
+        "GalaxyCluster": [
+          {
+            "id": "cluster-wiper",
+            "uuid": "cluster-wiper",
+            "value": "wiper",
+            "description": "wiper"
+          }
+        ]
+      }
+    ]
+  }
+}

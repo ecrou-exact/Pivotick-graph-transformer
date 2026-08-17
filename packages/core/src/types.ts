@@ -67,6 +67,10 @@ export interface ConverterOptions {
 export interface PivotickRenderOptions {
   nodeTypeAccessor?: NodeTypeAccessor
   nodeStyleMap?: NodeStyleMap
+  /** Matches Pivotick's `RendererOptions.defaultEdgeStyle` — applied to every edge; its `styleCb(edge)` is how a converter varies edge styling per relation kind. */
+  defaultEdgeStyle?: Record<string, unknown>
+  /** Matches Pivotick's `RendererOptions.markerStyleMap` — e.g. overriding the built-in `'arrow'` marker's size. */
+  markerStyleMap?: Record<string, unknown>
 }
 
 /** Return type of `GraphConverter.toPivotickOptions()` — ready to spread into `new Pivotick({ ..., data, options: { render } })`. */

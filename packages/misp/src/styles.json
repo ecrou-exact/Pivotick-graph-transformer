@@ -1,0 +1,19 @@
+{
+  "nodes": {
+    "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28 },
+    "tag": { "shape": "circle", "color": "#94a3b8", "size": 10 },
+    "attribute": { "shape": "circle", "color": "#0ea5e9", "size": 14 },
+    "object": { "shape": "hexagon", "color": "#7c3aed", "size": 18 },
+    "galaxyCluster": { "shape": "square", "color": "#a855f7", "size": 16 },
+    "generic": { "shape": "circle", "color": "#64748b", "size": 12 }
+  },
+  "edges": {
+    "default": { "strokeColor": "#94a3b8", "strokeWidth": 1 },
+    "structure": { "strokeColor": "#cbd5e1", "strokeWidth": 1 },
+    "tag": { "strokeColor": "#94a3b8", "strokeWidth": 1, "dashed": true },
+    "galaxy": { "strokeColor": "#a855f7", "strokeWidth": 1, "dashed": true },
+    "reference": { "strokeColor": "#7c3aed", "strokeWidth": 1.5 },
+    "clusterRelation": { "strokeColor": "#a855f7", "strokeWidth": 1.5 }
+  },
+  "arrow": { "markerWidth": 7, "markerHeight": 7 }
+}
