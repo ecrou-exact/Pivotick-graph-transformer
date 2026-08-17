@@ -1,0 +1,8 @@
+{
+  "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28 },
+  "tag": { "shape": "circle", "color": "#94a3b8", "size": 10 },
+  "attribute": { "shape": "circle", "color": "#0ea5e9", "size": 14 },
+  "object": { "shape": "hexagon", "color": "#7c3aed", "size": 18 },
+  "galaxyCluster": { "shape": "triangle", "color": "#f59e0b", "size": 11 },
+  "generic": { "shape": "circle", "color": "#64748b", "size": 12 }
+}

@@ -10,42 +10,44 @@
 // commit) followed by re-running this script, a deliberate, reviewable
 // diff, never something that happens on someone else's `npm install`.
 //
-// This script reads the submodule's *already-generated* icons.css and
-// icons.json (misp-iconify commits its own build output — we don't need
-// its own build tooling or its nested submodules), and:
-//   1. copies icons.css into packages/misp/assets/ (committed, shipped as
-//      the package's "./icons.css" export — see docs/icons-and-styling.md)
-//   2. parses icons.css itself for which icon keys actually exist and
-//      which "frame" class(es) each one ships (misp-attributes /
-//      misp-objects / misp-galaxies / misp-simple / misp-hexagone) —
-//      parsing the CSS rather than trusting icons.json's `source` field
-//      to guess categories, since that's the real ground truth
-//   3. writes that as packages/misp/src/icons.generated.ts, a set of key
-//      lookups consumed by mispIconClass.ts at runtime
-//   4. copies the submodule's own ATTRIBUTION.md, which already lists
-//      every icon's upstream source/license
+// Delivery mechanism: inline SVG via Pivotick's `NodeStyle.svgIcon`, NOT
+// CSS classes. An earlier version of this script shipped misp-iconify's
+// own icons.css (a `mask-image` + `iconClass` technique) — that doesn't
+// actually render anything in Pivotick: NodeDrawer.ts's `iconClass`
+// handling resolves the class through `faGlyph()` (a Font Awesome glyph
+// lookup) and falls back to a hollow-square text glyph for anything else,
+// which is not what misp-iconify's classes are. `svgIcon`, by contrast,
+// is handled by literally injecting the markup as a real, correctly-sized
+// `<svg>` element — verified against Pivotick's actual renderer source
+// (NodeDrawer.ts), not assumed. So: read misp-iconify's raw source SVGs
+// (src/svg/{attributes,objects,galaxies,simple}/<key>.svg — the *unframed*
+// variants; `objects-framed`/`galaxies-orbit`/`hexagone` bake in their own
+// border, which would double up with the border Pivotick's own `shape`
+// style already draws), lightly minify them, and inline them directly
+// into a generated TS file. No stylesheet needed at all.
+//
+// packages/misp/styles.json is deliberately NOT touched by this script —
+// it's the hand-maintained "shape/color per category" policy (event, tag,
+// attribute, object, galaxyCluster). This script only supplies which SVG
+// exists for which specific key; styles.json says what a category should
+// look like.
 //
 // Usage: node packages/misp/scripts/sync-icons.mjs
 // (requires the submodule checked out: `git submodule update --init`)
 
-import { execFileSync } from 'node:child_process'
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const pkgDir = path.join(__dirname, '..')
 const submoduleDir = path.join(pkgDir, 'vendor', 'misp-iconify')
-const assetsDir = path.join(pkgDir, 'assets')
+const svgDir = path.join(submoduleDir, 'src', 'svg')
 const srcDir = path.join(pkgDir, 'src')
 
-mkdirSync(assetsDir, { recursive: true })
-
-const iconsCssSrc = path.join(submoduleDir, 'exports', 'css', 'icons.css')
-copyFileSync(iconsCssSrc, path.join(assetsDir, 'icons.css'))
-console.log('  vendored assets/icons.css')
-
 const submoduleCommit = execFileSync('git', ['-C', submoduleDir, 'rev-parse', 'HEAD']).toString().trim()
+
 const attribution = readFileSync(path.join(submoduleDir, 'ATTRIBUTION.md'), 'utf8')
 writeFileSync(
   path.join(pkgDir, 'ATTRIBUTION.md'),
@@ -53,54 +55,64 @@ writeFileSync(
 )
 console.log('  vendored ATTRIBUTION.md')
 
-// Each icon key gets one or more `.misp-icon-<key>.misp-<frame>` rules.
-// <key> here is the *base* name — misp-iconify strips the `objects/` /
-// `galaxies/` category prefix in the actual class name (e.g. the
-// `objects/ip-port` icon.json key becomes `.misp-icon-ip-port.misp-objects`,
-// not `.misp-icon-objects/ip-port...`).
-const css = readFileSync(iconsCssSrc, 'utf8')
-const framesByBase = new Map()
-for (const [, base, frame] of css.matchAll(/\.misp-icon-([a-zA-Z0-9_-]+)\.(misp-[a-zA-Z]+)/g)) {
-  if (!framesByBase.has(base)) framesByBase.set(base, new Set())
-  framesByBase.get(base).add(frame)
+// Conservative minification: drop the XML prolog, comments, and the
+// (often large) Inkscape/Sodipodi editor-metadata block, then collapse
+// whitespace between tags. Deliberately does NOT touch `id` attributes —
+// ~80 of these icons use clip-path/mask/<use> referencing them internally.
+function minifySvg(raw) {
+  return raw
+    .replace(/<\?xml[^>]*\?>/, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<sodipodi:namedview\b[^>]*(?:\/>|>[\s\S]*?<\/sodipodi:namedview>)/g, '')
+    .replace(/>\s+</g, '><')
+    .trim()
 }
 
-const objectKeys = new Set()
-const galaxyKeys = new Set()
-const attributeKeys = new Set()
-const genericKeys = new Set()
-for (const [base, frames] of framesByBase) {
-  if (frames.has('misp-objects')) objectKeys.add(base)
-  if (frames.has('misp-galaxies')) galaxyKeys.add(base)
-  if (frames.has('misp-attributes')) attributeKeys.add(base)
-  if (frames.has('misp-simple') || frames.has('misp-hexagone')) genericKeys.add(base)
+function readCategory(dirName) {
+  const dir = path.join(svgDir, dirName)
+  const icons = {}
+  for (const file of readdirSync(dir)) {
+    if (!file.endsWith('.svg')) continue
+    const key = file.slice(0, -'.svg'.length)
+    icons[key] = minifySvg(readFileSync(path.join(dir, file), 'utf8'))
+  }
+  return icons
 }
 
-const toArrayLiteral = (set) => JSON.stringify([...set].sort())
+const attributeIcons = readCategory('attributes')
+const objectIcons = readCategory('objects')
+const galaxyIcons = readCategory('galaxies')
+const genericIcons = readCategory('simple')
+
+const toEntries = (icons) => JSON.stringify(icons, null, 2)
 
 writeFileSync(
   path.join(srcDir, 'icons.generated.ts'),
   `/* eslint-disable */
 // AUTO-GENERATED by scripts/sync-icons.mjs from vendor/misp-iconify's
-// exports/css/icons.css (pinned at ${submoduleCommit}) — do not edit by
-// hand. Re-run the script (after updating the submodule) to refresh.
-// Double-quoted string literals below are JSON.stringify output, not a
-// style violation — see eslint-disable.
+// src/svg/{attributes,objects,galaxies,simple}/ (pinned at
+// ${submoduleCommit}) — do not edit by hand. Re-run the script (after
+// updating the submodule) to refresh. Double-quoted strings below are
+// JSON.stringify output, not a style violation — see eslint-disable.
 //
-// Which icon-key sets exist, split by the CSS "frame" class misp-iconify
-// ships for them: object/galaxy cluster icons only get the .misp-objects /
-// .misp-galaxies frame; attribute-type icons get .misp-attributes;
-// everything else (event, tag, ...) gets .misp-simple / .misp-hexagone —
-// see mispIconClass.ts for how these combine into an iconClass string.
+// One inline SVG string per icon key misp-iconify ships, split by
+// category (which also doubles as "does an icon exist for this key" —
+// see mispIconStyle.ts). Keys match this converter's entityType strings:
+// bare for attribute/generic, "objects/<key>" / "galaxies/<key>" for the
+// other two (the prefix is stripped here since that's how misp-iconify's
+// own filenames are organized).
 
-export const MISP_OBJECT_ICON_KEYS: ReadonlySet<string> = new Set(${toArrayLiteral(objectKeys)})
-export const MISP_GALAXY_ICON_KEYS: ReadonlySet<string> = new Set(${toArrayLiteral(galaxyKeys)})
-export const MISP_ATTRIBUTE_ICON_KEYS: ReadonlySet<string> = new Set(${toArrayLiteral(attributeKeys)})
-export const MISP_GENERIC_ICON_KEYS: ReadonlySet<string> = new Set(${toArrayLiteral(genericKeys)})
+export const MISP_ATTRIBUTE_ICONS: Readonly<Record<string, string>> = ${toEntries(attributeIcons)}
+
+export const MISP_OBJECT_ICONS: Readonly<Record<string, string>> = ${toEntries(objectIcons)}
+
+export const MISP_GALAXY_ICONS: Readonly<Record<string, string>> = ${toEntries(galaxyIcons)}
+
+export const MISP_GENERIC_ICONS: Readonly<Record<string, string>> = ${toEntries(genericIcons)}
 `,
 )
 console.log(
-  `  vendored src/icons.generated.ts (${objectKeys.size} object, ${galaxyKeys.size} galaxy, ${attributeKeys.size} attribute, ${genericKeys.size} generic keys)`,
+  `  vendored src/icons.generated.ts (${Object.keys(attributeIcons).length} attribute, ${Object.keys(objectIcons).length} object, ${Object.keys(galaxyIcons).length} galaxy, ${Object.keys(genericIcons).length} generic icons)`,
 )
 
 console.log('Done.')

@@ -2,9 +2,10 @@ import { GraphConverter } from 'pivotick-transformer-core'
 import type { ConversionResult, ConverterOptions, ConverterVariantMeta, NodeId, NodeStyleMap, NodeTypeAccessor, RawEdge, RawNode } from 'pivotick-transformer-core'
 
 import { detectMispEvent } from './detectMispEvent.js'
-import { MISP_ATTRIBUTE_ICON_KEYS, MISP_GALAXY_ICON_KEYS, MISP_GENERIC_ICON_KEYS, MISP_OBJECT_ICON_KEYS } from './icons.generated.js'
-import { mispIconClass } from './mispIconClass.js'
+import { MISP_ATTRIBUTE_ICONS, MISP_GALAXY_ICONS, MISP_GENERIC_ICONS, MISP_OBJECT_ICONS } from './icons.generated.js'
+import { mispIconSvg } from './mispIconSvg.js'
 import { normalizeMispInput } from './normalizeMispInput.js'
+import stylesConfig from './styles.json' with { type: 'json' }
 import type { MispAttribute, MispGalaxy, MispInput, MispObject, MispTag } from './types.js'
 
 /**
@@ -57,7 +58,15 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
           nodes.push({
             id: tagNodeId,
             data: { label: tag.name, entityType: 'tag' },
-            style: tag.colour ? { color: tag.colour } : undefined,
+            // The tag's own MISP colour drives a coloured ring
+            // (strokeColor — which also tints the icon, since svgIcon's
+            // currentColor context follows strokeColor, not color) rather
+            // than the shape fill. Real tag colours are arbitrary and
+            // include white (tlp:white is one of the most common MISP
+            // tags): using colour as `color` (fill) risks an invisible
+            // node, since Pivotick's default stroke is also white. Fill
+            // stays the safe neutral from styles.json's "tag" category.
+            style: tag.colour ? { strokeColor: tag.colour, strokeWidth: 2 } : undefined,
           })
         }
         edges.push({ from: parentId, to: tagNodeId })
@@ -151,7 +160,17 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
       for (const reference of object.ObjectReference ?? []) {
         const toId = nodeIdByUuid.get(reference.referenced_uuid)
         if (!toId) continue
-        edges.push({ from: fromId, to: toId, data: { relationshipType: reference.relationship_type } })
+        // `label` is what Pivotick actually shows on the edge (see
+        // EdgeDrawer.ts's edgeLabelGetter — reads edge.getData().label
+        // directly, no render-option wiring needed). Purely structural
+        // edges (event->attribute, ...) are left unlabeled on purpose —
+        // Object References are MISP's actual named relationships, so
+        // that's where a label earns its place instead of adding clutter.
+        edges.push({
+          from: fromId,
+          to: toId,
+          data: { label: reference.relationship_type ?? '', relationshipType: reference.relationship_type },
+        })
       }
     }
 
@@ -163,31 +182,40 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
     return (node) => (node.data?.entityType as string | undefined) ?? 'unknown'
   }
 
-  getDefaultStyleMap(options?: ConverterOptions): NodeStyleMap {
-    // `entityType` already uses misp-iconify's key convention (bare
-    // attribute `type`, `objects/<name>`, `galaxies/<galaxy-type>`), so
-    // one iconClass lookup per known key covers every type misp-iconify
-    // ships an icon for. `iconFrame` ('simple' | 'hexagon', default
-    // 'simple') is a pure styling toggle — see docs/icons-and-styling.md
-    // for why it's a ConverterOptions field rather than a variant.
-    // Consumers who need more than that can still override individual
-    // entries themselves: `{ ...render, nodeStyleMap: {
-    // ...render.nodeStyleMap, domain: { color: 'red' } } }`.
-    const frame = options?.iconFrame === 'hexagon' ? 'hexagon' : 'simple'
-
-    const styleMap: NodeStyleMap = {
-      event: { shape: 'hexagon', color: '#1f6feb', size: 28 },
-      // Tag nodes carry the tag's own MISP colour directly as
-      // `style.color` (set in `addTags`, above) rather than through this
-      // map, since colour varies per tag, not per type.
-      tag: { shape: 'circle', size: 10 },
+  getDefaultStyleMap(): NodeStyleMap {
+    // shape/color per *category* comes from styles.json — a small,
+    // hand-edited config, not generated — so tweaking "objects should be
+    // squares" or "attributes should be green" is a one-line JSON edit,
+    // not a code change. The *icon* per specific key (domain vs ip-dst vs
+    // md5, ...) is what's actually per-key and machine-generated, from
+    // scripts/sync-icons.mjs — layered on top of the category style here.
+    //
+    // Node labels (NodeStyle.text) are deliberately not set — with icons
+    // already carrying the entity type and hundreds of nodes on screen at
+    // once, always-on text under every node is clutter, not signal.
+    // node.data.label is still there for the sidebar/tooltip either way.
+    // Edge labels (the MISP Object Reference relationship_type) are set
+    // instead, in convert() — those are the actually-interesting relation
+    // names, and there are far fewer edges worth labeling than nodes.
+    const withIcon = (categoryStyle: Record<string, unknown>, entityType: string): Record<string, unknown> => {
+      const svgIcon = mispIconSvg(entityType)
+      return svgIcon ? { ...categoryStyle, svgIcon } : categoryStyle
     }
 
-    for (const key of MISP_ATTRIBUTE_ICON_KEYS) styleMap[key] = { iconClass: mispIconClass(key, frame) }
-    for (const key of MISP_OBJECT_ICON_KEYS) styleMap[`objects/${key}`] = { iconClass: mispIconClass(`objects/${key}`, frame) }
-    for (const key of MISP_GALAXY_ICON_KEYS) styleMap[`galaxies/${key}`] = { iconClass: mispIconClass(`galaxies/${key}`, frame) }
-    for (const key of MISP_GENERIC_ICON_KEYS) {
-      styleMap[key] = { ...styleMap[key], iconClass: mispIconClass(key, frame) }
+    const styleMap: NodeStyleMap = {
+      event: withIcon(stylesConfig.event, 'event'),
+      // Tag nodes carry the tag's own MISP colour as a per-node
+      // strokeColor override (set in `addTags`, above) rather than
+      // through this map, since colour varies per tag, not per type.
+      tag: withIcon(stylesConfig.tag, 'tag'),
+    }
+
+    for (const key of Object.keys(MISP_ATTRIBUTE_ICONS)) styleMap[key] = withIcon(stylesConfig.attribute, key)
+    for (const key of Object.keys(MISP_OBJECT_ICONS)) styleMap[`objects/${key}`] = withIcon(stylesConfig.object, `objects/${key}`)
+    for (const key of Object.keys(MISP_GALAXY_ICONS)) styleMap[`galaxies/${key}`] = withIcon(stylesConfig.galaxyCluster, `galaxies/${key}`)
+    for (const key of Object.keys(MISP_GENERIC_ICONS)) {
+      if (key === 'event' || key === 'tag') continue
+      styleMap[key] = withIcon(stylesConfig.generic, key)
     }
 
     return styleMap

@@ -9,16 +9,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./icons.css": "./assets/icons.css"
+    }
   },
   "files": [
     "dist",
-    "assets",
     "ATTRIBUTION.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && cp src/styles.json dist/styles.json",
     "lint": "eslint 'src/**/*.ts'",
     "lint_fix": "eslint --fix 'src/**/*.ts'"
   },

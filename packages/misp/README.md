@@ -30,22 +30,34 @@ A future `object-refs-only` variant (no Event node, edges only from explicit Obj
 ```ts
 import { ConverterRegistry } from 'pivotick-transformer-core'
 import 'pivotick-transformer-misp'
-import 'pivotick-transformer-misp/icons.css' // once, anywhere in the app
 
 const { data, render } = ConverterRegistry.get('misp').toPivotickOptions(mispEventJson)
 ```
 
-## Icons
+No second import needed for icons — see below.
 
-`getDefaultStyleMap()` ships a real icon for every attribute type / object / galaxy cluster type [misp-iconify](https://github.com/MISP/misp-iconify) covers (~400 keys), falling back to shape/color only for the rest — see [`../../docs/icons-and-styling.md`](../../docs/icons-and-styling.md) for how the icons get from misp-iconify into this package.
+## Icons and styling
 
-The one thing that's configurable: `{ iconFrame: 'simple' | 'hexagon' }` (default `'simple'`), passed as `options` to `convert()` / `toPivotickOptions()`:
+`getDefaultStyleMap()` ships a real icon (inline SVG, via Pivotick's `NodeStyle.svgIcon` — see [`../../docs/icons-and-styling.md`](../../docs/icons-and-styling.md) for why that's the mechanism, not `iconClass`) for every attribute type / object / galaxy cluster type [misp-iconify](https://github.com/MISP/misp-iconify) covers (410 keys), falling back to shape/color only for the rest. Every node also shows its label (Event `info`, Attribute `value`, Tag `name`, ...) as text on the node itself, via `NodeStyle.text`.
 
-```ts
-ConverterRegistry.get('misp').toPivotickOptions(mispEventJson, { iconFrame: 'hexagon' })
+**Shape and color are configuration, not code** — [`src/styles.json`](./src/styles.json) is a small, hand-maintained file, one entry per category:
+
+```json
+{
+  "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28 },
+  "tag": { "shape": "circle", "size": 10 },
+  "attribute": { "shape": "circle", "color": "#0ea5e9", "size": 14 },
+  "object": { "shape": "hexagon", "color": "#7c3aed", "size": 18 },
+  "galaxyCluster": { "shape": "triangle", "color": "#f59e0b", "size": 11 },
+  "generic": { "shape": "circle", "color": "#64748b", "size": 12 }
+}
 ```
 
-For anything beyond that toggle, override the returned `nodeStyleMap` yourself — it's a plain object:
+Want objects to render as squares instead of hexagons, or a different accent color? Edit that file directly — nothing else needs to change. (Keep an eye on `size` if you pick a shape with a tight inner area relative to its outline, like `triangle` — Pivotick sizes the icon at `size * 1.4` regardless of shape, so a size tuned for a circle's icon will visibly overflow a triangle's edges; `galaxyCluster`'s smaller `size` above is deliberately compensating for exactly that.)
+
+The specific icon per key (`domain` vs `ip-dst` vs `md5`, ...) comes from [`src/icons.generated.ts`](./src/icons.generated.ts) instead — that one **is** machine-generated (by `scripts/sync-icons.mjs` from the vendored `misp-iconify` submodule) and shouldn't be hand-edited.
+
+For anything beyond `styles.json`, override the returned `nodeStyleMap` yourself — it's a plain object:
 
 ```ts
 const { data, render } = ConverterRegistry.get('misp').toPivotickOptions(mispEventJson)

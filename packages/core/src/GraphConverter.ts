@@ -52,14 +52,12 @@ export abstract class GraphConverter<TInput = unknown> {
   /**
    * Optional: a default per-type style map, matching Pivotick's
    * `RendererOptions.nodeStyleMap`, so consumers get a readable graph
-   * without configuring styles themselves. Receives the same `options` as
-   * `convert()`, for pure styling toggles that affect the default map
-   * itself (e.g. an icon frame shape) — see docs/icons-and-styling.md.
-   * Consumers who want to go further than a toggle can still override
-   * individual entries after the fact: `{ ...render, nodeStyleMap: {
-   * ...render.nodeStyleMap, myType: { color: 'red' } } }`.
+   * without configuring styles themselves. Consumers who want something
+   * different can override individual entries after the fact: `{
+   * ...render, nodeStyleMap: { ...render.nodeStyleMap, myType: { color:
+   * 'red' } } }`.
    */
-  getDefaultStyleMap?(options?: ConverterOptions): NodeStyleMap
+  getDefaultStyleMap?(): NodeStyleMap
 
   /**
    * Convenience entry point for consumers: converts `input` and bundles it
@@ -69,7 +67,7 @@ export abstract class GraphConverter<TInput = unknown> {
   toPivotickOptions(input: TInput, options?: ConverterOptions): PivotickReadyOptions {
     const data = this.convert(input, options)
     const nodeTypeAccessor = this.getNodeTypeAccessor?.()
-    const nodeStyleMap = this.getDefaultStyleMap?.(options)
+    const nodeStyleMap = this.getDefaultStyleMap?.()
 
     return {
       data,
