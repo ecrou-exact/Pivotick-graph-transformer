@@ -1,0 +1,36 @@
+{
+  "response": [
+    {
+      "Event": {
+        "uuid": "5f6a1a30-0000-4000-8000-000000000101",
+        "info": "Campaign A - initial access",
+        "date": "2024-02-01",
+        "Attribute": [
+          {
+            "uuid": "5f6a1a30-0000-4000-8000-000000000110",
+            "type": "email-src",
+            "category": "Payload delivery",
+            "value": "sender-a@malicious-example.test",
+            "to_ids": true
+          }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "uuid": "5f6a1a30-0000-4000-8000-000000000102",
+        "info": "Campaign A - C2 infrastructure",
+        "date": "2024-02-03",
+        "Attribute": [
+          {
+            "uuid": "5f6a1a30-0000-4000-8000-000000000111",
+            "type": "domain",
+            "category": "Network activity",
+            "value": "c2-example.test",
+            "to_ids": true
+          }
+        ]
+      }
+    }
+  ]
+}

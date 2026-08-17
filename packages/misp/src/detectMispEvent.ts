@@ -1,11 +1,15 @@
+import { normalizeMispInput } from './normalizeMispInput.js'
+
 // Shared detect() logic for every `misp` variant — see CONTRIBUTING.md,
-// "Multiple variants for the same format".
+// "Multiple variants for the same format". Accepts any of the shapes
+// `normalizeMispInput` understands (single/listed Events, a restSearch
+// response wrapper, standalone Objects); a cheap structural check on
+// whatever it found, to avoid false-positives on other formats.
 export function detectMispEvent(input: unknown): boolean {
-  if (typeof input !== 'object' || input === null) return false
+  const { events, objects } = normalizeMispInput(input)
 
-  const event = (input as { Event?: unknown }).Event
-  if (typeof event !== 'object' || event === null) return false
+  const hasRealEvent = events.some((event) => typeof event?.uuid === 'string' && typeof event?.info === 'string')
+  const hasRealObject = objects.some((object) => typeof object?.uuid === 'string' && typeof object?.name === 'string')
 
-  const { uuid, info } = event as Record<string, unknown>
-  return typeof uuid === 'string' && typeof info === 'string'
+  return hasRealEvent || hasRealObject
 }

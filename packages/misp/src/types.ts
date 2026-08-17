@@ -39,3 +39,12 @@ export interface MispEventBody {
 export interface MispEvent {
   Event: MispEventBody
 }
+
+/**
+ * Every top-level shape MISP actually exports things in, that this
+ * converter accepts: a single Event, a bare list of Events, a `restSearch`
+ * -style `{ response: [...] }` wrapper, a standalone Object (exported on
+ * its own, outside any Event), or a list of those. See
+ * `normalizeMispInput.ts` for how each is flattened into a common shape.
+ */
+export type MispInput = MispEvent | MispEvent[] | { response: MispEvent[] } | { Object: MispObject } | MispObject[]

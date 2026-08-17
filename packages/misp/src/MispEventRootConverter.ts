@@ -2,20 +2,27 @@ import { GraphConverter } from 'pivotick-transformer-core'
 import type { ConversionResult, ConverterOptions, ConverterVariantMeta, NodeId, NodeStyleMap, NodeTypeAccessor, RawEdge, RawNode } from 'pivotick-transformer-core'
 
 import { detectMispEvent } from './detectMispEvent.js'
-import type { MispAttribute, MispEvent } from './types.js'
+import { normalizeMispInput } from './normalizeMispInput.js'
+import type { MispAttribute, MispInput, MispObject } from './types.js'
 
 /**
- * `event-root` variant: the MISP Event is a root/cluster node, with its
- * Attributes and Objects as children. See CONTRIBUTING.md for how this
+ * `event-root` variant: each Event is a root/cluster node, with its
+ * Attributes and Objects as children; standalone Objects (not attached to
+ * any Event) are their own root node. See CONTRIBUTING.md for how this
  * differs from the (planned) `object-refs-only` variant.
+ *
+ * Accepts a single Event, a list of Events, a `{ response: [...] }`
+ * restSearch-style wrapper, a standalone Object, or a list of Objects —
+ * any mix of these — see `normalizeMispInput.ts`. Multiple Events/Objects
+ * in one input all land in the same graph, side by side.
  */
-export class MispEventRootConverter extends GraphConverter<MispEvent> {
+export class MispEventRootConverter extends GraphConverter<MispInput> {
   readonly format = 'misp'
 
   readonly variant: ConverterVariantMeta = {
     id: 'event-root',
     name: 'Event as root node',
-    description: 'The Event is a cluster node; Attributes and Objects are its children.',
+    description: 'Each Event is a cluster node; Attributes and Objects are its children. Standalone Objects root themselves.',
     default: true,
   }
 
@@ -23,21 +30,15 @@ export class MispEventRootConverter extends GraphConverter<MispEvent> {
     return detectMispEvent(input)
   }
 
-  convert(input: MispEvent, _options?: ConverterOptions): ConversionResult {
-    const event = input?.Event
-    if (!event || typeof event !== 'object') {
-      throw new Error('Not a MISP Event: expected a top-level "Event" object with "uuid" and "info".')
+  convert(input: MispInput, _options?: ConverterOptions): ConversionResult {
+    const { events, objects: standaloneObjects } = normalizeMispInput(input)
+    if (events.length === 0 && standaloneObjects.length === 0) {
+      throw new Error('Not MISP data: expected an Event, a standalone Object, or a list of either.')
     }
 
     const nodes: RawNode[] = []
     const edges: RawEdge[] = []
     const nodeIdByUuid = new Map<string, NodeId>()
-
-    const eventNodeId: NodeId = `event:${event.uuid}`
-    nodes.push({
-      id: eventNodeId,
-      data: { label: event.info, entityType: 'event', date: event.date },
-    })
 
     const addAttribute = (attribute: MispAttribute, parentId: NodeId): void => {
       const attributeNodeId: NodeId = `attribute:${attribute.uuid}`
@@ -49,33 +50,54 @@ export class MispEventRootConverter extends GraphConverter<MispEvent> {
       edges.push({ from: parentId, to: attributeNodeId })
     }
 
-    // Top-level Attributes only — ones that belong to an Object (object_id
-    // set to something other than '0') are added below, nested under that
-    // Object instead, to avoid emitting them twice.
-    for (const attribute of event.Attribute ?? []) {
-      if (attribute.object_id && attribute.object_id !== '0') continue
-      addAttribute(attribute, eventNodeId)
-    }
-
-    for (const object of event.Object ?? []) {
+    // `parentId: null` for a standalone Object (no Event to hang off of) —
+    // it becomes its own root node instead of a child.
+    const addObject = (object: MispObject, parentId: NodeId | null): void => {
       const objectNodeId: NodeId = `object:${object.uuid}`
       nodes.push({
         id: objectNodeId,
         data: { label: object.name, entityType: `objects/${object.name}`, description: object.description },
       })
       nodeIdByUuid.set(object.uuid, objectNodeId)
-      edges.push({ from: eventNodeId, to: objectNodeId })
+      if (parentId) edges.push({ from: parentId, to: objectNodeId })
 
       for (const attribute of object.Attribute ?? []) {
         addAttribute(attribute, objectNodeId)
       }
     }
 
+    for (const event of events) {
+      const eventNodeId: NodeId = `event:${event.uuid}`
+      nodes.push({
+        id: eventNodeId,
+        data: { label: event.info, entityType: 'event', date: event.date },
+      })
+
+      // Top-level Attributes only — ones that belong to an Object
+      // (object_id set to something other than '0') are added via the
+      // Object's own nested Attribute list instead, to avoid emitting
+      // them twice.
+      for (const attribute of event.Attribute ?? []) {
+        if (attribute.object_id && attribute.object_id !== '0') continue
+        addAttribute(attribute, eventNodeId)
+      }
+
+      for (const object of event.Object ?? []) {
+        addObject(object, eventNodeId)
+      }
+    }
+
+    for (const object of standaloneObjects) {
+      addObject(object, null)
+    }
+
     // Explicit Object References become extra edges, on top of the
-    // Event->Object structural ones above. A reference's target can be any
-    // UUID in the event (another Object, or an Attribute); skip it if it
+    // structural ones above — across every Object we rendered, whether it
+    // came from an Event or stood alone. A reference's target can be any
+    // UUID in the input (another Object, or an Attribute); skip it if it
     // doesn't resolve to a node we created.
-    for (const object of event.Object ?? []) {
+    const allObjects = [...events.flatMap((event) => event.Object ?? []), ...standaloneObjects]
+    for (const object of allObjects) {
       const fromId = nodeIdByUuid.get(object.uuid)
       if (!fromId) continue
 
