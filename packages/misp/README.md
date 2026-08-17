@@ -2,11 +2,11 @@
 
 Converts a [MISP](https://www.misp-project.org/) Event into Pivotick's `nodes` / `edges` shape.
 
-> **Status**: scaffolding only. `detect()` and `convert()` are stubbed with `// TODO` — see [`src/MispEventRootConverter.ts`](./src/MispEventRootConverter.ts).
+> **Status**: first pass. `event-root` maps the Event, its top-level Attributes, Objects (with their nested Attributes) and explicit Object References. Tag / Galaxy / Sighting aren't mapped yet — see the `// TODO` in [`src/MispEventRootConverter.ts`](./src/MispEventRootConverter.ts).
 
 ## Input
 
-Expects a MISP Event JSON object (`MispEvent`, currently a placeholder type — see [`src/types.ts`](./src/types.ts)).
+Expects a MISP Event JSON object — `{ Event: { uuid, info, Attribute?, Object? } }`, see [`src/types.ts`](./src/types.ts) for the full shape this converter reads.
 
 ## Variants
 

@@ -1,8 +1,8 @@
 import { GraphConverter } from 'pivotick-transformer-core'
-import type { ConversionResult, ConverterOptions, ConverterVariantMeta, NodeStyleMap, NodeTypeAccessor } from 'pivotick-transformer-core'
+import type { ConversionResult, ConverterOptions, ConverterVariantMeta, NodeId, NodeStyleMap, NodeTypeAccessor, RawEdge, RawNode } from 'pivotick-transformer-core'
 
 import { detectMispEvent } from './detectMispEvent.js'
-import type { MispEvent } from './types.js'
+import type { MispAttribute, MispEvent } from './types.js'
 
 /**
  * `event-root` variant: the MISP Event is a root/cluster node, with its
@@ -23,21 +23,80 @@ export class MispEventRootConverter extends GraphConverter<MispEvent> {
     return detectMispEvent(input)
   }
 
-  convert(_input: MispEvent, _options?: ConverterOptions): ConversionResult {
-    // TODO: map the Event, its Attributes, Objects and Object References
-    // into RawNode[] / RawEdge[].
-    return { nodes: [], edges: [] }
+  convert(input: MispEvent, _options?: ConverterOptions): ConversionResult {
+    const event = input.Event
+    const nodes: RawNode[] = []
+    const edges: RawEdge[] = []
+    const nodeIdByUuid = new Map<string, NodeId>()
+
+    const eventNodeId: NodeId = `event:${event.uuid}`
+    nodes.push({
+      id: eventNodeId,
+      data: { label: event.info, entityType: 'event', date: event.date },
+    })
+
+    const addAttribute = (attribute: MispAttribute, parentId: NodeId): void => {
+      const attributeNodeId: NodeId = `attribute:${attribute.uuid}`
+      nodes.push({
+        id: attributeNodeId,
+        data: { label: attribute.value, entityType: attribute.type, category: attribute.category },
+      })
+      nodeIdByUuid.set(attribute.uuid, attributeNodeId)
+      edges.push({ from: parentId, to: attributeNodeId })
+    }
+
+    // Top-level Attributes only — ones that belong to an Object (object_id
+    // set to something other than '0') are added below, nested under that
+    // Object instead, to avoid emitting them twice.
+    for (const attribute of event.Attribute ?? []) {
+      if (attribute.object_id && attribute.object_id !== '0') continue
+      addAttribute(attribute, eventNodeId)
+    }
+
+    for (const object of event.Object ?? []) {
+      const objectNodeId: NodeId = `object:${object.uuid}`
+      nodes.push({
+        id: objectNodeId,
+        data: { label: object.name, entityType: `objects/${object.name}`, description: object.description },
+      })
+      nodeIdByUuid.set(object.uuid, objectNodeId)
+      edges.push({ from: eventNodeId, to: objectNodeId })
+
+      for (const attribute of object.Attribute ?? []) {
+        addAttribute(attribute, objectNodeId)
+      }
+    }
+
+    // Explicit Object References become extra edges, on top of the
+    // Event->Object structural ones above. A reference's target can be any
+    // UUID in the event (another Object, or an Attribute); skip it if it
+    // doesn't resolve to a node we created.
+    for (const object of event.Object ?? []) {
+      const fromId = nodeIdByUuid.get(object.uuid)
+      if (!fromId) continue
+
+      for (const reference of object.ObjectReference ?? []) {
+        const toId = nodeIdByUuid.get(reference.referenced_uuid)
+        if (!toId) continue
+        edges.push({ from: fromId, to: toId, data: { relationshipType: reference.relationship_type } })
+      }
+    }
+
+    // TODO: Tag / Galaxy / Sighting are not mapped yet.
+    return { nodes, edges }
   }
 
   getNodeTypeAccessor(): NodeTypeAccessor {
-    // TODO: return the MISP entity type (attribute `type`, object `name`,
-    // galaxy cluster `type`, or `'event'` for the root node) per node.
-    return () => 'unknown'
+    return (node) => (node.data?.entityType as string | undefined) ?? 'unknown'
   }
 
   getDefaultStyleMap(): NodeStyleMap {
-    // TODO: default shape/color (and, later, icons — see
-    // docs/icons-and-styling.md) per MISP entity type.
-    return {}
+    // Shape/color only for now — no curated icon set wired up yet, see
+    // docs/icons-and-styling.md. `entityType` already uses misp-iconify's
+    // key convention (bare attribute `type`, `objects/<name>`) so icons can
+    // be layered on later without reshaping this map.
+    return {
+      event: { shape: 'hexagon', color: '#1f6feb', size: 28 },
+    }
   }
 }

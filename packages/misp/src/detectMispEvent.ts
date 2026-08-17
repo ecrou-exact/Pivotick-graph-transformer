@@ -1,7 +1,11 @@
 // Shared detect() logic for every `misp` variant — see CONTRIBUTING.md,
 // "Multiple variants for the same format".
-export function detectMispEvent(_input: unknown): boolean {
-  // TODO: cheap structural check, e.g. a top-level `Event` key with the
-  // fields a real MISP Event always has (`id`, `uuid`, `Attribute`, ...).
-  return false
+export function detectMispEvent(input: unknown): boolean {
+  if (typeof input !== 'object' || input === null) return false
+
+  const event = (input as { Event?: unknown }).Event
+  if (typeof event !== 'object' || event === null) return false
+
+  const { uuid, info } = event as Record<string, unknown>
+  return typeof uuid === 'string' && typeof info === 'string'
 }

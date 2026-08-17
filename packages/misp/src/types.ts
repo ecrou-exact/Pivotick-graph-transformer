@@ -1,6 +1,41 @@
-// TODO: model the real MISP Event JSON shape (Attributes, Objects, Object
-// References, Tags, Galaxies, ...). See the MISP core format docs:
-// https://www.misp-project.org/documentation/
+// Shape of a MISP Event, as exported by the MISP core format
+// (https://www.misp-project.org/documentation/). Only the fields this
+// converter actually reads are modeled — MISP Events carry many more
+// optional fields (Tag, Galaxy, Sighting, ...) that aren't mapped yet.
+export interface MispAttribute {
+  uuid: string
+  type: string
+  category?: string
+  value: string
+  comment?: string
+  to_ids?: boolean
+  /** `'0'` (or absent) for a top-level Attribute; otherwise the id of the Object it belongs to. */
+  object_id?: string
+}
+
+export interface MispObjectReference {
+  uuid: string
+  referenced_uuid: string
+  relationship_type?: string
+}
+
+export interface MispObject {
+  uuid: string
+  name: string
+  'meta-category'?: string
+  description?: string
+  Attribute?: MispAttribute[]
+  ObjectReference?: MispObjectReference[]
+}
+
+export interface MispEventBody {
+  uuid: string
+  info: string
+  date?: string
+  Attribute?: MispAttribute[]
+  Object?: MispObject[]
+}
+
 export interface MispEvent {
-  [key: string]: unknown
+  Event: MispEventBody
 }

@@ -1,0 +1,64 @@
+{
+  "Event": {
+    "uuid": "5f6a1a30-0000-4000-8000-000000000001",
+    "info": "Example phishing campaign",
+    "date": "2024-01-15",
+    "Attribute": [
+      {
+        "uuid": "5f6a1a30-0000-4000-8000-000000000010",
+        "type": "domain",
+        "category": "Network activity",
+        "value": "malicious-example.test",
+        "to_ids": true
+      },
+      {
+        "uuid": "5f6a1a30-0000-4000-8000-000000000011",
+        "type": "email-src",
+        "category": "Payload delivery",
+        "value": "attacker@malicious-example.test",
+        "to_ids": true
+      },
+      {
+        "uuid": "5f6a1a30-0000-4000-8000-000000000021",
+        "type": "ip-dst",
+        "category": "Network activity",
+        "value": "203.0.113.42",
+        "to_ids": true,
+        "object_id": "1"
+      }
+    ],
+    "Object": [
+      {
+        "uuid": "5f6a1a30-0000-4000-8000-000000000020",
+        "name": "ip-port",
+        "meta-category": "network",
+        "description": "C2 server",
+        "Attribute": [
+          {
+            "uuid": "5f6a1a30-0000-4000-8000-000000000021",
+            "type": "ip-dst",
+            "category": "Network activity",
+            "value": "203.0.113.42",
+            "to_ids": true,
+            "object_id": "1"
+          },
+          {
+            "uuid": "5f6a1a30-0000-4000-8000-000000000022",
+            "type": "port",
+            "category": "Network activity",
+            "value": "443",
+            "to_ids": false,
+            "object_id": "1"
+          }
+        ],
+        "ObjectReference": [
+          {
+            "uuid": "5f6a1a30-0000-4000-8000-000000000030",
+            "referenced_uuid": "5f6a1a30-0000-4000-8000-000000000010",
+            "relationship_type": "resolves-to"
+          }
+        ]
+      }
+    ]
+  }
+}
