@@ -29,6 +29,15 @@ const PIVOTICK_VERSION = 'v1.5.0'
 const REPO = 'Pivotick/Pivotick'
 const DOWNLOAD_URL = `https://github.com/${REPO}/releases/download/${PIVOTICK_VERSION}/pivotick-dist.zip`
 
+// Pivotick's ES build keeps a handful of its own `dependencies` external
+// (bare `import ... from 'd3-selection'` etc. left unbundled in
+// index-*.js) rather than inlining them — dompurify/marked, by contrast,
+// ARE bundled in. After bumping PIVOTICK_VERSION, re-check which imports
+// are still bare specifiers (`grep -oE 'from "[^"./][^"]*"'
+// demo/vendor/pivotick/index-*.js`) and keep demo/package.json's
+// `dependencies` in sync — otherwise the demo builds locally (Node's
+// resolver may find a stray copy elsewhere on disk) but fails in CI.
+
 // Only the ES module build + the chunks it actually references at runtime.
 // The UMD/IIFE bundles and the duplicate `assets/pivotick.css` in the zip
 // aren't needed by the Vite-based demo, so they're intentionally left out.
