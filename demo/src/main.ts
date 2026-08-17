@@ -95,17 +95,21 @@ async function handleFiles(files: FileList): Promise<void> {
   if (!file) return
 
   try {
-    const parsed: unknown = JSON.parse(await file.text())
+    // Strip a leading UTF-8 BOM — common in JSON files saved by some
+    // Windows editors/exporters, and otherwise makes JSON.parse throw.
+    const text = (await file.text()).replace(/^\uFEFF/, '')
+    const parsed: unknown = JSON.parse(text)
     const key = `upload:${file.name}`
     uploadedFixtures.set(key, parsed)
     populateFixtures(key)
 
     const detectedFormat = ConverterRegistry.detectFormat(parsed)
-    if (detectedFormat) {
-      formatSelect.value = detectedFormat
-      populateVariants()
+    if (!detectedFormat) {
+      statusEl.textContent = `No registered converter recognized "${file.name}"'s format. Pick a format/variant manually and hit Render to try anyway.`
+      return
     }
-
+    formatSelect.value = detectedFormat
+    populateVariants()
     render()
   } catch (error) {
     statusEl.textContent = `Could not read "${file.name}": ${error instanceof Error ? error.message : String(error)}`

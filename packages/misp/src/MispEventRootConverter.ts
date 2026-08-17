@@ -24,7 +24,11 @@ export class MispEventRootConverter extends GraphConverter<MispEvent> {
   }
 
   convert(input: MispEvent, _options?: ConverterOptions): ConversionResult {
-    const event = input.Event
+    const event = input?.Event
+    if (!event || typeof event !== 'object') {
+      throw new Error('Not a MISP Event: expected a top-level "Event" object with "uuid" and "info".')
+    }
+
     const nodes: RawNode[] = []
     const edges: RawEdge[] = []
     const nodeIdByUuid = new Map<string, NodeId>()
