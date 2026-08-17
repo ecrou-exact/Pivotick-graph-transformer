@@ -2,7 +2,7 @@
 
 Converts [MISP](https://www.misp-project.org/) Events and Objects into Pivotick's `nodes` / `edges` shape.
 
-> **Status**: first pass. `event-root` maps each Event's top-level Attributes, Objects (with their nested Attributes) and explicit Object References, plus Tags and Galaxy/GalaxyCluster wherever MISP allows them (Event, Attribute, Object) — deduped by tag name / cluster id, so a tag reused across many entities is one node with many edges, not a duplicate per entity. Standalone Objects root themselves. Sighting isn't mapped yet — see the `// TODO` in [`src/MispEventRootConverter.ts`](./src/MispEventRootConverter.ts).
+> **Status**: `event-root` maps each Event's top-level Attributes, Objects (with their nested Attributes, each Attribute's `object_relation` shown as the edge label) and explicit Object References, Tags and Galaxy/GalaxyCluster wherever MISP allows them (Event, Attribute, Object) — deduped by tag name / cluster id, so a tag reused across many entities is one node with many edges, not a duplicate per entity — plus GalaxyClusterRelation as extra edges between the clusters themselves (MISP's own cluster-to-cluster graph, e.g. a threat-actor cluster "uses" a malware cluster — distinct from an Object Reference). Standalone Objects root themselves. Sighting is aggregated into a count on the Attribute's node data, not rendered as its own nodes. Field shapes are checked against PyMISP's actual class definitions (`pymisp/mispevent.py`, `pymisp/abstract.py`) and real example exports, not guessed — see [`src/types.ts`](./src/types.ts).
 
 ## Input
 
@@ -38,26 +38,37 @@ No second import needed for icons — see below.
 
 ## Icons and styling
 
-`getDefaultStyleMap()` ships a real icon (inline SVG, via Pivotick's `NodeStyle.svgIcon` — see [`../../docs/icons-and-styling.md`](../../docs/icons-and-styling.md) for why that's the mechanism, not `iconClass`) for every attribute type / object / galaxy cluster type [misp-iconify](https://github.com/MISP/misp-iconify) covers (410 keys), falling back to shape/color only for the rest. Every node also shows its label (Event `info`, Attribute `value`, Tag `name`, ...) as text on the node itself, via `NodeStyle.text`.
+`getDefaultStyleMap()` ships a real icon (inline SVG, via Pivotick's `NodeStyle.svgIcon` — see [`../../docs/icons-and-styling.md`](../../docs/icons-and-styling.md) for why that's the mechanism, not `iconClass`) for every attribute type / object / galaxy cluster type [misp-iconify](https://github.com/MISP/misp-iconify) covers (410 keys), falling back to shape/color only for the rest. Node labels aren't shown as on-canvas text on purpose — with icons already carrying the type and hundreds of nodes on screen at once, that's clutter, not signal; `node.data.label` is still there for the sidebar/tooltip. Edges carry the actually-interesting labels instead: an Object Reference's `relationship_type`, an Object Attribute's `object_relation`, a GalaxyClusterRelation's type.
 
-**Shape and color are configuration, not code** — [`src/styles.json`](./src/styles.json) is a small, hand-maintained file, one entry per category:
+**Shape, color, and edge styling are configuration, not code** — [`src/styles.json`](./src/styles.json) is a small, hand-maintained file:
 
 ```json
 {
-  "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28 },
-  "tag": { "shape": "circle", "size": 10 },
-  "attribute": { "shape": "circle", "color": "#0ea5e9", "size": 14 },
-  "object": { "shape": "hexagon", "color": "#7c3aed", "size": 18 },
-  "galaxyCluster": { "shape": "triangle", "color": "#f59e0b", "size": 11 },
-  "generic": { "shape": "circle", "color": "#64748b", "size": 12 }
+  "nodes": {
+    "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28 },
+    "tag": { "shape": "circle", "color": "#94a3b8", "size": 10 },
+    "attribute": { "shape": "circle", "color": "#0ea5e9", "size": 14 },
+    "object": { "shape": "hexagon", "color": "#7c3aed", "size": 18 },
+    "galaxyCluster": { "shape": "square", "color": "#f59e0b", "size": 16 },
+    "generic": { "shape": "circle", "color": "#64748b", "size": 12 }
+  },
+  "edges": {
+    "default": { "strokeColor": "#94a3b8", "strokeWidth": 1 },
+    "structure": { "strokeColor": "#cbd5e1", "strokeWidth": 1 },
+    "tag": { "strokeColor": "#94a3b8", "strokeWidth": 1, "dashed": true },
+    "galaxy": { "strokeColor": "#f59e0b", "strokeWidth": 1, "dashed": true },
+    "reference": { "strokeColor": "#7c3aed", "strokeWidth": 1.5 },
+    "clusterRelation": { "strokeColor": "#f59e0b", "strokeWidth": 1.5 }
+  },
+  "arrow": { "markerWidth": 7, "markerHeight": 7 }
 }
 ```
 
-Want objects to render as squares instead of hexagons, or a different accent color? Edit that file directly — nothing else needs to change. (Keep an eye on `size` if you pick a shape with a tight inner area relative to its outline, like `triangle` — Pivotick sizes the icon at `size * 1.4` regardless of shape, so a size tuned for a circle's icon will visibly overflow a triangle's edges; `galaxyCluster`'s smaller `size` above is deliberately compensating for exactly that.)
+Want objects to render as squares instead of hexagons, Object References to be thicker, or a different accent color? Edit that file directly — nothing else needs to change. `nodes` is per node category; `edges` is per relation *kind* — `convert()` stamps `data.kind` (`structure`/`tag`/`galaxy`/`reference`/`clusterRelation`) on every edge it creates, and `getDefaultEdgeStyle()`'s `styleCb` reads it back to pick the right entry, falling back to `default`. `arrow` resizes the built-in arrowhead marker — mind the aspect ratio if you change it (width and height scale together for a normal-looking triangle). (Watch node `size` if you pick `triangle`, though — Pivotick sizes the icon at `size * 1.4` regardless of shape, and a triangle's usable inner area is much smaller than a circle/square/hexagon's at the same `size`, so an icon tuned for those will visibly overflow a triangle's edges. `circle`/`square`/`hexagon` are all safe at normal sizes.)
 
 The specific icon per key (`domain` vs `ip-dst` vs `md5`, ...) comes from [`src/icons.generated.ts`](./src/icons.generated.ts) instead — that one **is** machine-generated (by `scripts/sync-icons.mjs` from the vendored `misp-iconify` submodule) and shouldn't be hand-edited.
 
-For anything beyond `styles.json`, override the returned `nodeStyleMap` yourself — it's a plain object:
+For anything beyond `styles.json`, override the returned render options yourself — they're plain objects:
 
 ```ts
 const { data, render } = ConverterRegistry.get('misp').toPivotickOptions(mispEventJson)

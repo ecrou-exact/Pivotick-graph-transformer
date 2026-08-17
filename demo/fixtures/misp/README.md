@@ -13,9 +13,12 @@ handles (see `packages/misp/src/normalizeMispInput.ts` and
 - `example-event-bare.json` — an Event with no `{ Event: {...} }` wrapper:
   its fields sit directly at the top level, the shape `pymisp`'s
   `MISPEvent.to_json()` actually produces
-- `example-event-full.json` — Tags at Event/Attribute/Object level (the
-  same tag reused twice, to show dedup), a Galaxy with a GalaxyCluster, and
-  an Object — field shapes checked against real MISP export fixtures
+- `example-event-full.json` — the "everything" fixture: Event metadata
+  (`published`, `analysis`, `threat_level_id`, `Orgc`), Tags at Event/
+  Attribute/Object level (the same tag reused twice, to show dedup), two
+  Galaxies/GalaxyClusters linked by a GalaxyClusterRelation, and an Object
+  whose Attribute carries `object_relation` (shown as its edge's label) —
+  field shapes checked against real MISP export fixtures
   (`PyMISP/tests/reportlab_testfiles/galaxy_1.json`), values are invented
 - `example-object-standalone.json` — a standalone Object, not attached to
   any Event

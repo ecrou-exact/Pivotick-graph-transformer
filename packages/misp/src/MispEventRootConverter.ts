@@ -6,7 +6,7 @@ import { MISP_ATTRIBUTE_ICONS, MISP_GALAXY_ICONS, MISP_GENERIC_ICONS, MISP_OBJEC
 import { mispIconSvg } from './mispIconSvg.js'
 import { normalizeMispInput } from './normalizeMispInput.js'
 import stylesConfig from './styles.json' with { type: 'json' }
-import type { MispAttribute, MispGalaxy, MispInput, MispObject, MispTag } from './types.js'
+import type { MispAttribute, MispGalaxy, MispGalaxyCluster, MispInput, MispObject, MispTag } from './types.js'
 
 /**
  * `event-root` variant: each Event is a root/cluster node, with its
@@ -48,6 +48,14 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
     // that carries it, rather than a duplicate node each time.
     const tagNodeIdByName = new Map<string, NodeId>()
     const clusterNodeIdById = new Map<string, NodeId>()
+    // Only populated when a cluster's `uuid` is actually non-empty (it's
+    // frequently `''` in real exports) — used to resolve
+    // GalaxyClusterRelation targets, which reference clusters by uuid.
+    const clusterNodeIdByUuid = new Map<string, NodeId>()
+    // Every cluster we've created a node for, so relations can be resolved
+    // once at the end instead of per-parent (a cluster attached to three
+    // entities would otherwise have its relations processed three times).
+    const seenClusters: MispGalaxyCluster[] = []
 
     const addTags = (tags: MispTag[] | undefined, parentId: NodeId): void => {
       for (const tag of tags ?? []) {
@@ -58,18 +66,19 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
           nodes.push({
             id: tagNodeId,
             data: { label: tag.name, entityType: 'tag' },
-            // The tag's own MISP colour drives a coloured ring
-            // (strokeColor — which also tints the icon, since svgIcon's
-            // currentColor context follows strokeColor, not color) rather
-            // than the shape fill. Real tag colours are arbitrary and
-            // include white (tlp:white is one of the most common MISP
-            // tags): using colour as `color` (fill) risks an invisible
-            // node, since Pivotick's default stroke is also white. Fill
-            // stays the safe neutral from styles.json's "tag" category.
-            style: tag.colour ? { strokeColor: tag.colour, strokeWidth: 2 } : undefined,
+            // The tag's own MISP colour is the fill (`color`) — tlp:white
+            // really renders white, tlp:red really renders red, matching
+            // what the tag actually says. `strokeColor` is pinned to a
+            // fixed dark neutral rather than following the tag (Pivotick's
+            // own default stroke is white), so the node's outline stays
+            // visible even for a white/near-white tag colour — and since
+            // svgIcon's currentColor context follows strokeColor, not
+            // color, the icon renders in that same dark neutral, readable
+            // against any fill colour instead of disappearing into it.
+            style: tag.colour ? { color: tag.colour, strokeColor: '#334155', strokeWidth: 1.5 } : undefined,
           })
         }
-        edges.push({ from: parentId, to: tagNodeId })
+        edges.push({ from: parentId, to: tagNodeId, data: { kind: 'tag' } })
       }
     }
 
@@ -80,12 +89,14 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
           if (!clusterNodeId) {
             clusterNodeId = `cluster:${cluster.id}`
             clusterNodeIdById.set(cluster.id, clusterNodeId)
+            if (cluster.uuid) clusterNodeIdByUuid.set(cluster.uuid, clusterNodeId)
+            seenClusters.push(cluster)
             nodes.push({
               id: clusterNodeId,
               data: { label: cluster.value, entityType: `galaxies/${galaxy.type}`, description: cluster.description },
             })
           }
-          edges.push({ from: parentId, to: clusterNodeId })
+          edges.push({ from: parentId, to: clusterNodeId, data: { kind: 'galaxy' } })
         }
       }
     }
@@ -94,10 +105,27 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
       const attributeNodeId: NodeId = `attribute:${attribute.uuid}`
       nodes.push({
         id: attributeNodeId,
-        data: { label: attribute.value, entityType: attribute.type, category: attribute.category },
+        data: {
+          label: attribute.value,
+          entityType: attribute.type,
+          category: attribute.category,
+          // The attribute's semantic role within its parent Object's
+          // template (e.g. 'first-name', 'ip') — MISP's own UI shows this,
+          // not the raw `type`, when the attribute belongs to an Object.
+          objectRelation: attribute.object_relation,
+          sightingCount: attribute.Sighting?.length,
+        },
       })
       nodeIdByUuid.set(attribute.uuid, attributeNodeId)
-      edges.push({ from: parentId, to: attributeNodeId })
+      edges.push({
+        from: parentId,
+        to: attributeNodeId,
+        // object_relation doubles as the edge label when present — it's a
+        // real MISP-defined relation name, same idea as an Object
+        // Reference's relationship_type, just for Object->Attribute
+        // membership instead of Object->Object.
+        data: attribute.object_relation ? { label: attribute.object_relation, kind: 'structure' } : { kind: 'structure' },
+      })
       addTags(attribute.Tag, attributeNodeId)
       addGalaxies(attribute.Galaxy, attributeNodeId)
     }
@@ -111,7 +139,7 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
         data: { label: object.name, entityType: `objects/${object.name}`, description: object.description },
       })
       nodeIdByUuid.set(object.uuid, objectNodeId)
-      if (parentId) edges.push({ from: parentId, to: objectNodeId })
+      if (parentId) edges.push({ from: parentId, to: objectNodeId, data: { kind: 'structure' } })
       addTags(object.Tag, objectNodeId)
       addGalaxies(object.Galaxy, objectNodeId)
 
@@ -124,7 +152,15 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
       const eventNodeId: NodeId = `event:${event.uuid}`
       nodes.push({
         id: eventNodeId,
-        data: { label: event.info, entityType: 'event', date: event.date },
+        data: {
+          label: event.info,
+          entityType: 'event',
+          date: event.date,
+          published: event.published,
+          analysis: event.analysis,
+          threatLevel: event.threat_level_id,
+          org: event.Orgc?.name ?? event.Org?.name,
+        },
       })
       addTags(event.Tag, eventNodeId)
       addGalaxies(event.Galaxy, eventNodeId)
@@ -169,12 +205,34 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
         edges.push({
           from: fromId,
           to: toId,
-          data: { label: reference.relationship_type ?? '', relationshipType: reference.relationship_type },
+          data: { label: reference.relationship_type ?? '', relationshipType: reference.relationship_type, kind: 'reference' },
         })
       }
     }
 
-    // TODO: Sighting is not mapped yet.
+    // GalaxyClusterRelation — MISP's own cluster-to-cluster graph (e.g. a
+    // threat-actor cluster "uses" a malware cluster), distinct from an
+    // Object Reference. Targets are resolved by uuid; skipped if the
+    // referenced cluster wasn't one we rendered (out of scope of this
+    // input, or its uuid is empty in the source data).
+    for (const cluster of seenClusters) {
+      const fromId = clusterNodeIdById.get(cluster.id)
+      if (!fromId) continue
+
+      for (const relation of cluster.GalaxyClusterRelation ?? []) {
+        const toId = clusterNodeIdByUuid.get(relation.referenced_galaxy_cluster_uuid)
+        if (!toId) continue
+        edges.push({
+          from: fromId,
+          to: toId,
+          data: { label: relation.referenced_galaxy_cluster_type, kind: 'clusterRelation' },
+        })
+      }
+    }
+
+    // TODO: Sighting is aggregated into sightingCount on the Attribute
+    // node's data, not rendered as its own nodes — individual sightings
+    // (a timestamp + source) aren't graph-worthy entities on their own.
     return { nodes, edges }
   }
 
@@ -183,41 +241,80 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
   }
 
   getDefaultStyleMap(): NodeStyleMap {
-    // shape/color per *category* comes from styles.json — a small,
-    // hand-edited config, not generated — so tweaking "objects should be
-    // squares" or "attributes should be green" is a one-line JSON edit,
-    // not a code change. The *icon* per specific key (domain vs ip-dst vs
-    // md5, ...) is what's actually per-key and machine-generated, from
-    // scripts/sync-icons.mjs — layered on top of the category style here.
+    // shape/color per *category* comes from styles.json's "nodes" section —
+    // a small, hand-edited config, not generated — so tweaking "objects
+    // should be squares" or "attributes should be green" is a one-line
+    // JSON edit, not a code change. The *icon* per specific key (domain vs
+    // ip-dst vs md5, ...) is what's actually per-key and machine-generated,
+    // from scripts/sync-icons.mjs — layered on top of the category style.
     //
     // Node labels (NodeStyle.text) are deliberately not set — with icons
     // already carrying the entity type and hundreds of nodes on screen at
     // once, always-on text under every node is clutter, not signal.
     // node.data.label is still there for the sidebar/tooltip either way.
-    // Edge labels (the MISP Object Reference relationship_type) are set
-    // instead, in convert() — those are the actually-interesting relation
-    // names, and there are far fewer edges worth labeling than nodes.
+    // Edge labels (Object Reference relationship_type, Object Attribute
+    // object_relation, GalaxyClusterRelation type) are set instead, in
+    // convert() — those are the actually-interesting relation names, and
+    // there are far fewer edges worth labeling than nodes.
+    const nodeStyles = stylesConfig.nodes
+
     const withIcon = (categoryStyle: Record<string, unknown>, entityType: string): Record<string, unknown> => {
       const svgIcon = mispIconSvg(entityType)
       return svgIcon ? { ...categoryStyle, svgIcon } : categoryStyle
     }
 
     const styleMap: NodeStyleMap = {
-      event: withIcon(stylesConfig.event, 'event'),
+      event: withIcon(nodeStyles.event, 'event'),
       // Tag nodes carry the tag's own MISP colour as a per-node
-      // strokeColor override (set in `addTags`, above) rather than
+      // strokeColor/color override (set in `addTags`, above) rather than
       // through this map, since colour varies per tag, not per type.
-      tag: withIcon(stylesConfig.tag, 'tag'),
+      tag: withIcon(nodeStyles.tag, 'tag'),
     }
 
-    for (const key of Object.keys(MISP_ATTRIBUTE_ICONS)) styleMap[key] = withIcon(stylesConfig.attribute, key)
-    for (const key of Object.keys(MISP_OBJECT_ICONS)) styleMap[`objects/${key}`] = withIcon(stylesConfig.object, `objects/${key}`)
-    for (const key of Object.keys(MISP_GALAXY_ICONS)) styleMap[`galaxies/${key}`] = withIcon(stylesConfig.galaxyCluster, `galaxies/${key}`)
+    for (const key of Object.keys(MISP_ATTRIBUTE_ICONS)) styleMap[key] = withIcon(nodeStyles.attribute, key)
+    for (const key of Object.keys(MISP_OBJECT_ICONS)) styleMap[`objects/${key}`] = withIcon(nodeStyles.object, `objects/${key}`)
+    for (const key of Object.keys(MISP_GALAXY_ICONS)) styleMap[`galaxies/${key}`] = withIcon(nodeStyles.galaxyCluster, `galaxies/${key}`)
     for (const key of Object.keys(MISP_GENERIC_ICONS)) {
       if (key === 'event' || key === 'tag') continue
-      styleMap[key] = withIcon(stylesConfig.generic, key)
+      styleMap[key] = withIcon(nodeStyles.generic, key)
     }
 
     return styleMap
+  }
+
+  getDefaultEdgeStyle(): Record<string, unknown> {
+    // styles.json's "edges" section is keyed by the `kind` convert() sets
+    // on each edge's data (structure/tag/galaxy/reference/clusterRelation)
+    // — styleCb reads it back per edge, same "small hand-edited JSON is
+    // the source of truth" approach as node styling.
+    const edgeStyles = stylesConfig.edges
+    return {
+      ...edgeStyles.default,
+      styleCb: (edge: { getData?: () => Record<string, unknown> | undefined }): Record<string, unknown> => {
+        const kind = edge.getData?.()?.kind as string | undefined
+        return kind && kind in edgeStyles ? edgeStyles[kind as keyof typeof edgeStyles] : {}
+      },
+    }
+  }
+
+  getMarkerStyleMap(): Record<string, unknown> {
+    // Smaller arrowheads than Pivotick's built-in 12x12 default — same
+    // triangle proportions, just scaled down (see styles.json's "arrow").
+    // Only `markerWidth`/`markerHeight` are configurable from JSON; shape
+    // and anchor point stay fixed since they're tied to those dimensions.
+    const { markerWidth, markerHeight } = stylesConfig.arrow
+    const halfHeight = markerHeight / 2
+    return {
+      arrow: {
+        pathD: `M0,-${halfHeight}L${markerWidth},0L0,${halfHeight}`,
+        viewBox: `0 -${halfHeight} ${markerWidth} ${markerHeight}`,
+        refX: markerWidth * 0.6,
+        refY: 0,
+        markerWidth,
+        markerHeight,
+        markerUnits: 'userSpaceOnUse',
+        orient: 'auto',
+      },
+    }
   }
 }
