@@ -1,0 +1,23 @@
+{
+  "name": "pivotick-graph-transformer",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Community-maintained converters that turn third-party graph data (MISP, STIX, VirusTotal Graph, AIL-framework, ...) into data the Pivotick graph visualization library can render.",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint_fix": "npm run lint_fix --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "eslint": "^9.29.0",
+    "globals": "^16.2.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.34.1"
+  },
+  "license": "MIT"
+}
