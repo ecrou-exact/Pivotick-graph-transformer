@@ -5,7 +5,8 @@
   "description": "Community-maintained converters that turn third-party graph data (MISP, STIX, VirusTotal Graph, AIL-framework, ...) into data the Pivotick graph visualization library can render.",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "demo"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",

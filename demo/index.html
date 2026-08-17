@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pivotick Graph Transformer — Demo</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Pivotick Graph Transformer</h1>
+      <p>Pick a converter and a fixture, then render it through Pivotick.</p>
+    </header>
+
+    <main>
+      <form id="controls">
+        <label>
+          Format
+          <select id="format-select"></select>
+        </label>
+
+        <label>
+          Variant
+          <select id="variant-select"></select>
+        </label>
+
+        <label>
+          Fixture
+          <select id="fixture-select"></select>
+        </label>
+
+        <button type="submit">Render</button>
+      </form>
+
+      <p id="status" role="status"></p>
+
+      <div id="layout">
+        <div id="pivotick-container"></div>
+        <pre id="json-output"></pre>
+      </div>
+    </main>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

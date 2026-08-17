@@ -1,0 +1,22 @@
+{
+  "name": "pivotick-transformer-demo",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Browser demo: pick a converter format/variant, load a fixture, preview the Pivotick render.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview",
+    "lint": "eslint 'src/**/*.ts'",
+    "lint_fix": "eslint --fix 'src/**/*.ts'"
+  },
+  "dependencies": {
+    "pivotick-transformer-core": "*",
+    "pivotick-transformer-misp": "*"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  },
+  "license": "MIT"
+}
