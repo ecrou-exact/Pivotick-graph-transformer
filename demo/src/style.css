@@ -1,64 +1,198 @@
+/*
+ * Deliberately no color/font tokens of our own: ../vendor/pivotick/pivotick.css
+ * defines a full --pvt-* design system (colors, chrome, JSON viewer) that
+ * already auto-adapts to light/dark (prefers-color-scheme, or an explicit
+ * [data-theme] override — see main.ts's theme toggle). Reusing it keeps this
+ * page visually consistent with the embedded Pivotick UI instead of clashing
+ * with it.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
 :root {
   color-scheme: light dark;
-  font-family: system-ui, sans-serif;
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
+  background: var(--pvt-bg);
+  color: var(--pvt-text-color-6);
+  font-family: var(--pvt-font-family);
+}
+
+#site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid var(--pvt-chrome-border);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.brand-mark {
+  font-size: 1.35rem;
+  font-weight: 700;
+  background: linear-gradient(120deg, var(--pvt-theme-primary) 20%, var(--pvt-vibrant-blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand-suffix {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--pvt-text-color-3);
+}
+
+.tagline {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--pvt-text-color-3);
+}
+
+#theme-toggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--pvt-chrome-border);
+  background: var(--pvt-chrome-bg);
+  color: var(--pvt-text-color-5);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#theme-toggle:hover {
+  border-color: var(--pvt-theme-primary);
+}
+
+main {
+  max-width: 1400px;
+  margin: 0 auto;
   padding: 1.5rem;
-}
-
-header {
-  margin-bottom: 1.5rem;
-}
-
-header h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.25rem;
-}
-
-header p {
-  margin: 0;
-  opacity: 0.7;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 #controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
   align-items: end;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--pvt-chrome-bg);
+  border: 1px solid var(--pvt-chrome-border);
+  border-radius: 11px;
+  box-shadow: var(--pvt-chrome-shadow);
 }
 
 #controls label {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.85rem;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--pvt-text-color-3);
+}
+
+#controls select {
+  min-width: 11rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 7px;
+  border: 1px solid var(--pvt-border-color);
+  background: var(--pvt-ui-bg);
+  color: var(--pvt-text-color-6);
+  font: inherit;
+}
+
+#render-btn {
+  padding: 0.5rem 1.15rem;
+  border: none;
+  border-radius: 7px;
+  background: var(--pvt-bg-color-primary);
+  color: var(--pvt-text-color-for-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#render-btn:hover {
+  filter: brightness(1.08);
 }
 
 #status {
+  margin: 0;
   min-height: 1.2em;
-  opacity: 0.75;
-}
-
-#layout {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1rem;
-  height: 70vh;
+  font-size: 0.85rem;
+  color: var(--pvt-text-color-3);
 }
 
 #pivotick-container {
-  border: 1px solid currentColor;
-  border-radius: 4px;
+  width: 100%;
+  height: 78vh;
+  min-height: 560px;
+  border: 1px solid var(--pvt-chrome-border);
+  border-radius: 12px;
+  box-shadow: var(--pvt-chrome-shadow);
   overflow: hidden;
 }
 
+#output-details {
+  border: 1px solid var(--pvt-chrome-border);
+  border-radius: 11px;
+  overflow: hidden;
+  background: var(--pvt-chrome-bg);
+}
+
+#output-details > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+#output-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+#output-details[open] > summary {
+  border-bottom: 1px solid var(--pvt-chrome-border);
+}
+
+#output-summary-meta {
+  font-weight: 400;
+  color: var(--pvt-text-color-3);
+}
+
 #json-output {
-  margin: 0;
-  padding: 0.75rem;
-  border: 1px solid currentColor;
-  border-radius: 4px;
-  overflow: auto;
-  font-size: 0.8rem;
+  height: 420px;
+}
+
+/* Disclosure caret for collapsible JSON nodes — pvt-json-viewer's own
+   markup hides the native <details> marker but doesn't ship a replacement
+   (it's driven by Pivotick's internal properties-panel JS, which we don't
+   have); a spacer keeps sibling primitive lines aligned with it. */
+.pgt-json-caret {
+  display: inline-block;
+  width: 0.9em;
+  margin-right: 0.15rem;
+  color: var(--pvt-text-color-3);
+  transition: transform 0.12s ease;
+}
+
+details[open] > summary > .pvt-json-viewer__line-content > .pgt-json-caret {
+  transform: rotate(90deg);
 }

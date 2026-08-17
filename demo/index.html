@@ -7,9 +7,15 @@
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
-    <header>
-      <h1>Pivotick Graph Transformer</h1>
-      <p>Pick a converter and a fixture, then render it through Pivotick.</p>
+    <header id="site-header">
+      <div class="brand-block">
+        <span class="brand">
+          <span class="brand-mark">Pivotick</span>
+          <span class="brand-suffix">Graph Transformer</span>
+        </span>
+        <p class="tagline">Pick a converter, load a fixture, preview the render.</p>
+      </div>
+      <button id="theme-toggle" type="button" aria-label="Toggle color theme"></button>
     </header>
 
     <main>
@@ -29,15 +35,17 @@
           <select id="fixture-select"></select>
         </label>
 
-        <button type="submit">Render</button>
+        <button type="submit" id="render-btn">Render</button>
       </form>
 
       <p id="status" role="status"></p>
 
-      <div id="layout">
-        <div id="pivotick-container"></div>
-        <pre id="json-output"></pre>
-      </div>
+      <div id="pivotick-container"></div>
+
+      <details id="output-details" open>
+        <summary>Converted output <span id="output-summary-meta"></span></summary>
+        <div id="json-output"></div>
+      </details>
     </main>
 
     <script type="module" src="./src/main.ts"></script>

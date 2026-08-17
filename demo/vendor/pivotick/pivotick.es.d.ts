@@ -11,7 +11,7 @@ export declare class Pivotick {
   constructor(
     container: HTMLElement,
     data?: { nodes: unknown[]; edges: unknown[] },
-    options?: { render?: unknown },
+    options?: { render?: unknown; UI?: { mode?: 'viewer' | 'full' | 'light' | 'static' } },
   )
   destroy(): void
 }
