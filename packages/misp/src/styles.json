@@ -1,19 +1,94 @@
 {
-  "nodes": {
-    "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28 },
-    "tag": { "shape": "circle", "color": "#94a3b8", "size": 10 },
-    "attribute": { "shape": "circle", "color": "#0ea5e9", "size": 14 },
-    "object": { "shape": "hexagon", "color": "#7c3aed", "size": 18 },
-    "galaxyCluster": { "shape": "square", "color": "#a855f7", "size": 16 },
-    "generic": { "shape": "circle", "color": "#64748b", "size": 12 }
+  "defaultMode": "icons",
+
+  "icons": {
+    "nodes": {
+      "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28 },
+      "tag": { "shape": "circle", "color": "#94a3b8", "size": 10 },
+      "attribute": { "shape": "circle", "color": "#0ea5e9", "size": 14 },
+      "object": { "shape": "hexagon", "color": "#7c3aed", "size": 18 },
+      "galaxyCluster": { "shape": "square", "color": "#a855f7", "size": 16 },
+      "generic": { "shape": "circle", "color": "#64748b", "size": 12 }
+    }
   },
+
+  "kinds": {
+    "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28, "mark": "EV", "label": "Event" },
+    "tag": { "shape": "circle", "color": "#94a3b8", "size": 10, "mark": "TAG", "label": "Tag" },
+    "object": { "shape": "hexagon", "color": "#7c3aed", "size": 18, "mark": "OBJ", "label": "Object" },
+    "attribute": { "shape": "circle", "color": "#0ea5e9", "size": 14, "mark": "ATT", "label": "Attribute" },
+    "actor": { "shape": "square", "color": "#a855f7", "size": 16, "mark": "TA", "label": "Threat Actor" },
+    "malware": { "shape": "square", "color": "#dc2626", "size": 16, "mark": "MAL", "label": "Malware" },
+    "tool": { "shape": "square", "color": "#ea580c", "size": 16, "mark": "TL", "label": "Tool" },
+    "technique": { "shape": "square", "color": "#0891b2", "size": 16, "mark": "TTP", "label": "Technique" },
+    "vulnerability": { "shape": "square", "color": "#16a34a", "size": 16, "mark": "VULN", "label": "Vulnerability" },
+    "campaign": { "shape": "square", "color": "#ca8a04", "size": 16, "mark": "CAMP", "label": "Campaign" },
+    "sector": { "shape": "square", "color": "#db2777", "size": 16, "mark": "SEC", "label": "Sector" },
+    "country": { "shape": "square", "color": "#0d9488", "size": 16, "mark": "GEO", "label": "Country/Region" },
+    "other": { "shape": "circle", "color": "#64748b", "size": 12, "mark": "?", "label": "Other" }
+  },
+
+  "categories": {
+    "Internal reference": { "color": "#64748b", "mark": "REF" },
+    "Targeting data": { "color": "#be123c", "mark": "TGT" },
+    "Antivirus detection": { "color": "#16a34a", "mark": "AV" },
+    "Payload delivery": { "color": "#ea580c", "mark": "DLV" },
+    "Artifacts dropped": { "color": "#d97706", "mark": "ART" },
+    "Payload installation": { "color": "#ca8a04", "mark": "INST" },
+    "Persistence mechanism": { "color": "#92400e", "mark": "PERS" },
+    "Network activity": { "color": "#0ea5e9", "mark": "NET" },
+    "Payload type": { "color": "#c2410c", "mark": "TYPE" },
+    "Attribution": { "color": "#a855f7", "mark": "ATTR" },
+    "External analysis": { "color": "#0891b2", "mark": "EXT" },
+    "Financial fraud": { "color": "#059669", "mark": "FIN" },
+    "Support Tool": { "color": "#f97316", "mark": "TOOL" },
+    "Social network": { "color": "#2563eb", "mark": "SOC" },
+    "Person": { "color": "#db2777", "mark": "PER" },
+    "Other": { "color": "#64748b", "mark": "OTH" }
+  },
+
   "edges": {
     "default": { "strokeColor": "#94a3b8", "strokeWidth": 1 },
-    "structure": { "strokeColor": "#cbd5e1", "strokeWidth": 1 },
-    "tag": { "strokeColor": "#94a3b8", "strokeWidth": 1, "dashed": true },
-    "galaxy": { "strokeColor": "#a855f7", "strokeWidth": 1, "dashed": true },
+    "hasObject": { "strokeColor": "#cbd5e1", "strokeWidth": 1.2 },
+    "hasAttribute": { "strokeColor": "#bae6fd", "strokeWidth": 1 },
+    "hasTag": { "strokeColor": "#94a3b8", "strokeWidth": 1, "dashed": true },
+    "hasGalaxy": { "strokeColor": "#a855f7", "strokeWidth": 1, "dashed": true },
     "reference": { "strokeColor": "#7c3aed", "strokeWidth": 1.5 },
     "clusterRelation": { "strokeColor": "#a855f7", "strokeWidth": 1.5 }
   },
-  "arrow": { "markerWidth": 7, "markerHeight": 7 }
+
+  "cards": {
+    "event": [
+      { "key": "org", "label": "Org" },
+      { "key": "date", "label": "Date" },
+      { "key": "analysis", "label": "Analysis", "format": "analysisLevel" },
+      { "key": "threatLevel", "label": "Threat level", "format": "threatLevel" },
+      { "key": "published", "label": "Published", "format": "boolean" },
+      { "key": "attributeCount", "label": "Attributes", "hideIfZero": true },
+      { "key": "objectCount", "label": "Objects", "hideIfZero": true },
+      { "key": "tagCount", "label": "Tags", "hideIfZero": true }
+    ],
+    "object": [
+      { "key": "metaCategory", "label": "Category" },
+      { "key": "description", "label": "Description", "truncate": true },
+      { "key": "attributeCount", "label": "Attributes", "hideIfZero": true },
+      { "key": "tagCount", "label": "Tags", "hideIfZero": true }
+    ],
+    "attribute": [
+      { "key": "category", "label": "Category" },
+      { "key": "objectRelation", "label": "Relation" },
+      { "key": "toIds", "label": "IDS", "format": "boolean" },
+      { "key": "sightingCount", "label": "Sightings", "hideIfZero": true },
+      { "key": "comment", "label": "Comment", "truncate": true }
+    ],
+    "galaxyCluster": [
+      { "key": "description", "label": "Description", "truncate": true },
+      { "key": "source", "label": "Source" }
+    ],
+    "tag": [
+      { "key": "colour", "label": "Colour" }
+    ]
+  },
+
+  "arrow": { "markerWidth": 10, "markerHeight": 10 }
 }
