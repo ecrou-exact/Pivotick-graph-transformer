@@ -42,9 +42,19 @@ export interface MispEvent {
 
 /**
  * Every top-level shape MISP actually exports things in, that this
- * converter accepts: a single Event, a bare list of Events, a `restSearch`
- * -style `{ response: [...] }` wrapper, a standalone Object (exported on
- * its own, outside any Event), or a list of those. See
+ * converter accepts: a single Event (`{ Event: {...} }` or, as pymisp's
+ * `MISPEvent.to_json()` emits it, the Event's fields directly at the top
+ * level with no wrapper), a bare list of Events, a `restSearch`-style
+ * `{ response: [...] }` wrapper, a standalone Object (wrapped or bare,
+ * exported on its own outside any Event), or a list of those. See
  * `normalizeMispInput.ts` for how each is flattened into a common shape.
  */
-export type MispInput = MispEvent | MispEvent[] | { response: MispEvent[] } | { Object: MispObject } | MispObject[]
+export type MispInput =
+  | MispEvent
+  | MispEventBody
+  | MispEvent[]
+  | MispEventBody[]
+  | { response: MispEvent[] }
+  | { Object: MispObject }
+  | MispObject
+  | MispObject[]

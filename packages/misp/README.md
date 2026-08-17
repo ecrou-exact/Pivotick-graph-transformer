@@ -9,9 +9,10 @@ Converts [MISP](https://www.misp-project.org/) Events and Objects into Pivotick'
 Accepts any of the shapes MISP actually exports things in — see [`normalizeMispInput.ts`](./src/normalizeMispInput.ts), which every variant's `detect()`/`convert()` shares:
 
 - a single Event: `{ Event: { uuid, info, Attribute?, Object? } }`
+- an Event with no wrapper — its fields directly at the top level, `{ uuid, info, Attribute?, Object? }` — the shape `pymisp`'s `MISPEvent.to_json()` actually produces
 - a bare list of Events: `[{ Event: {...} }, { Event: {...} }]`
 - a `restSearch`-style API response: `{ response: [{ Event: {...} }, ...] }`
-- a standalone Object, exported on its own outside any Event: `{ Object: { uuid, name, Attribute? } }`
+- a standalone Object, wrapped (`{ Object: { uuid, name, Attribute? } }`) or bare (`{ uuid, name, Attribute? }`), exported on its own outside any Event
 - a list of standalone Objects, or a mix of Events and Objects in one array
 
 All Events/Objects found in one input land in the same graph. See [`src/types.ts`](./src/types.ts) for the full field shapes this converter reads, and `demo/fixtures/misp/` in the repo root for a worked example of each case.
