@@ -2,7 +2,7 @@
 
 Converts [MISP](https://www.misp-project.org/) Events and Objects into Pivotick's `nodes` / `edges` shape.
 
-> **Status**: first pass. `event-root` maps each Event's top-level Attributes, Objects (with their nested Attributes) and explicit Object References; standalone Objects root themselves. Tag / Galaxy / Sighting aren't mapped yet — see the `// TODO` in [`src/MispEventRootConverter.ts`](./src/MispEventRootConverter.ts).
+> **Status**: first pass. `event-root` maps each Event's top-level Attributes, Objects (with their nested Attributes) and explicit Object References, plus Tags and Galaxy/GalaxyCluster wherever MISP allows them (Event, Attribute, Object) — deduped by tag name / cluster id, so a tag reused across many entities is one node with many edges, not a duplicate per entity. Standalone Objects root themselves. Sighting isn't mapped yet — see the `// TODO` in [`src/MispEventRootConverter.ts`](./src/MispEventRootConverter.ts).
 
 ## Input
 

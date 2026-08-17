@@ -3,7 +3,7 @@ import type { ConversionResult, ConverterOptions, ConverterVariantMeta, NodeId, 
 
 import { detectMispEvent } from './detectMispEvent.js'
 import { normalizeMispInput } from './normalizeMispInput.js'
-import type { MispAttribute, MispInput, MispObject } from './types.js'
+import type { MispAttribute, MispGalaxy, MispInput, MispObject, MispTag } from './types.js'
 
 /**
  * `event-root` variant: each Event is a root/cluster node, with its
@@ -39,6 +39,45 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
     const nodes: RawNode[] = []
     const edges: RawEdge[] = []
     const nodeIdByUuid = new Map<string, NodeId>()
+    // Tags/Galaxy clusters are commonly reused across many Events/Attributes/
+    // Objects in the same input (e.g. every Attribute tagged tlp:white) — one
+    // node per unique tag name / cluster id, with an edge from every entity
+    // that carries it, rather than a duplicate node each time.
+    const tagNodeIdByName = new Map<string, NodeId>()
+    const clusterNodeIdById = new Map<string, NodeId>()
+
+    const addTags = (tags: MispTag[] | undefined, parentId: NodeId): void => {
+      for (const tag of tags ?? []) {
+        let tagNodeId = tagNodeIdByName.get(tag.name)
+        if (!tagNodeId) {
+          tagNodeId = `tag:${tag.name}`
+          tagNodeIdByName.set(tag.name, tagNodeId)
+          nodes.push({
+            id: tagNodeId,
+            data: { label: tag.name, entityType: 'tag' },
+            style: tag.colour ? { color: tag.colour } : undefined,
+          })
+        }
+        edges.push({ from: parentId, to: tagNodeId })
+      }
+    }
+
+    const addGalaxies = (galaxies: MispGalaxy[] | undefined, parentId: NodeId): void => {
+      for (const galaxy of galaxies ?? []) {
+        for (const cluster of galaxy.GalaxyCluster ?? []) {
+          let clusterNodeId = clusterNodeIdById.get(cluster.id)
+          if (!clusterNodeId) {
+            clusterNodeId = `cluster:${cluster.id}`
+            clusterNodeIdById.set(cluster.id, clusterNodeId)
+            nodes.push({
+              id: clusterNodeId,
+              data: { label: cluster.value, entityType: `galaxies/${galaxy.type}`, description: cluster.description },
+            })
+          }
+          edges.push({ from: parentId, to: clusterNodeId })
+        }
+      }
+    }
 
     const addAttribute = (attribute: MispAttribute, parentId: NodeId): void => {
       const attributeNodeId: NodeId = `attribute:${attribute.uuid}`
@@ -48,6 +87,8 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
       })
       nodeIdByUuid.set(attribute.uuid, attributeNodeId)
       edges.push({ from: parentId, to: attributeNodeId })
+      addTags(attribute.Tag, attributeNodeId)
+      addGalaxies(attribute.Galaxy, attributeNodeId)
     }
 
     // `parentId: null` for a standalone Object (no Event to hang off of) —
@@ -60,6 +101,8 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
       })
       nodeIdByUuid.set(object.uuid, objectNodeId)
       if (parentId) edges.push({ from: parentId, to: objectNodeId })
+      addTags(object.Tag, objectNodeId)
+      addGalaxies(object.Galaxy, objectNodeId)
 
       for (const attribute of object.Attribute ?? []) {
         addAttribute(attribute, objectNodeId)
@@ -72,6 +115,8 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
         id: eventNodeId,
         data: { label: event.info, entityType: 'event', date: event.date },
       })
+      addTags(event.Tag, eventNodeId)
+      addGalaxies(event.Galaxy, eventNodeId)
 
       // Top-level Attributes only — ones that belong to an Object
       // (object_id set to something other than '0') are added via the
@@ -108,7 +153,7 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
       }
     }
 
-    // TODO: Tag / Galaxy / Sighting are not mapped yet.
+    // TODO: Sighting is not mapped yet.
     return { nodes, edges }
   }
 
@@ -119,10 +164,14 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
   getDefaultStyleMap(): NodeStyleMap {
     // Shape/color only for now — no curated icon set wired up yet, see
     // docs/icons-and-styling.md. `entityType` already uses misp-iconify's
-    // key convention (bare attribute `type`, `objects/<name>`) so icons can
-    // be layered on later without reshaping this map.
+    // key convention (bare attribute `type`, `objects/<name>`,
+    // `galaxies/<galaxy-type>`) so icons can be layered on later without
+    // reshaping this map. Tag nodes carry the tag's own MISP colour
+    // directly as `style.color` (set in `addTags`, above) rather than
+    // through this map, since colour varies per tag, not per type.
     return {
       event: { shape: 'hexagon', color: '#1f6feb', size: 28 },
+      tag: { shape: 'circle', size: 10 },
     }
   }
 }

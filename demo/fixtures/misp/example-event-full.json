@@ -1,0 +1,61 @@
+{
+  "Event": {
+    "uuid": "5f6a1a30-0000-4000-8000-000000000301",
+    "info": "Full example — Tags, Galaxies/Clusters, Objects, and an Attribute-level Tag",
+    "date": "2024-04-01",
+    "Tag": [
+      { "id": "1", "name": "tlp:white", "colour": "#ffffff" },
+      { "id": "2", "name": "malware_classification:malware-category=\"Ransomware\"", "colour": "#2c4f00" }
+    ],
+    "Galaxy": [
+      {
+        "id": "1",
+        "uuid": "d1e9d2f6-0000-4000-8000-000000000001",
+        "name": "Threat Actor",
+        "type": "threat-actor",
+        "description": "Threat actors are characteristics of malicious actors.",
+        "GalaxyCluster": [
+          {
+            "id": "4135",
+            "uuid": "",
+            "value": "Example Threat Actor Group",
+            "description": "Fictional cluster for demo purposes.",
+            "meta": { "country": ["ZZ"] }
+          }
+        ]
+      }
+    ],
+    "Attribute": [
+      {
+        "uuid": "5f6a1a30-0000-4000-8000-000000000310",
+        "type": "domain",
+        "category": "Network activity",
+        "value": "full-example.test",
+        "to_ids": true,
+        "Tag": [
+          { "id": "1", "name": "tlp:white", "colour": "#ffffff" }
+        ]
+      }
+    ],
+    "Object": [
+      {
+        "uuid": "5f6a1a30-0000-4000-8000-000000000320",
+        "name": "file",
+        "meta-category": "file",
+        "description": "Dropped payload",
+        "Attribute": [
+          {
+            "uuid": "5f6a1a30-0000-4000-8000-000000000321",
+            "type": "md5",
+            "category": "Payload delivery",
+            "value": "d41d8cd98f00b204e9800998ecf8427e",
+            "to_ids": true
+          }
+        ],
+        "Tag": [
+          { "id": "2", "name": "malware_classification:malware-category=\"Ransomware\"", "colour": "#2c4f00" }
+        ]
+      }
+    ]
+  }
+}

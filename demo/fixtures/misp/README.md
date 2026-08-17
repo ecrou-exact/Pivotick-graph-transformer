@@ -3,8 +3,9 @@
 Drop MISP Event JSON files here (e.g. `event-basic.json`). Each one shows up
 automatically in the demo's fixture picker — no wiring needed.
 
-Four samples, one per input shape `MispEventRootConverter` accepts (see
-`packages/misp/src/normalizeMispInput.ts`):
+Five samples, one per input shape / feature set `MispEventRootConverter`
+handles (see `packages/misp/src/normalizeMispInput.ts` and
+`MispEventRootConverter.ts`):
 
 - `example-event.json` — a single Event, `{ Event: {...} }`-wrapped (domain
   + email Attribute, an `ip-port` Object with an Object Reference back to
@@ -12,6 +13,10 @@ Four samples, one per input shape `MispEventRootConverter` accepts (see
 - `example-event-bare.json` — an Event with no `{ Event: {...} }` wrapper:
   its fields sit directly at the top level, the shape `pymisp`'s
   `MISPEvent.to_json()` actually produces
+- `example-event-full.json` — Tags at Event/Attribute/Object level (the
+  same tag reused twice, to show dedup), a Galaxy with a GalaxyCluster, and
+  an Object — field shapes checked against real MISP export fixtures
+  (`PyMISP/tests/reportlab_testfiles/galaxy_1.json`), values are invented
 - `example-object-standalone.json` — a standalone Object, not attached to
   any Event
 - `example-event-list.json` — a `{ response: [...] }` restSearch-style list
