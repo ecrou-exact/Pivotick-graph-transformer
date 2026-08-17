@@ -9,6 +9,14 @@ import { normalizeMispInput } from './normalizeMispInput.js'
 import stylesConfig from './styles.json' with { type: 'json' }
 import type { MispAttribute, MispGalaxy, MispGalaxyCluster, MispInput, MispObject, MispTag } from './types.js'
 
+// MISP represents a galaxy cluster's association two ways: the structured
+// Galaxy/GalaxyCluster arrays `addGalaxies` handles below, *and* as a
+// plain machine tag of this exact shape (it's literally GalaxyCluster's
+// own `tag_name` field) — e.g. `misp-galaxy:tool="Cobalt Strike"`. A tag
+// matching this pattern is a galaxy cluster reference wearing a tag's
+// clothes, not a generic tag, and should look like one.
+const GALAXY_TAG_PATTERN = /^misp-galaxy:([^=]+)="(.+)"$/
+
 /**
  * `event-root` variant: each Event is a root/cluster node, with its
  * Attributes and Objects as children; standalone Objects (not attached to
@@ -64,28 +72,43 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
         if (!tagNodeId) {
           tagNodeId = `tag:${tag.name}`
           tagNodeIdByName.set(tag.name, tagNodeId)
-          // The tag's own colour if the input set one; otherwise the
-          // colour misp-taxonomies itself declares for this machine tag
-          // (e.g. tlp:red -> #FF2B2B) — real MISP exports normally already
-          // carry the right colour directly on the Tag, so this fallback
-          // mostly covers hand-built/incomplete input.
-          const colour = mispTagColor(tag)
-          nodes.push({
-            id: tagNodeId,
-            data: { label: tag.name, entityType: 'tag' },
-            // `colour` is the fill (`color`) — tlp:white really renders
-            // white, tlp:red really renders red, matching what the tag
-            // actually says. `strokeColor` is pinned to a fixed dark
-            // neutral rather than following the tag (Pivotick's own
-            // default stroke is white), so the node's outline stays
-            // visible even for a white/near-white colour — and since
-            // svgIcon's currentColor context follows strokeColor, not
-            // color, the icon renders in that same dark neutral, readable
-            // against any fill colour instead of disappearing into it.
-            style: colour ? { color: colour, strokeColor: '#334155', strokeWidth: 1.5 } : undefined,
-          })
+
+          const galaxyMatch = GALAXY_TAG_PATTERN.exec(tag.name)
+          if (galaxyMatch) {
+            const [, galaxyType, clusterValue] = galaxyMatch
+            // Styled and iconed exactly like a "real" GalaxyCluster node
+            // (galaxies/<type> already covers every misp-iconify galaxy
+            // icon in getDefaultStyleMap()) — no per-node style override,
+            // same as addGalaxies below. Deduped by tag name rather than
+            // cluster id, since a plain Tag carries no cluster id/uuid to
+            // correlate against; the same cluster tagged both ways (rare)
+            // ends up as two nodes rather than one.
+            nodes.push({ id: tagNodeId, data: { label: clusterValue, entityType: `galaxies/${galaxyType}` } })
+          } else {
+            // The tag's own colour if the input set one; otherwise the
+            // colour misp-taxonomies itself declares for this machine tag
+            // (e.g. tlp:red -> #FF2B2B) — real MISP exports normally
+            // already carry the right colour directly on the Tag, so this
+            // fallback mostly covers hand-built/incomplete input.
+            const colour = mispTagColor(tag)
+            nodes.push({
+              id: tagNodeId,
+              data: { label: tag.name, entityType: 'tag' },
+              // `colour` is the fill (`color`) — tlp:white really renders
+              // white, tlp:red really renders red, matching what the tag
+              // actually says. `strokeColor` is pinned to a fixed dark
+              // neutral rather than following the tag (Pivotick's own
+              // default stroke is white), so the node's outline stays
+              // visible even for a white/near-white colour — and since
+              // svgIcon's currentColor context follows strokeColor, not
+              // color, the icon renders in that same dark neutral,
+              // readable against any fill colour instead of disappearing
+              // into it.
+              style: colour ? { color: colour, strokeColor: '#334155', strokeWidth: 1.5 } : undefined,
+            })
+          }
         }
-        edges.push({ from: parentId, to: tagNodeId, data: { kind: 'tag' } })
+        edges.push({ from: parentId, to: tagNodeId, data: { kind: GALAXY_TAG_PATTERN.test(tag.name) ? 'galaxy' : 'tag' } })
       }
     }
 
