@@ -16,4 +16,11 @@ export default [
   },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    rules: {
+      // Matches tsconfig's noUnusedParameters, which already exempts
+      // underscore-prefixed params (used for not-yet-implemented stubs).
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
 ]
