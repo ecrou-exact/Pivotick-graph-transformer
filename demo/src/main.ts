@@ -1,6 +1,7 @@
 import { ConverterRegistry } from 'pivotick-transformer-core'
 import type { ConversionResult } from 'pivotick-transformer-core'
 import 'pivotick-transformer-misp'
+import 'pivotick-transformer-misp/icons.css'
 
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
 import '../vendor/pivotick/pivotick.css'
@@ -19,6 +20,7 @@ const uploadedFixtures = new Map<string, unknown>()
 const formatSelect = document.querySelector<HTMLSelectElement>('#format-select')!
 const variantSelect = document.querySelector<HTMLSelectElement>('#variant-select')!
 const fixtureSelect = document.querySelector<HTMLSelectElement>('#fixture-select')!
+const iconFrameSelect = document.querySelector<HTMLSelectElement>('#icon-frame-select')!
 const form = document.querySelector<HTMLFormElement>('#controls')!
 const statusEl = document.querySelector<HTMLElement>('#status')!
 const jsonOutput = document.querySelector<HTMLElement>('#json-output')!
@@ -137,7 +139,10 @@ function render(): void {
   let data: ConversionResult
   try {
     const converter = ConverterRegistry.get(format, variantId)
-    const toPivotick = converter.toPivotickOptions(fixture.data)
+    // iconFrame only means something to pivotick-transformer-misp today —
+    // harmless for any other format's converter, which just ignores an
+    // option key it doesn't recognize.
+    const toPivotick = converter.toPivotickOptions(fixture.data, { iconFrame: iconFrameSelect.value })
     data = toPivotick.data
 
     renderJsonViewer(jsonOutput, data)
@@ -243,6 +248,9 @@ pasteLoadBtn.addEventListener('click', () => {
 })
 
 formatSelect.addEventListener('change', populateVariants)
+iconFrameSelect.addEventListener('change', () => {
+  if (fixtureSelect.value) render()
+})
 form.addEventListener('submit', (event) => {
   event.preventDefault()
   render()

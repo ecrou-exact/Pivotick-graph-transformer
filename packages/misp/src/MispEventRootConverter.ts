@@ -2,6 +2,8 @@ import { GraphConverter } from 'pivotick-transformer-core'
 import type { ConversionResult, ConverterOptions, ConverterVariantMeta, NodeId, NodeStyleMap, NodeTypeAccessor, RawEdge, RawNode } from 'pivotick-transformer-core'
 
 import { detectMispEvent } from './detectMispEvent.js'
+import { MISP_ATTRIBUTE_ICON_KEYS, MISP_GALAXY_ICON_KEYS, MISP_GENERIC_ICON_KEYS, MISP_OBJECT_ICON_KEYS } from './icons.generated.js'
+import { mispIconClass } from './mispIconClass.js'
 import { normalizeMispInput } from './normalizeMispInput.js'
 import type { MispAttribute, MispGalaxy, MispInput, MispObject, MispTag } from './types.js'
 
@@ -161,17 +163,33 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
     return (node) => (node.data?.entityType as string | undefined) ?? 'unknown'
   }
 
-  getDefaultStyleMap(): NodeStyleMap {
-    // Shape/color only for now — no curated icon set wired up yet, see
-    // docs/icons-and-styling.md. `entityType` already uses misp-iconify's
-    // key convention (bare attribute `type`, `objects/<name>`,
-    // `galaxies/<galaxy-type>`) so icons can be layered on later without
-    // reshaping this map. Tag nodes carry the tag's own MISP colour
-    // directly as `style.color` (set in `addTags`, above) rather than
-    // through this map, since colour varies per tag, not per type.
-    return {
+  getDefaultStyleMap(options?: ConverterOptions): NodeStyleMap {
+    // `entityType` already uses misp-iconify's key convention (bare
+    // attribute `type`, `objects/<name>`, `galaxies/<galaxy-type>`), so
+    // one iconClass lookup per known key covers every type misp-iconify
+    // ships an icon for. `iconFrame` ('simple' | 'hexagon', default
+    // 'simple') is a pure styling toggle — see docs/icons-and-styling.md
+    // for why it's a ConverterOptions field rather than a variant.
+    // Consumers who need more than that can still override individual
+    // entries themselves: `{ ...render, nodeStyleMap: {
+    // ...render.nodeStyleMap, domain: { color: 'red' } } }`.
+    const frame = options?.iconFrame === 'hexagon' ? 'hexagon' : 'simple'
+
+    const styleMap: NodeStyleMap = {
       event: { shape: 'hexagon', color: '#1f6feb', size: 28 },
+      // Tag nodes carry the tag's own MISP colour directly as
+      // `style.color` (set in `addTags`, above) rather than through this
+      // map, since colour varies per tag, not per type.
       tag: { shape: 'circle', size: 10 },
     }
+
+    for (const key of MISP_ATTRIBUTE_ICON_KEYS) styleMap[key] = { iconClass: mispIconClass(key, frame) }
+    for (const key of MISP_OBJECT_ICON_KEYS) styleMap[`objects/${key}`] = { iconClass: mispIconClass(`objects/${key}`, frame) }
+    for (const key of MISP_GALAXY_ICON_KEYS) styleMap[`galaxies/${key}`] = { iconClass: mispIconClass(`galaxies/${key}`, frame) }
+    for (const key of MISP_GENERIC_ICON_KEYS) {
+      styleMap[key] = { ...styleMap[key], iconClass: mispIconClass(key, frame) }
+    }
+
+    return styleMap
   }
 }

@@ -9,10 +9,13 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./icons.css": "./assets/icons.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "assets",
+    "ATTRIBUTION.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

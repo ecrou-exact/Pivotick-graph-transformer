@@ -30,6 +30,26 @@ A future `object-refs-only` variant (no Event node, edges only from explicit Obj
 ```ts
 import { ConverterRegistry } from 'pivotick-transformer-core'
 import 'pivotick-transformer-misp'
+import 'pivotick-transformer-misp/icons.css' // once, anywhere in the app
 
 const { data, render } = ConverterRegistry.get('misp').toPivotickOptions(mispEventJson)
+```
+
+## Icons
+
+`getDefaultStyleMap()` ships a real icon for every attribute type / object / galaxy cluster type [misp-iconify](https://github.com/MISP/misp-iconify) covers (~400 keys), falling back to shape/color only for the rest — see [`../../docs/icons-and-styling.md`](../../docs/icons-and-styling.md) for how the icons get from misp-iconify into this package.
+
+The one thing that's configurable: `{ iconFrame: 'simple' | 'hexagon' }` (default `'simple'`), passed as `options` to `convert()` / `toPivotickOptions()`:
+
+```ts
+ConverterRegistry.get('misp').toPivotickOptions(mispEventJson, { iconFrame: 'hexagon' })
+```
+
+For anything beyond that toggle, override the returned `nodeStyleMap` yourself — it's a plain object:
+
+```ts
+const { data, render } = ConverterRegistry.get('misp').toPivotickOptions(mispEventJson)
+new Pivotick(container, data, {
+  render: { ...render, nodeStyleMap: { ...render.nodeStyleMap, domain: { color: 'red' } } },
+})
 ```

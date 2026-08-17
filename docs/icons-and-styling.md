@@ -39,19 +39,29 @@ So: **prefer inline `svgIcon`. Use `iconClass` + a bundled stylesheet when the s
 
 What's actually in the repo (verified directly, not assumed):
 
-- `metadata/icons.json` — maps every icon key (e.g. `objects/ip-port`, `event`, `galaxies/threat-actor`) to its attribution metadata.
-- `exports/css/icons.css` — a **generated, already-committed** stylesheet (~4 MB). Uses a `mask-image: url("data:image/svg+xml;base64,...")` technique with `background-color: currentColor`, so icon color follows the CSS `color` property. Class naming: `.misp-icon.misp-icon-<key>.misp-simple` or `.misp-icon.misp-icon-<key>.misp-hexagone` (MISP's UI uses a hexagon frame; a plain variant is also available).
+- `metadata/icons.json` — maps every icon key (410 total: e.g. `objects/ip-port`, `event`, `galaxies/threat-actor`) to its attribution metadata (`source`, `original`, `license`, `url`).
+- `exports/css/icons.css` — a **generated, already-committed** stylesheet (~4 MB). Uses a `mask-image: url("data:image/svg+xml;base64,...")` technique with `background-color: currentColor`, so icon color follows the CSS `color` property.
+
+  Class naming is `.misp-icon-<basename>.misp-<frame>` (two classes, not chained with more dots than that) — and it's less uniform than it first looks:
+
+  - `<basename>` **strips** the `objects/`/`galaxies/` prefix a key has in `icons.json` — the `objects/ip-port` icon is `.misp-icon-ip-port`, not `.misp-icon-objects/ip-port`.
+  - `<frame>` is one of **five** values, not just "simple vs hexagon frame" as it might look at a glance: `misp-objects` and `misp-galaxies` are exclusive to keys under those prefixes (213 and 131 keys respectively); `misp-attributes` covers most bare attribute-type keys (50); the remaining ~16 generic keys (`event`, `tag`, `misp`, ...) get both `misp-simple` and `misp-hexagone`, which really is a stylistic pick between the two.
+
+  (Confirmed by parsing the actual committed CSS, not by reading a spec — see `packages/misp/scripts/sync-icons.mjs`, which does the same parsing at maintain-time.)
 - `src/svg/**/*.svg` — the raw source SVGs, if inlining is ever preferred over the CSS approach for a subset of icons.
 - No `package.json` at the repo root.
 
 That last point matters: **`npm install github:MISP/misp-iconify` does not work.** This was tested directly (`npm init` + `npm install github:MISP/misp-iconify` in a scratch project) and fails with `ENOENT ... Could not read package.json` — npm's git installer requires one, and misp-iconify doesn't ship one. There is no way to make misp-iconify a normal npm dependency as-is.
 
-### The vendoring approach
+### The vendoring approach (implemented)
 
-Since we can't depend on it live, we vendor it — pull the specific files we need at *maintenance time*, commit the result, and let ordinary `npm install` handle the rest:
+Since we can't depend on it live, we vendor it — pull what we need at *maintenance time*, commit the result, and let ordinary `npm install` handle the rest:
 
-1. **`packages/misp/scripts/sync-icons.mjs`** (maintainer-run, not part of the install/build path): downloads `metadata/icons.json` and `exports/css/icons.css` from `raw.githubusercontent.com/MISP/misp-iconify/<pinned-commit-sha>/...` — pinned to a specific commit so a refresh is a deliberate, reviewable diff, not a moving target.
-2. The script writes the fetched files into `packages/misp/assets/` (committed to git) and regenerates a small typed lookup, e.g. `packages/misp/src/icons.generated.ts`, mapping MISP type keys (attribute `type`, object `name`/template, galaxy cluster `type`) to the corresponding `misp-icon-<key>` class name.
+1. **`packages/misp/vendor/misp-iconify`** is a git submodule pinned to a specific commit (`git submodule status` shows which) — not an npm dependency, just a convenient, versioned local checkout for the sync script (and for maintainers) to read from. It ships its own already-generated build output (`exports/css/icons.css`, `metadata/icons.json`), so nothing needs building inside it and its own nested submodules never need checking out. **The submodule is a maintain-time-only tool, not part of the install path** — `assets/icons.css` and `src/icons.generated.ts` (below) are the actually-committed output that ships in the npm package, so a plain `npm install` on this repo works with the submodule left uninitialized. `git submodule update --init packages/misp/vendor/misp-iconify` is only needed to re-run the sync script itself.
+2. **`packages/misp/scripts/sync-icons.mjs`** (maintainer-run, not part of the install/build path) reads the submodule and:
+   - copies `exports/css/icons.css` into `packages/misp/assets/icons.css` (committed to git)
+   - parses that same CSS for which icon keys exist and which frame class(es) each has (the real ground truth — see above), and writes the result as `packages/misp/src/icons.generated.ts`: four `Set<string>` lookups (object/galaxy/attribute/generic keys) consumed by `packages/misp/src/mispIconClass.ts` at runtime to build the `iconClass` string for a given `entityType`, or return `undefined` if misp-iconify has no icon for it
+   - copies the submodule's own `ATTRIBUTION.md` (already lists every icon's upstream source/license) to `packages/misp/ATTRIBUTION.md`, prefixed with the pinned commit it came from
 3. `packages/misp/package.json` ships `assets/icons.css` as a package export (`"./icons.css": "./assets/icons.css"`, following the same `exports` field pattern already used in `packages/core`), so consumers do:
 
    ```ts
@@ -59,13 +69,21 @@ Since we can't depend on it live, we vendor it — pull the specific files we ne
    import { MispEventRootConverter } from 'pivotick-transformer-misp'
    ```
 
-   and `getDefaultStyleMap()` returns entries like `{ iconClass: 'misp-icon misp-icon-objects/ip-port misp-simple' }`.
-4. `packages/misp/ATTRIBUTION.md` carries forward the upstream attribution requirement (copy of the relevant `misp-iconify` `ATTRIBUTION.md` content, or a link to the pinned commit's version).
-5. Re-running the sync script and bumping the pinned commit is how the icon set gets refreshed — a normal PR, reviewed like any other change, never something that happens automatically on someone else's `npm install`.
+   and `getDefaultStyleMap()` returns entries like `{ iconClass: 'misp-icon misp-icon-ip-port misp-objects' }` for every `entityType` misp-iconify covers, falling back to shape/color-only styling (see `getDefaultStyleMap`'s hand-written `event`/`tag` entries) for the rest.
+4. Refreshing the icon set: `git submodule update --remote packages/misp/vendor/misp-iconify` (or check out a specific newer commit), then re-run the sync script and commit the diff — a normal PR, reviewed like any other change, never something that happens automatically on someone else's `npm install`. A submodule bump with no corresponding `assets/`/`icons.generated.ts` diff in the same PR is a sign the sync script wasn't re-run.
 
 This is the same shape as `pivotick` itself requiring `import 'pivotick/dist/pivotick.css'` — consumers already expect one CSS import for a graph library, so this isn't an extra foreign step, it's the same step they already know.
 
-The **simple vs. hexagon** choice (`misp-simple` / `misp-hexagone`) is a pure styling toggle, not a structural one — it doesn't change which nodes/edges get produced. It belongs in `ConverterOptions` (e.g. `{ iconFrame: 'hexagon' }` passed to `convert()`/`toPivotickOptions()`), **not** as a separate `variant`. Variants (see [CONTRIBUTING.md](../CONTRIBUTING.md)) are reserved for choices that change graph topology, like "Event as root node" vs "flattened, references only."
+The **simple vs. hexagon** choice (`misp-simple` / `misp-hexagone` — only meaningful for the ~16 generic keys that ship both; object/galaxy/attribute icons each only have one frame) is a pure styling toggle, not a structural one — it doesn't change which nodes/edges get produced. It's implemented as `ConverterOptions.iconFrame` (`'simple' | 'hexagon'`, default `'simple'`), read by `getDefaultStyleMap(options)` — see `packages/core/src/GraphConverter.ts`, which passes `toPivotickOptions()`'s `options` through to `getDefaultStyleMap` for exactly this. It is **not** a separate `variant`: variants (see [CONTRIBUTING.md](../CONTRIBUTING.md)) are reserved for choices that change graph topology, like "Event as root node" vs "flattened, references only."
+
+Consumers who need more control than the `iconFrame` toggle can override the generated style map after the fact — nothing special is needed for this, `nodeStyleMap` is a plain object:
+
+```ts
+const { data, render } = converter.toPivotickOptions(input, { iconFrame: 'hexagon' })
+new Pivotick(container, data, {
+  render: { ...render, nodeStyleMap: { ...render.nodeStyleMap, domain: { color: 'red' } } },
+})
+```
 
 ## Formats without a curated icon set
 
