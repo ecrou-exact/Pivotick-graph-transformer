@@ -1,8 +1,10 @@
 # Pivotick Graph Transformer — demo
 
-A small browser app: pick a registered converter (format + variant), pick a
-fixture, and see the actual Pivotick render — plus the raw `{ nodes, edges }`
-JSON it produced, useful while a converter's `convert()` is still a stub.
+A small browser app styled after [pivotick.github.io](https://pivotick.github.io/Pivotick/) (same nav/brand tokens, same logo): pick a registered converter
+(format + variant), pick a fixture — or drag-and-drop / browse for your own
+JSON file — and see the actual Pivotick render side-by-side with the raw
+`{ nodes, edges }` JSON it produced, useful while a converter's `convert()`
+is still a stub.
 
 Not a published package — `private: true`, lives outside `packages/*` on
 purpose so it never ships as part of a converter's npm install.

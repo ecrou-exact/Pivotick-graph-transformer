@@ -1,10 +1,15 @@
 /*
- * Deliberately no color/font tokens of our own: ../vendor/pivotick/pivotick.css
- * defines a full --pvt-* design system (colors, chrome, JSON viewer) that
- * already auto-adapts to light/dark (prefers-color-scheme, or an explicit
- * [data-theme] override — see main.ts's theme toggle). Reusing it keeps this
- * page visually consistent with the embedded Pivotick UI instead of clashing
- * with it.
+ * Page chrome (nav, toolbar, panels) uses the same design tokens as
+ * https://pivotick.github.io/Pivotick/ — hand-copied from that site's real
+ * source (VitePress's default theme node_modules/vitepress/dist/client/
+ * theme-default/styles/vars.css, brand colors overridden by
+ * docs/.vitepress/theme/custom.css) rather than reinvented, so this page
+ * reads as the same product. We don't depend on VitePress itself (this is
+ * a Vite/vanilla-TS tool, not a docs site) — only the token *values*.
+ *
+ * The embedded Pivotick graph itself is themed separately, by its own
+ * ../vendor/pivotick/pivotick.css --pvt-* tokens (see main.ts's theme
+ * toggle, which drives both systems together).
  */
 
 * {
@@ -13,87 +18,183 @@
 
 :root {
   color-scheme: light dark;
+
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: #f6f6f7;
+  --vp-c-bg-soft: #f6f6f7;
+  --vp-c-divider: #e2e2e3;
+  --vp-c-border: #c2c2c4;
+  --vp-c-text-1: #3c3c43;
+  --vp-c-text-2: #67676c;
+  --vp-c-text-3: #929295;
+
+  /* Pivotick's own brand override (docs/.vitepress/theme/custom.css),
+     theme-invariant (same in light and dark). */
+  --vp-c-brand-1: #7ea2fb;
+  --vp-c-brand-2: #5785fa;
+  --vp-c-brand-3: #eb2e53;
+
+  --vp-shadow-2: 0 3px 12px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.07);
+  --vp-nav-height: 64px;
+  --vp-font-family-base: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --vp-c-bg: #1b1b1f;
+    --vp-c-bg-alt: #161618;
+    --vp-c-bg-soft: #202127;
+    --vp-c-divider: #2e2e32;
+    --vp-c-border: #3c3f44;
+    --vp-c-text-1: #dfdfd6;
+    --vp-c-text-2: #98989f;
+    --vp-c-text-3: #6a6a71;
+  }
+}
+
+:root[data-theme='dark'] {
+  --vp-c-bg: #1b1b1f;
+  --vp-c-bg-alt: #161618;
+  --vp-c-bg-soft: #202127;
+  --vp-c-divider: #2e2e32;
+  --vp-c-border: #3c3f44;
+  --vp-c-text-1: #dfdfd6;
+  --vp-c-text-2: #98989f;
+  --vp-c-text-3: #6a6a71;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
   margin: 0;
-  min-height: 100vh;
-  background: var(--pvt-bg);
-  color: var(--pvt-text-color-6);
-  font-family: var(--pvt-font-family);
+  display: flex;
+  flex-direction: column;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-base);
 }
 
-#site-header {
+/* ── Nav ─────────────────────────────────────────────────────────────── */
+
+#site-nav {
+  flex: 0 0 auto;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: var(--vp-nav-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.1rem 1.5rem;
-  border-bottom: 1px solid var(--pvt-chrome-border);
+  padding: 0 1.5rem;
+  background: var(--vp-c-bg);
+  border-bottom: 1px solid var(--vp-c-divider);
 }
 
 .brand {
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: inherit;
 }
 
-.brand-mark {
-  font-size: 1.35rem;
+.brand-logo {
+  height: 28px;
+  width: 28px;
+}
+
+.brand-text {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.brand-name {
+  font-size: 1.1rem;
   font-weight: 700;
-  background: linear-gradient(120deg, var(--pvt-theme-primary) 20%, var(--pvt-vibrant-blue));
+  background: linear-gradient(120deg, var(--vp-c-brand-3) 20%, var(--vp-c-brand-1));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .brand-suffix {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  color: var(--pvt-text-color-3);
+  color: var(--vp-c-text-2);
 }
 
-.tagline {
-  margin: 0.2rem 0 0;
-  font-size: 0.85rem;
-  color: var(--pvt-text-color-3);
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+}
+
+.nav-links a {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+}
+
+.nav-links a:hover {
+  color: var(--vp-c-brand-1);
+}
+
+.nav-links a.active {
+  color: var(--vp-c-brand-2);
+}
+
+.nav-links a.icon-link {
+  display: flex;
+  color: var(--vp-c-text-2);
+}
+
+.nav-links a.icon-link:hover {
+  color: var(--vp-c-text-1);
 }
 
 #theme-toggle {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  border: 1px solid var(--pvt-chrome-border);
-  background: var(--pvt-chrome-bg);
-  color: var(--pvt-text-color-5);
-  font-size: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  font-size: 0.95rem;
   line-height: 1;
   cursor: pointer;
 }
 
 #theme-toggle:hover {
-  border-color: var(--pvt-theme-primary);
+  border-color: var(--vp-c-brand-1);
 }
 
+/* ── Main ────────────────────────────────────────────────────────────── */
+
 main {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.85rem 1.1rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 #controls {
+  flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
   align-items: end;
   gap: 1rem;
   padding: 0.85rem 1rem;
-  background: var(--pvt-chrome-bg);
-  border: 1px solid var(--pvt-chrome-border);
-  border-radius: 11px;
-  box-shadow: var(--pvt-chrome-shadow);
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
 }
 
 #controls label {
@@ -101,84 +202,142 @@ main {
   flex-direction: column;
   gap: 0.3rem;
   font-size: 0.78rem;
-  color: var(--pvt-text-color-3);
+  color: var(--vp-c-text-2);
 }
 
 #controls select {
   min-width: 11rem;
   padding: 0.4rem 0.6rem;
-  border-radius: 7px;
-  border: 1px solid var(--pvt-border-color);
-  background: var(--pvt-ui-bg);
-  color: var(--pvt-text-color-6);
+  border-radius: 6px;
+  border: 1px solid var(--vp-c-border);
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
   font: inherit;
 }
 
 #render-btn {
   padding: 0.5rem 1.15rem;
   border: none;
-  border-radius: 7px;
-  background: var(--pvt-bg-color-primary);
-  color: var(--pvt-text-color-for-primary);
+  border-radius: 6px;
+  background: var(--vp-c-brand-3);
+  color: #fff;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 
 #render-btn:hover {
-  filter: brightness(1.08);
+  background: var(--vp-c-brand-2);
+}
+
+#dropzone {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px dashed var(--vp-c-border);
+  border-radius: 6px;
+  color: var(--vp-c-text-2);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+#dropzone:hover,
+#dropzone:focus-visible {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-text-1);
+}
+
+#dropzone.dropzone--active {
+  border-color: var(--vp-c-brand-1);
+  background: color-mix(in srgb, var(--vp-c-brand-1) 10%, transparent);
+  color: var(--vp-c-text-1);
+}
+
+.dropzone-browse {
+  color: var(--vp-c-brand-1);
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 #status {
+  flex: 0 0 auto;
   margin: 0;
   min-height: 1.2em;
   font-size: 0.85rem;
-  color: var(--pvt-text-color-3);
+  color: var(--vp-c-text-2);
+}
+
+/* ── Workspace: graph + JSON side by side, never stacked. Grows to fill
+   whatever vertical space main has left, instead of a guessed vh. ────── */
+
+#workspace {
+  flex: 1 1 auto;
+  min-height: 420px;
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
 }
 
 #pivotick-container {
-  width: 100%;
-  height: 78vh;
-  min-height: 560px;
-  border: 1px solid var(--pvt-chrome-border);
-  border-radius: 12px;
-  box-shadow: var(--pvt-chrome-shadow);
+  flex: 3 1 0;
+  min-width: 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  box-shadow: var(--vp-shadow-2);
   overflow: hidden;
 }
 
-#output-details {
-  border: 1px solid var(--pvt-chrome-border);
-  border-radius: 11px;
-  overflow: hidden;
-  background: var(--pvt-chrome-bg);
-}
-
-#output-details > summary {
-  cursor: pointer;
-  list-style: none;
+#output-panel {
+  flex: 2 1 0;
+  min-width: 340px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--vp-c-bg-soft);
+}
+
+#output-header {
+  display: flex;
+  align-items: baseline;
   gap: 0.5rem;
   padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+#output-header h2 {
+  margin: 0;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
-#output-details > summary::-webkit-details-marker {
-  display: none;
-}
-
-#output-details[open] > summary {
-  border-bottom: 1px solid var(--pvt-chrome-border);
-}
-
 #output-summary-meta {
-  font-weight: 400;
-  color: var(--pvt-text-color-3);
+  font-size: 0.78rem;
+  color: var(--vp-c-text-3);
 }
 
 #json-output {
-  height: 420px;
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 960px) {
+  #workspace {
+    flex-direction: column;
+    height: auto;
+  }
+
+  #pivotick-container {
+    height: 60vh;
+  }
+
+  #output-panel {
+    flex-basis: auto;
+    height: 40vh;
+  }
 }
 
 /* Disclosure caret for collapsible JSON nodes — pvt-json-viewer's own

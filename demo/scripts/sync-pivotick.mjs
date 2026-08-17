@@ -49,6 +49,11 @@ const FILES_TO_VENDOR = [
   'workers/simulation.worker.js',
 ]
 
+// The nav logo isn't part of the release dist zip (it's a docs/brand asset,
+// not a build output) — fetched separately, straight from the repo at the
+// same pinned tag.
+const LOGO_URL = `https://raw.githubusercontent.com/${REPO}/${PIVOTICK_VERSION}/public/pivotick.svg`
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const vendorDir = path.join(__dirname, '..', 'vendor', 'pivotick')
 
@@ -63,7 +68,9 @@ try {
   console.log(`Extracting to ${workDir}`)
   execFileSync('unzip', ['-o', '-q', zipPath, '-d', workDir])
 
-  rmSync(vendorDir, { recursive: true, force: true })
+  // Only overwrite the managed files below — never wipe vendorDir wholesale,
+  // it also holds pivotick.es.d.ts (hand-written, see that file's header)
+  // which this script must never touch.
   mkdirSync(vendorDir, { recursive: true })
 
   for (const relPath of FILES_TO_VENDOR) {
@@ -74,9 +81,13 @@ try {
     console.log(`  vendored ${relPath}`)
   }
 
+  console.log(`Downloading logo ${LOGO_URL}`)
+  execFileSync('curl', ['-sL', '-o', path.join(vendorDir, 'logo.svg'), LOGO_URL])
+  console.log('  vendored logo.svg')
+
   writeFileSync(
     path.join(vendorDir, 'VERSION'),
-    `${PIVOTICK_VERSION}\nSynced from ${DOWNLOAD_URL}\n`,
+    `${PIVOTICK_VERSION}\nSynced from ${DOWNLOAD_URL}\nLogo from ${LOGO_URL}\n`,
   )
 
   console.log(`Done. Vendored Pivotick ${PIVOTICK_VERSION} into ${vendorDir}`)
