@@ -4,6 +4,7 @@ import type { ConversionResult, ConverterOptions, ConverterVariantMeta, NodeId, 
 import { detectMispEvent } from './detectMispEvent.js'
 import { MISP_ATTRIBUTE_ICONS, MISP_GALAXY_ICONS, MISP_GENERIC_ICONS, MISP_OBJECT_ICONS } from './icons.generated.js'
 import { mispIconSvg } from './mispIconSvg.js'
+import { mispTagColor } from './mispTagColor.js'
 import { normalizeMispInput } from './normalizeMispInput.js'
 import stylesConfig from './styles.json' with { type: 'json' }
 import type { MispAttribute, MispGalaxy, MispGalaxyCluster, MispInput, MispObject, MispTag } from './types.js'
@@ -63,19 +64,25 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
         if (!tagNodeId) {
           tagNodeId = `tag:${tag.name}`
           tagNodeIdByName.set(tag.name, tagNodeId)
+          // The tag's own colour if the input set one; otherwise the
+          // colour misp-taxonomies itself declares for this machine tag
+          // (e.g. tlp:red -> #FF2B2B) — real MISP exports normally already
+          // carry the right colour directly on the Tag, so this fallback
+          // mostly covers hand-built/incomplete input.
+          const colour = mispTagColor(tag)
           nodes.push({
             id: tagNodeId,
             data: { label: tag.name, entityType: 'tag' },
-            // The tag's own MISP colour is the fill (`color`) — tlp:white
-            // really renders white, tlp:red really renders red, matching
-            // what the tag actually says. `strokeColor` is pinned to a
-            // fixed dark neutral rather than following the tag (Pivotick's
-            // own default stroke is white), so the node's outline stays
-            // visible even for a white/near-white tag colour — and since
+            // `colour` is the fill (`color`) — tlp:white really renders
+            // white, tlp:red really renders red, matching what the tag
+            // actually says. `strokeColor` is pinned to a fixed dark
+            // neutral rather than following the tag (Pivotick's own
+            // default stroke is white), so the node's outline stays
+            // visible even for a white/near-white colour — and since
             // svgIcon's currentColor context follows strokeColor, not
             // color, the icon renders in that same dark neutral, readable
             // against any fill colour instead of disappearing into it.
-            style: tag.colour ? { color: tag.colour, strokeColor: '#334155', strokeWidth: 1.5 } : undefined,
+            style: colour ? { color: colour, strokeColor: '#334155', strokeWidth: 1.5 } : undefined,
           })
         }
         edges.push({ from: parentId, to: tagNodeId, data: { kind: 'tag' } })
