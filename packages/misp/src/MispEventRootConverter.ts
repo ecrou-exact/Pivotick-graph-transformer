@@ -256,10 +256,31 @@ function buildTagChip(color: string, svgIcon: string | undefined, label: string)
 
   const chip = document.createElement('div')
   Object.assign(chip.style, {
+    // A fixed width/min-height (not shrink-to-fit) — same technique
+    // adulau/threat-actor-explorer's renderReadableNode() uses for its
+    // own renderNode cards (`.misp-graph-node { width: 184px; min-height:
+    // 82px; ... overflow: hidden }`). Pivotick measures whatever this
+    // returns via getBoundingClientRect() and treats
+    // max(width,height)/2 as a *circular* edge-anchor radius, no matter
+    // the real shape — a single-line, shrink-to-fit pill made that
+    // radius huge relative to its actual height (edges stopping well
+    // short of the visible chip), while truncating to keep it small cut
+    // real tag names off ('tlp:...'). A fixed, bounded box sidesteps
+    // both: the radius is small and predictable regardless of content,
+    // and up to 2 lines of text still fit before `overflow: hidden`
+    // clips anything longer. Width/height are kept close to each other
+    // (not just "fixed") for the same reason — max(w,h)/2 only
+    // approximates the real edge-touching point well when the box is
+    // close to square; a wide-short pill still leaves a gap above/below
+    // even once the size is fixed.
+    width: '92px',
+    minHeight: '26px',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
     display: 'inline-flex',
     alignItems: 'center',
     gap: '5px',
-    padding: '3px 9px 3px 6px',
+    padding: '4px 8px',
     borderRadius: '4px',
     background: color,
     // A thin dark outline on every tag, not just pale ones — a solid
@@ -275,7 +296,7 @@ function buildTagChip(color: string, svgIcon: string | undefined, label: string)
 
   if (svgIcon) {
     const iconWrap = document.createElement('span')
-    Object.assign(iconWrap.style, { width: '13px', height: '13px', display: 'flex', flexShrink: '0', color: textColor })
+    Object.assign(iconWrap.style, { width: '14px', height: '14px', display: 'flex', flexShrink: '0', color: textColor })
     // Trusted markup — see buildIconToken()'s identical note.
     iconWrap.innerHTML = svgIcon
     const svgEl = iconWrap.firstElementChild
@@ -290,11 +311,14 @@ function buildTagChip(color: string, svgIcon: string | undefined, label: string)
   Object.assign(labelEl.style, {
     fontSize: '10.5px',
     fontWeight: '600',
+    lineHeight: '1.25',
     color: textColor,
-    whiteSpace: 'nowrap',
+    minWidth: '0',
+    display: '-webkit-box',
+    webkitLineClamp: '2',
+    webkitBoxOrient: 'vertical',
     overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    maxWidth: '220px',
+    wordBreak: 'break-word',
   })
   labelEl.textContent = label
 
@@ -392,16 +416,34 @@ function buildIconBadge(params: {
 
   const badge = document.createElement('div')
   Object.assign(badge.style, {
-    // Pivotick measures this element's getBoundingClientRect() to size its
-    // wrapping <foreignObject> (initially a 20x20 box it clips to), then
-    // resizes to fit — `inline-flex` shrink-to-fits its content instead of
-    // stretching to fill that initial box. See buildReadableCard()'s
-    // longer note on this same mechanism.
-    display: 'inline-flex',
+    // A fixed width/min-height (not shrink-to-fit) — same technique
+    // adulau/threat-actor-explorer's renderReadableNode() uses for its
+    // own renderNode cards (`.misp-graph-node { width: 184px; min-height:
+    // 82px; ...; overflow: hidden }`, `.full { width: 224px; min-height:
+    // 96px }`). Pivotick measures whatever this returns via
+    // getBoundingClientRect() and treats max(width,height)/2 as a
+    // *circular* edge-anchor radius no matter the real shape — letting
+    // the box shrink/grow to fit a single line of content (our first
+    // attempt) made that radius swing wildly per node and, for long
+    // titles, made it far bigger than the box's real height (edges
+    // stopping well short of the visible badge); truncating hard to keep
+    // it small cut real names off. A fixed, bounded box sidesteps both:
+    // the radius is small and predictable for *every* node regardless of
+    // content, and up to 2-3 lines of text still fit before
+    // `overflow: hidden` clips anything longer. Width/height are also
+    // kept close to each other (not just fixed) — max(w,h)/2 only
+    // approximates the real edge-touching point well when the box is
+    // close to square; a wide-short box still leaves a gap above/below
+    // even once its size is fixed and predictable.
+    width: emphasized ? '150px' : '112px',
+    minHeight: emphasized ? '58px' : '42px',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+    display: 'flex',
     alignItems: 'flex-start',
     gap: '7px',
-    padding: emphasized ? '6px 14px 6px 5px' : '3px 10px 3px 3px',
-    borderRadius: emphasized ? '10px' : '999px',
+    padding: emphasized ? '6px 10px' : '4px 7px',
+    borderRadius: emphasized ? '8px' : '6px',
     background: '#ffffff',
     border: `${emphasized ? '3px' : '1.5px'} solid ${borderColor}`,
     boxShadow: emphasized ? '0 2px 6px rgba(15,23,42,.22)' : '0 1px 2px rgba(15,23,42,.15)',
@@ -409,27 +451,28 @@ function buildIconBadge(params: {
     cursor: 'default',
   })
 
-  const token = buildIconToken(shape, fillColor, iconTint, emphasized ? 38 : 18, svgIcon)
+  const token = buildIconToken(shape, fillColor, iconTint, emphasized ? 28 : 18, svgIcon)
   Object.assign(token.style, { marginTop: emphasized ? '1px' : '0.5px' })
 
   const content = document.createElement('span')
-  Object.assign(content.style, { display: 'inline-flex', flexDirection: 'column', gap: '3px' })
+  Object.assign(content.style, { display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '0', flex: '1' })
 
   const titleEl = document.createElement('span')
   Object.assign(titleEl.style, {
-    fontSize: emphasized ? '15px' : '10.5px',
-    fontWeight: emphasized ? '700' : '500',
+    fontSize: emphasized ? '15px' : '11px',
+    fontWeight: emphasized ? '700' : '600',
     lineHeight: '1.25',
     color: '#0f172a',
-    whiteSpace: 'nowrap',
+    display: '-webkit-box',
+    webkitLineClamp: emphasized ? '3' : '2',
+    webkitBoxOrient: 'vertical',
     overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    maxWidth: emphasized ? '260px' : '170px',
+    wordBreak: 'break-word',
   })
   titleEl.textContent = title
 
   const metaRow = document.createElement('span')
-  Object.assign(metaRow.style, { display: 'inline-flex', alignItems: 'center', gap: '5px' })
+  Object.assign(metaRow.style, { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px' })
 
   const kindChip = document.createElement('span')
   Object.assign(kindChip.style, {
@@ -452,10 +495,10 @@ function buildIconBadge(params: {
     Object.assign(secondaryEl.style, {
       fontSize: emphasized ? '10px' : '8.5px',
       color: '#64748b',
-      whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
-      maxWidth: emphasized ? '200px' : '110px',
+      whiteSpace: 'nowrap',
+      minWidth: '0',
     })
     secondaryEl.textContent = secondary
     metaRow.append(secondaryEl)
