@@ -40,6 +40,24 @@ export interface ConversionResult {
   edges: RawEdge[]
 }
 
+/**
+ * Describes one mapping strategy among possibly several for the same source
+ * format — e.g. a MISP Event can be mapped with the Event as a root/cluster
+ * node, or flattened with only explicit Object References as edges. Each
+ * strategy is a separate `GraphConverter` instance sharing the same `format`
+ * but a distinct `variant.id`, so consumers can list and pick between them.
+ */
+export interface ConverterVariantMeta {
+  /** Unique within its `format`, e.g. `'event-root'`. Combined with `format` as the registry key. */
+  id: string
+  /** Human-readable name for a picker UI, e.g. `'Event as root node'`. */
+  name: string
+  /** What this variant does and when to prefer it over the format's other variants. */
+  description: string
+  /** Marks this as the variant `ConverterRegistry.get(format)` resolves to when no `variantId` is given. Exactly one variant per format should set this. */
+  default?: boolean
+}
+
 /** Free-form options a converter implementation may accept, e.g. filtering or mapping toggles. */
 export interface ConverterOptions {
   [key: string]: unknown

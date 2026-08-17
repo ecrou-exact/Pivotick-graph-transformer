@@ -1,6 +1,7 @@
 import type {
   ConversionResult,
   ConverterOptions,
+  ConverterVariantMeta,
   NodeStyleMap,
   NodeTypeAccessor,
   PivotickReadyOptions,
@@ -11,13 +12,22 @@ import type {
  *
  * A converter turns some third-party input (a MISP Event, a STIX bundle, a
  * VirusTotal Graph response, ...) into the `{ nodes, edges }` shape Pivotick
- * expects. Implementers only need to provide `format`, `detect()` and
- * `convert()` — everything needed to wire the result into Pivotick is
+ * expects. Implementers only need to provide `format`, `variant`, `detect()`
+ * and `convert()` — everything needed to wire the result into Pivotick is
  * handled once, here, by `toPivotickOptions()`.
+ *
+ * A single source format can have several converters — same `format`,
+ * different `variant` — for different mapping strategies (e.g. "MISP Event
+ * as a root node" vs "MISP Event flattened, edges from Object References
+ * only"). Consumers pick one via `ConverterRegistry.listVariants(format)` /
+ * `ConverterRegistry.get(format, variantId)`.
  */
 export abstract class GraphConverter<TInput = unknown> {
-  /** Unique identifier for this format, e.g. `'misp'` or `'stix-2.1'`. Used as the registry key. */
+  /** Unique identifier for this source format, e.g. `'misp'` or `'stix-2.1'`. Shared by every variant of this format. */
   abstract readonly format: string
+
+  /** Which mapping strategy this converter instance implements. Its `id` must be unique among converters sharing the same `format`. */
+  abstract readonly variant: ConverterVariantMeta
 
   /** Optional version of the source format this converter targets, e.g. `'2.4'`. */
   readonly version?: string

@@ -55,7 +55,9 @@ npm run lint       # ESLint across every workspace package
 
 ## Contributing
 
-Adding a new format converter should be as close to "write one class" as possible. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the step-by-step guide, and [CLAUDE.md](./CLAUDE.md) / [AGENTS.md](./AGENTS.md) for the architecture reference used by AI coding agents working in this repo.
+Adding a new format converter should be as close to "write one class" as possible. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the step-by-step guide, [`docs/icons-and-styling.md`](./docs/icons-and-styling.md) for how converters ship icons without adding a manual setup step, and [CLAUDE.md](./CLAUDE.md) / [AGENTS.md](./AGENTS.md) for the architecture reference used by AI coding agents working in this repo.
+
+A format can also have multiple **variants** — different valid ways to map the same source data to a graph (e.g. "MISP Event as a root node" vs "flattened, explicit references only"). Consumers list and pick between them via `ConverterRegistry.listVariants(format)` / `ConverterRegistry.get(format, variantId)`.
 
 ## License
 

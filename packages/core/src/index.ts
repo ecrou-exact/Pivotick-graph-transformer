@@ -3,6 +3,7 @@ export { ConverterRegistry } from './ConverterRegistry.js'
 export type {
   ConversionResult,
   ConverterOptions,
+  ConverterVariantMeta,
   NodeId,
   NodeStyleMap,
   NodeTypeAccessor,
