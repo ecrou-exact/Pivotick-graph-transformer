@@ -34,7 +34,7 @@ The only package with no format-specific logic. Exposes:
 - **`GraphConverter<TInput>`** (`packages/core/src/GraphConverter.ts`) — abstract base class every format converter extends.
   - Required: `format` (a unique string id shared by every variant of that format, e.g. `'misp'`), `variant` (a `ConverterVariantMeta` — `{ id, name, description, default? }` — identifying which mapping strategy this instance implements), `detect(input)` (return `true` if `input` looks like this format), `convert(input, options)` (return `{ nodes: RawNode[], edges: RawEdge[] }`).
   - Optional: `getNodeTypeAccessor()` and `getDefaultStyleMap()`, which let a converter ship a ready-to-use Pivotick `nodeTypeAccessor` / `nodeStyleMap` so consumers get sensible styling without configuring it themselves.
-  - `toPivotickOptions(input, options)` is implemented once, on the base class, and combines all of the above into `{ data, render }`, ready to spread into `new Pivotick({ ..., data, options: { render } })`. Do not reimplement this per converter.
+  - `toPivotickOptions(input, options)` is implemented once, on the base class, and combines all of the above into `{ data, render }`. Pivotick's constructor takes positional args, not a single options object (verified against the vendored release used by `demo/` — see `demo/README.md`), so consumers call `new Pivotick(container, data, { render })`. Do not reimplement `toPivotickOptions` per converter.
   - **Variants**: a source format can have several converters — same `format`, different `variant.id` — for different mapping strategies (e.g. MISP Event as a root/cluster node vs. flattened with only explicit Object References as edges). Variants are for choices that change graph topology. A pure styling toggle (e.g. icon frame shape) is not a variant — pass it through `ConverterOptions` to `convert()` instead. See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 - **`ConverterRegistry`** (`packages/core/src/ConverterRegistry.ts`) — static registry, mirrors the Factory pattern Pivotick itself uses for renderer selection (`src/renderers/GraphRendererFactory.ts` in the Pivotick repo). Converters call `ConverterRegistry.register(new XConverter())` as a module side effect, so `import 'pivotick-transformer-misp'` alone is enough to make it available. `ConverterRegistry.convertAuto(input)` auto-detects the format via each registered converter's `detect()`.
@@ -43,11 +43,15 @@ The only package with no format-specific logic. Exposes:
 
 ### Format packages (`packages/<format>`)
 
-Each format package (e.g. a future `packages/misp`) exports one or more `GraphConverter` subclasses and registers them as an import side effect. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the exact steps to add one — follow that guide rather than improvising a different shape, so every converter stays consistent and passes the same conformance checks.
+Each format package (e.g. `packages/misp`) exports one or more `GraphConverter` subclasses and registers them as an import side effect. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the exact steps to add one — follow that guide rather than improvising a different shape, so every converter stays consistent and passes the same conformance checks.
 
 ### Icons and visual assets
 
 If a format has curated iconography (MISP's attribute/object/galaxy icons, STIX SDO icons, ...), converters should ship it via `getDefaultStyleMap()`. The hard constraint: **a plain `npm install pivotick-transformer-<format>` must be enough** — never make a converter depend on a manual asset-fetching step, and never wire up a third-party icon framework (e.g. Font Awesome) that assumes the consumer already loads its CSS. Icon sets that live in a separate upstream repo (e.g. [misp-iconify](https://github.com/MISP/misp-iconify), which has no `package.json` and cannot be an npm dependency as-is) must be vendored at maintain-time by a sync script whose output is committed, not fetched live. Full writeup, including why the direct `github:` npm dependency was tried and fails: [`docs/icons-and-styling.md`](./docs/icons-and-styling.md).
+
+### `demo/`
+
+A browser app (Vite + TS, `private: true`) to pick a registered converter format/variant, pick a fixture, and see the actual Pivotick render — not a published package, lives outside `packages/*` on purpose. Deployed to GitHub Pages by `.github/workflows/deploy-demo.yml`. Add test input under `demo/fixtures/<format>/*.json`; the fixture picker updates itself via a Vite glob import, no wiring needed. Pivotick itself is vendored into `demo/vendor/pivotick/` from a pinned GitHub Release (it's `private: true` in its own `package.json` and doesn't commit a built `dist/`, so neither `npm install pivotick` nor a `github:` dependency works) — see `demo/README.md` and `demo/scripts/sync-pivotick.mjs` for how the vendoring works, same pinned-commit/sync-script pattern as the MISP icon set above.
 
 ## Adding a new converter — quick checklist for agents
 

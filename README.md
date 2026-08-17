@@ -25,7 +25,11 @@ Early scaffolding. The core converter interface and registry are in place (`pack
 | Package | Description |
 |---|---|
 | [`packages/core`](./packages/core) | `GraphConverter` base class + `ConverterRegistry`. No format-specific logic. |
-| `packages/misp` | *(planned)* MISP Event → Pivotick |
+| [`packages/misp`](./packages/misp) | MISP Event → Pivotick (scaffolding — `convert()` is still a stub) |
+
+## Demo
+
+[`demo/`](./demo) is a browser app to pick a converter, load a fixture, and preview the actual Pivotick render — see [`demo/README.md`](./demo/README.md). Deployed to GitHub Pages on every push to `main` that touches `demo/**` or `packages/**`.
 
 ## How it will look for consumers
 
@@ -36,11 +40,7 @@ import 'pivotick-transformer-misp' // registers itself
 
 const { data, render } = ConverterRegistry.get('misp').toPivotickOptions(mispEventJson)
 
-new Pivotick({
-  container: document.getElementById('app'),
-  data,
-  options: { render },
-})
+new Pivotick(document.getElementById('app'), data, { render })
 ```
 
 One call gets you both the graph data *and* a matching node style map — no manual wiring required.
