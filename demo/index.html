@@ -50,7 +50,14 @@
           <span>Drop a JSON file, or <span class="dropzone-browse">browse</span></span>
           <input type="file" id="file-input" accept="application/json,.json" hidden />
         </div>
+
+        <button type="button" id="paste-toggle" aria-expanded="false" aria-controls="paste-json">Paste JSON</button>
       </form>
+
+      <div id="paste-json" hidden>
+        <textarea id="paste-textarea" placeholder="Paste a MISP Event/Object JSON here…" rows="8" spellcheck="false"></textarea>
+        <button type="button" id="paste-load-btn">Load</button>
+      </div>
 
       <p id="status" role="status"></p>
 

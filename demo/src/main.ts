@@ -27,6 +27,10 @@ const container = document.querySelector<HTMLDivElement>('#pivotick-container')!
 const themeToggle = document.querySelector<HTMLButtonElement>('#theme-toggle')!
 const dropzone = document.querySelector<HTMLDivElement>('#dropzone')!
 const fileInput = document.querySelector<HTMLInputElement>('#file-input')!
+const pasteToggle = document.querySelector<HTMLButtonElement>('#paste-toggle')!
+const pasteJson = document.querySelector<HTMLDivElement>('#paste-json')!
+const pasteTextarea = document.querySelector<HTMLTextAreaElement>('#paste-textarea')!
+const pasteLoadBtn = document.querySelector<HTMLButtonElement>('#paste-load-btn')!
 
 let pivotickInstance: Pivotick | undefined
 
@@ -90,30 +94,35 @@ function getFixtureData(key: string): { data: unknown; found: true } | { found: 
   return { found: false }
 }
 
-async function handleFiles(files: FileList): Promise<void> {
-  const file = files[0]
-  if (!file) return
-
+// Shared by file upload/drop and paste: parse `text`, stash it under
+// `upload:<label>` so it appears in the fixture picker like any other
+// fixture, try to auto-detect its format, and render it.
+function loadJsonSource(text: string, label: string): void {
   try {
     // Strip a leading UTF-8 BOM — common in JSON files saved by some
     // Windows editors/exporters, and otherwise makes JSON.parse throw.
-    const text = (await file.text()).replace(/^\uFEFF/, '')
-    const parsed: unknown = JSON.parse(text)
-    const key = `upload:${file.name}`
+    const parsed: unknown = JSON.parse(text.replace(/^\uFEFF/, ''))
+    const key = `upload:${label}`
     uploadedFixtures.set(key, parsed)
     populateFixtures(key)
 
     const detectedFormat = ConverterRegistry.detectFormat(parsed)
     if (!detectedFormat) {
-      statusEl.textContent = `No registered converter recognized "${file.name}"'s format. Pick a format/variant manually and hit Render to try anyway.`
+      statusEl.textContent = `No registered converter recognized "${label}"'s format. Pick a format/variant manually and hit Render to try anyway.`
       return
     }
     formatSelect.value = detectedFormat
     populateVariants()
     render()
   } catch (error) {
-    statusEl.textContent = `Could not read "${file.name}": ${error instanceof Error ? error.message : String(error)}`
+    statusEl.textContent = `Could not read "${label}": ${error instanceof Error ? error.message : String(error)}`
   }
+}
+
+async function handleFiles(files: FileList): Promise<void> {
+  const file = files[0]
+  if (!file) return
+  loadJsonSource(await file.text(), file.name)
 }
 
 function render(): void {
@@ -218,6 +227,23 @@ dropzone.addEventListener('drop', (event) => {
 fileInput.addEventListener('change', () => {
   if (fileInput.files?.length) void handleFiles(fileInput.files)
   fileInput.value = ''
+})
+
+// ── Paste JSON ────────────────────────────────────────────────────────
+
+pasteToggle.addEventListener('click', () => {
+  const expanded = pasteToggle.getAttribute('aria-expanded') === 'true'
+  pasteToggle.setAttribute('aria-expanded', String(!expanded))
+  pasteJson.hidden = expanded
+  if (!expanded) pasteTextarea.focus()
+})
+pasteLoadBtn.addEventListener('click', () => {
+  const text = pasteTextarea.value.trim()
+  if (!text) {
+    statusEl.textContent = 'Paste some JSON first.'
+    return
+  }
+  loadJsonSource(text, 'pasted.json')
 })
 
 formatSelect.addEventListener('change', populateVariants)
