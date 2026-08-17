@@ -12,9 +12,14 @@ import type { MispAttribute, MispGalaxy, MispGalaxyCluster, MispInput, MispObjec
 // MISP represents a galaxy cluster's association two ways: the structured
 // Galaxy/GalaxyCluster arrays `addGalaxies` handles below, *and* as a
 // plain machine tag of this exact shape (it's literally GalaxyCluster's
-// own `tag_name` field) — e.g. `misp-galaxy:tool="Cobalt Strike"`. A tag
-// matching this pattern is a galaxy cluster reference wearing a tag's
-// clothes, not a generic tag, and should look like one.
+// own `tag_name` field) — e.g. `misp-galaxy:tool="Cobalt Strike"`. It's
+// still structurally a tag node (same shape/size as every other tag,
+// same 'tag' edge kind) — only its icon and colour are swapped for the
+// galaxy's own, so it reads as "a tag, but a galaxy one" rather than
+// turning into a differently-shaped node. Its colour comes from
+// styles.json's "galaxyCluster" category (not a separate hardcoded
+// value), so it stays in sync with whatever a "real" GalaxyCluster node
+// is coloured.
 const GALAXY_TAG_PATTERN = /^misp-galaxy:([^=]+)="(.+)"$/
 
 /**
@@ -74,41 +79,40 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
           tagNodeIdByName.set(tag.name, tagNodeId)
 
           const galaxyMatch = GALAXY_TAG_PATTERN.exec(tag.name)
-          if (galaxyMatch) {
-            const [, galaxyType, clusterValue] = galaxyMatch
-            // Styled and iconed exactly like a "real" GalaxyCluster node
-            // (galaxies/<type> already covers every misp-iconify galaxy
-            // icon in getDefaultStyleMap()) — no per-node style override,
-            // same as addGalaxies below. Deduped by tag name rather than
-            // cluster id, since a plain Tag carries no cluster id/uuid to
-            // correlate against; the same cluster tagged both ways (rare)
-            // ends up as two nodes rather than one.
-            nodes.push({ id: tagNodeId, data: { label: clusterValue, entityType: `galaxies/${galaxyType}` } })
-          } else {
-            // The tag's own colour if the input set one; otherwise the
-            // colour misp-taxonomies itself declares for this machine tag
-            // (e.g. tlp:red -> #FF2B2B) — real MISP exports normally
-            // already carry the right colour directly on the Tag, so this
-            // fallback mostly covers hand-built/incomplete input.
-            const colour = mispTagColor(tag)
-            nodes.push({
-              id: tagNodeId,
-              data: { label: tag.name, entityType: 'tag' },
-              // `colour` is the fill (`color`) — tlp:white really renders
-              // white, tlp:red really renders red, matching what the tag
-              // actually says. `strokeColor` is pinned to a fixed dark
-              // neutral rather than following the tag (Pivotick's own
-              // default stroke is white), so the node's outline stays
-              // visible even for a white/near-white colour — and since
-              // svgIcon's currentColor context follows strokeColor, not
-              // color, the icon renders in that same dark neutral,
-              // readable against any fill colour instead of disappearing
-              // into it.
-              style: colour ? { color: colour, strokeColor: '#334155', strokeWidth: 1.5 } : undefined,
-            })
-          }
+          // Colour: a galaxy tag always gets the galaxyCluster category's
+          // colour (from styles.json), ignoring its own `colour`; a plain
+          // tag gets its own colour, or the misp-taxonomies fallback (e.g.
+          // tlp:red -> #FF2B2B) when it didn't carry one — real MISP
+          // exports normally already carry the right colour directly on
+          // the Tag, so that fallback mostly covers hand-built/incomplete
+          // input.
+          const colour = galaxyMatch ? (stylesConfig.nodes.galaxyCluster.color as string) : mispTagColor(tag)
+          // Icon: the galaxy's own misp-iconify icon for a galaxy tag
+          // (deduped by tag name, not cluster id — a plain Tag carries no
+          // cluster id/uuid to correlate against a "real" GalaxyCluster
+          // node, so the rare case of the same cluster appearing both ways
+          // ends up as two nodes, not one), otherwise none — attribute/
+          // object/event icons don't apply to a tag.
+          const svgIcon = galaxyMatch ? mispIconSvg(`galaxies/${galaxyMatch[1]}`) : undefined
+          const label = galaxyMatch ? galaxyMatch[2] : tag.name
+
+          nodes.push({
+            id: tagNodeId,
+            data: { label, entityType: 'tag' },
+            // Still structurally a tag node — same shape/size as every
+            // other tag (styles.json's "tag" category), only `color` and
+            // `svgIcon` are overridden here, per node. `colour` is the
+            // fill; `strokeColor` is pinned to a fixed dark neutral rather
+            // than following it (Pivotick's own default stroke is white),
+            // so the outline stays visible even for a white/near-white
+            // colour — and since svgIcon's currentColor context follows
+            // strokeColor, not color, the icon renders in that same dark
+            // neutral, readable against any fill colour instead of
+            // disappearing into it.
+            style: colour ? { color: colour, strokeColor: '#334155', strokeWidth: 1.5, ...(svgIcon ? { svgIcon } : {}) } : undefined,
+          })
         }
-        edges.push({ from: parentId, to: tagNodeId, data: { kind: GALAXY_TAG_PATTERN.test(tag.name) ? 'galaxy' : 'tag' } })
+        edges.push({ from: parentId, to: tagNodeId, data: { kind: 'tag' } })
       }
     }
 
