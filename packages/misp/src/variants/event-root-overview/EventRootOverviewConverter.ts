@@ -20,8 +20,9 @@ import type { MispGalaxyCluster, MispInput, MispObject } from '../../shared/type
  * Unlike `event-root-simplified`, there is no expand/collapse anywhere in
  * this variant — nothing is hidden-but-reachable; Attributes are simply
  * absent from the graph. See `event-root-minimal`
- * (`EventRootMinimalConverter`) for an even coarser option that drops
- * Objects too, rolling everything up to the Event itself. An Object's
+ * (`EventRootMinimalConverter`) for an even coarser option: just Events
+ * as points, directly linked to each other when they share context —
+ * no Object/Tag/Galaxy Cluster nodes survive at all. An Object's
  * `attributeCount`/`tagCount` are
  * still carried on its node data (visible in the sidebar/tooltip) even
  * though the Attributes themselves never become nodes, so "how much detail

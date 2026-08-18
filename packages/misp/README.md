@@ -24,7 +24,7 @@ All Events/Objects found in one input land in the same graph. See [`src/shared/t
 | `event-root` (default) | Event as root node | The Event is a cluster node; Attributes and Objects are its children, all rendered as flat, always-visible nodes. |
 | `event-root-simplified` | Event as root node (simplified) | Same entities/relationships as `event-root`, but each Object nests its own Attributes as collapsed children — see below. |
 | `event-root-overview` | Event as root node (overview) | Attributes are omitted entirely — only Events, Objects, Tags, and Galaxy Clusters appear. No expand/collapse; the fewest nodes possible while still telling a coherent story — see below. |
-| `event-root-minimal` | Event as root node (minimal) | The smallest graph possible: one node per Event, plus every Tag/Galaxy Cluster reachable anywhere inside it, rolled straight up as a direct edge. Objects and Attributes never appear as nodes — see below. |
+| `event-root-minimal` | Event as root node (minimal) | Just the Events, as points — plus a direct edge between any two Events that explicitly extend one another or share a Tag/Galaxy Cluster, labeled with what they share. Nothing else is ever shown — see below. |
 
 A future `object-refs-only` variant (no Event node, edges only from explicit Object References) is planned — see the repo root [CONTRIBUTING.md](../../CONTRIBUTING.md#multiple-variants-for-the-same-format).
 
@@ -42,11 +42,19 @@ The coarsest mapping — the fewest nodes that still tell a coherent story, with
 
 An Object's `attributeCount`/`tagCount` are still carried on its node data (visible in the sidebar/tooltip) even though the Attributes themselves never become nodes — "how much detail did this collapse" stays answerable without rendering it. An Attribute's *own* Tags are the one thing this variant genuinely can't show (there's no Attribute node for them to attach to), and an Object Reference whose target is an Attribute silently doesn't resolve to any edge — both an accepted trade-off of "fewest nodes possible."
 
-### `event-root-minimal`: even Objects disappear
+### `event-root-minimal`: just Events, as points, linked when related
 
-The smallest graph this converter can produce: one node per Event (or per standalone Object, when there's no Event), plus the Tags and Galaxy Clusters reachable *anywhere* inside it — no Object nodes, no Attribute nodes, no expand/collapse. An Object is fully absorbed into its owning Event: its own Tags/Galaxies, and its Attributes' Tags/Galaxies, all roll straight up to the Event as a direct edge. "Keeping the logic" means exactly this — every piece of threat classification (TLP, threat actor, malware family, campaign, ...) anywhere in the input is still visible, connected straight to its Event; only the raw structural nesting (which specific Object or Attribute carried it) is dropped.
+The smallest graph this converter can produce: one point per Event (or per standalone Object, when there's no Event). Nothing else ever becomes a node — no Object, Attribute, Tag, or Galaxy Cluster. Every one of those is only ever used to decide *whether two Events should be linked*, then discarded.
 
-`attributeCount`/`objectCount`/`tagCount` on the Event's node data are totals across the *whole* Event (including every nested Object's Attributes), same spirit as `event-root-overview`, just summed one level deeper since Objects don't get their own node/count here. Object References can't be expressed at all in this variant (both of its ends are always an Object or Attribute) — silently dropped; GalaxyClusterRelation is unaffected, since Galaxy Cluster nodes still exist and dedupe exactly as in every other variant.
+Two Events get a direct edge when:
+
+- one explicitly `extends` the other (MISP's own `extends_uuid` field — a real, directed relationship, so it keeps its arrowhead), or
+- they share at least one Tag name, anywhere in either Event (its own Tags, or any of its Objects'/Attributes' Tags), or
+- they share at least one Galaxy Cluster (by id), anywhere in either Event, same reach as Tags.
+
+One edge per distinct shared item, not one generic "related" edge — each is labeled with the actual tag name or cluster value, so *why* two Events are linked stays inspectable without adding a single extra node. If Event A and Event B are both tagged `tlp:white` and both carry the same "Cobalt Strike" cluster, that's two edges between them, not one.
+
+`attributeCount`/`objectCount`/`tagCount` on the Event's node data are still totals across the *whole* Event, same spirit as `event-root-overview`, even though none of it becomes a node. Correlation is scoped to Event ↔ Event only — a standalone Object still gets its own point (there's nothing else to represent it by), but never links to anything.
 
 ## Usage
 

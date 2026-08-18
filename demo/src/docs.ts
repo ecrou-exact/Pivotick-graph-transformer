@@ -183,6 +183,9 @@ const EDGE_DESCRIPTIONS: Record<string, string> = {
   hasGalaxy: 'A Galaxy Cluster attached to an Event, Object, or Attribute.',
   reference: 'An explicit MISP Object Reference — a real, named relationship (e.g. "uses", "dropped-by") between two Objects/Attributes. Labeled with the actual relationship_type.',
   clusterRelation: 'A MISP Galaxy Cluster Relation — a named relationship between two Galaxy Clusters (e.g. a threat actor "uses" a malware family). Labeled with the relation type.',
+  eventExtends: 'event-root-minimal only: one Event explicitly extends another (MISP\'s own extends_uuid field) — a real, directed relationship.',
+  sharedTag: 'event-root-minimal only: two Events share a Tag name somewhere inside them, in place of a Tag node. Labeled with the shared tag name.',
+  sharedGalaxyCluster: 'event-root-minimal only: two Events share a Galaxy Cluster somewhere inside them, in place of a Galaxy Cluster node. Labeled with the shared cluster\'s value.',
 }
 
 function renderEdgeLegend(): void {

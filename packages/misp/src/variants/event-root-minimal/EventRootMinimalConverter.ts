@@ -1,42 +1,60 @@
 import type { ConversionResult, ConverterVariantMeta, NodeId, RawEdge, RawNode } from 'pivotick-transformer-core'
 
 import { detectMispEvent } from '../../shared/detectMispEvent.js'
-import { buildClusterRelationEdges } from '../../shared/mispCrossReferenceEdges.js'
+import { edgeStyleFor } from '../../shared/edgeStyleFor.js'
 import { MispIconRenderingConverter } from '../../shared/MispIconRenderingConverter.js'
-import { addMispGalaxies, addMispTags } from '../../shared/mispTagsAndGalaxies.js'
 import { normalizeMispInput } from '../../shared/normalizeMispInput.js'
-import type { MispAttribute, MispGalaxyCluster, MispInput, MispObject } from '../../shared/types.js'
+import type { MispGalaxy, MispInput, MispTag } from '../../shared/types.js'
+
+/** One Event's node id plus everything collected about it, purely to decide which other Events to link to — never rendered as nodes themselves. */
+interface EventContext {
+  nodeId: NodeId
+  uuid: string
+  extendsUuid?: string
+  tagNames: Set<string>
+  /** Galaxy Cluster id -> its display value (e.g. the actor/malware name), for the shared-cluster edge's label. */
+  clusterLabelById: Map<string, string>
+}
+
+function collectTagNames(tags: MispTag[] | undefined, into: Set<string>): void {
+  for (const tag of tags ?? []) into.add(tag.name)
+}
+
+function collectClusterLabels(galaxies: MispGalaxy[] | undefined, into: Map<string, string>): void {
+  for (const galaxy of galaxies ?? []) {
+    for (const cluster of galaxy.GalaxyCluster ?? []) {
+      into.set(cluster.id, cluster.value)
+    }
+  }
+}
 
 /**
- * `event-root-minimal` variant: the smallest graph this converter can
- * produce — one node per Event (or per standalone Object, when there's no
- * Event), plus the Tags and Galaxy Clusters reachable *anywhere* inside
- * it. Objects and Attributes are never rendered as nodes at all, at any
- * level — unlike `event-root-overview` (which still shows Objects), here
- * an Object is fully absorbed into its owning Event/root: its own Tags/
- * Galaxies, and its Attributes' Tags/Galaxies, all roll straight up to
- * the Event (or root Object) as direct edges. "Keeping the logic" means
- * exactly this: every piece of threat classification (TLP, threat actor,
- * malware family, campaign, ...) anywhere in the input is still visible,
- * connected straight to its Event — only the raw structural nesting
- * (which specific Object or Attribute carried it) is dropped.
+ * `event-root-minimal` variant: the absolute smallest graph — one point
+ * per Event (or per standalone Object, when there's no Event), nothing
+ * else. No Object, Attribute, Tag, or Galaxy Cluster ever becomes its own
+ * node here — every one of those is only ever used to decide *whether
+ * two Events should be linked*, then discarded.
  *
- * A quick MISP-shape refresher for why this rollup is safe: nesting is
- * always exactly Event → Object → Attribute (Objects don't nest inside
- * each other), so "roll every Tag/Galaxy up to the Event" only ever means
- * walking one or two levels down, never an unbounded tree.
+ * Two Events get a direct edge when:
+ * - one explicitly `extends` the other (MISP's own `extends_uuid` field
+ *   — a real, directed relationship, so it keeps its arrowhead), or
+ * - they share at least one Tag name, anywhere in either Event (its own
+ *   Tags, or any of its Objects'/Attributes' Tags), or
+ * - they share at least one Galaxy Cluster (by id), anywhere in either
+ *   Event, same reach as Tags above.
  *
- * Object References can't be expressed at all here (both of its ends are
- * always an Object or Attribute, neither of which exists as a node in
- * this variant) — silently dropped. GalaxyClusterRelation is unaffected,
- * since Galaxy Cluster nodes still exist and dedupe exactly as in every
- * other variant — see `addMispGalaxies()`'s doc.
+ * One edge per distinct shared item (not one generic "related" edge) —
+ * each is labeled with the actual tag name or cluster value, so *why*
+ * two Events are linked stays inspectable without adding a single node
+ * for the tag/cluster itself. If Event A and Event B are both tagged
+ * `tlp:white` and both carry the same "Cobalt Strike" cluster, that's
+ * two edges between them, not one.
  *
- * `attributeCount`/`objectCount`/`tagCount` on the Event's node data are
- * still totals across the *whole* Event (including every nested Object's
- * Attributes) — the sidebar/tooltip can still answer "how much detail is
- * this hiding," same spirit as `event-root-overview`, just summed one
- * level deeper since Objects themselves don't get their own node/count.
+ * This is deliberately narrower than `event-root-overview`: no Object/
+ * Attribute/Tag/Galaxy Cluster nodes survive at all, and correlation is
+ * scoped to Event ↔ Event only — a standalone Object still gets its own
+ * point (there's nothing else to represent it by), but never links to
+ * anything.
  */
 export class MispEventRootMinimalConverter extends MispIconRenderingConverter {
   readonly format = 'misp'
@@ -45,7 +63,7 @@ export class MispEventRootMinimalConverter extends MispIconRenderingConverter {
     id: 'event-root-minimal',
     name: 'Event as root node (minimal)',
     description:
-      'The smallest graph possible: one node per Event, plus every Tag/Galaxy Cluster reachable anywhere inside it, rolled straight up as a direct edge. Objects and Attributes never appear as nodes.',
+      'Just the Events, as points — plus a direct edge between any two Events that explicitly extend one another or share a Tag/Galaxy Cluster, labeled with what they share. Nothing else is ever shown.',
   }
 
   detect(input: unknown): boolean {
@@ -60,28 +78,7 @@ export class MispEventRootMinimalConverter extends MispIconRenderingConverter {
 
     const nodes: RawNode[] = []
     const edges: RawEdge[] = []
-    const tagNodeIdByName = new Map<string, NodeId>()
-    const clusterNodeIdById = new Map<string, NodeId>()
-    const clusterNodeIdByUuid = new Map<string, NodeId>()
-    const seenClusters: MispGalaxyCluster[] = []
-
-    const addTags = (tags: MispAttribute['Tag'], rootId: NodeId): void => addMispTags({ tags, parentId: rootId, nodes, edges, tagNodeIdByName })
-    const addGalaxies = (galaxies: MispAttribute['Galaxy'], rootId: NodeId): void =>
-      addMispGalaxies({ galaxies, parentId: rootId, nodes, edges, clusterNodeIdById, clusterNodeIdByUuid, seenClusters })
-
-    // Rolls every Tag/Galaxy an Object (and its own Attributes) carries
-    // straight up to `rootId` — the Object/Attribute nodes themselves
-    // never exist in this variant, only their classification does. See
-    // class doc for why this is a safe, bounded walk (Objects don't
-    // nest inside each other).
-    const rollUpObject = (object: MispObject, rootId: NodeId): void => {
-      addTags(object.Tag, rootId)
-      addGalaxies(object.Galaxy, rootId)
-      for (const attribute of object.Attribute ?? []) {
-        addTags(attribute.Tag, rootId)
-        addGalaxies(attribute.Galaxy, rootId)
-      }
-    }
+    const eventContexts: EventContext[] = []
 
     for (const event of events) {
       const eventNodeId: NodeId = `event:${event.uuid}`
@@ -94,35 +91,45 @@ export class MispEventRootMinimalConverter extends MispIconRenderingConverter {
         threatLevel: event.threat_level_id,
         org: event.Orgc?.name ?? event.Org?.name,
       }
-      nodes.push({ id: eventNodeId, data: eventData })
-      addTags(event.Tag, eventNodeId)
-      addGalaxies(event.Galaxy, eventNodeId)
 
-      // Top-level Attributes only — ones that belong to an Object
-      // (object_id set to something other than '0') are rolled up via
-      // that Object's own list instead, to avoid double-counting/double-
-      // attaching their Tags/Galaxies.
+      // Collected purely to decide which other Events this one links to
+      // (see class doc) — never rendered as nodes.
+      const tagNames = new Set<string>()
+      const clusterLabelById = new Map<string, string>()
+      collectTagNames(event.Tag, tagNames)
+      collectClusterLabels(event.Galaxy, clusterLabelById)
+
       const topLevelAttributes = (event.Attribute ?? []).filter((attribute) => !attribute.object_id || attribute.object_id === '0')
       for (const attribute of topLevelAttributes) {
-        addTags(attribute.Tag, eventNodeId)
-        addGalaxies(attribute.Galaxy, eventNodeId)
+        collectTagNames(attribute.Tag, tagNames)
+        collectClusterLabels(attribute.Galaxy, clusterLabelById)
       }
 
       let nestedAttributeCount = 0
       for (const object of event.Object ?? []) {
-        rollUpObject(object, eventNodeId)
+        collectTagNames(object.Tag, tagNames)
+        collectClusterLabels(object.Galaxy, clusterLabelById)
+        for (const attribute of object.Attribute ?? []) {
+          collectTagNames(attribute.Tag, tagNames)
+          collectClusterLabels(attribute.Galaxy, clusterLabelById)
+        }
         nestedAttributeCount += object.Attribute?.length ?? 0
       }
 
       // Totals across the *whole* Event, including every nested Object's
-      // Attributes — see class doc.
+      // Attributes — still useful summary data even though none of it
+      // becomes a node.
       eventData.attributeCount = topLevelAttributes.length + nestedAttributeCount
       eventData.objectCount = event.Object?.length ?? 0
       eventData.tagCount = event.Tag?.length ?? 0
+
+      nodes.push({ id: eventNodeId, data: eventData })
+      eventContexts.push({ nodeId: eventNodeId, uuid: event.uuid, extendsUuid: event.extends_uuid, tagNames, clusterLabelById })
     }
 
-    // A standalone Object (no Event to roll up into) becomes its own
-    // root instead — same fallback every other MISP variant uses.
+    // A standalone Object (no Event at all) still gets its own point —
+    // there's nothing else to represent it by — but never participates
+    // in the Event <-> Event correlation below.
     for (const object of standaloneObjects) {
       const objectNodeId: NodeId = `object:${object.uuid}`
       nodes.push({
@@ -136,14 +143,36 @@ export class MispEventRootMinimalConverter extends MispIconRenderingConverter {
           tagCount: object.Tag?.length ?? 0,
         },
       })
-      rollUpObject(object, objectNodeId)
     }
 
-    // GalaxyClusterRelation is unaffected — Galaxy Cluster nodes still
-    // exist and dedupe exactly as in every other variant. Object
-    // References can't be expressed at all here (both ends are always
-    // an Object/Attribute, neither of which is a node in this variant).
-    edges.push(...buildClusterRelationEdges(seenClusters, clusterNodeIdById, clusterNodeIdByUuid))
+    const eventNodeIdByUuid = new Map(eventContexts.map((context) => [context.uuid, context.nodeId]))
+
+    for (let i = 0; i < eventContexts.length; i++) {
+      const eventA = eventContexts[i]
+
+      if (eventA.extendsUuid) {
+        const extendedNodeId = eventNodeIdByUuid.get(eventA.extendsUuid)
+        if (extendedNodeId) {
+          edges.push({ from: eventA.nodeId, to: extendedNodeId, data: { label: 'extends', kind: 'eventExtends' }, style: edgeStyleFor('eventExtends') })
+        }
+      }
+
+      for (let j = i + 1; j < eventContexts.length; j++) {
+        const eventB = eventContexts[j]
+
+        for (const tagName of eventA.tagNames) {
+          if (eventB.tagNames.has(tagName)) {
+            edges.push({ from: eventA.nodeId, to: eventB.nodeId, data: { label: tagName, kind: 'sharedTag' }, style: edgeStyleFor('sharedTag') })
+          }
+        }
+
+        for (const [clusterId, clusterLabel] of eventA.clusterLabelById) {
+          if (eventB.clusterLabelById.has(clusterId)) {
+            edges.push({ from: eventA.nodeId, to: eventB.nodeId, data: { label: clusterLabel, kind: 'sharedGalaxyCluster' }, style: edgeStyleFor('sharedGalaxyCluster') })
+          }
+        }
+      }
+    }
 
     return { nodes, edges }
   }

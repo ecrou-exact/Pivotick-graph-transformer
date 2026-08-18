@@ -33,7 +33,10 @@
     "hasTag": { "strokeColor": "#64748b", "strokeWidth": 1, "dashed": true, "structural": true },
     "hasGalaxy": { "strokeColor": "#8b5cf6", "strokeWidth": 1, "dashed": true, "structural": true },
     "reference": { "strokeColor": "#7c3aed", "strokeWidth": 2.5 },
-    "clusterRelation": { "strokeColor": "#c026d3", "strokeWidth": 2.5 }
+    "clusterRelation": { "strokeColor": "#c026d3", "strokeWidth": 2.5 },
+    "eventExtends": { "strokeColor": "#1f6feb", "strokeWidth": 2.5 },
+    "sharedTag": { "strokeColor": "#64748b", "strokeWidth": 1.5, "dashed": true, "structural": true },
+    "sharedGalaxyCluster": { "strokeColor": "#8b5cf6", "strokeWidth": 1.5, "dashed": true, "structural": true }
   },
 
   "badge": {

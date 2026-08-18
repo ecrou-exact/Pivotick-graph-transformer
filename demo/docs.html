@@ -162,21 +162,32 @@
 
           <h3>Variant: Event as root node, minimal <code>(event-root-minimal)</code></h3>
           <p>
-            The smallest graph this converter can produce: one node per Event (or per standalone Object, when
-            there's no Event), plus the Tags and Galaxy Clusters reachable <em>anywhere</em> inside it — no Object
-            nodes, no Attribute nodes, no expand/collapse. An Object is fully absorbed into its owning Event: its
-            own Tags/Galaxies, and its Attributes' Tags/Galaxies, all roll straight up to the Event as a direct
-            edge.
+            The smallest graph this converter can produce: one point per Event (or per standalone Object, when
+            there's no Event). Nothing else ever becomes a node — no Object, Attribute, Tag, or Galaxy Cluster.
+            Every one of those is only ever used to decide <em>whether two Events should be linked</em>, then
+            discarded.
           </p>
+          <p>Two Events get a direct edge when:</p>
+          <ul class="docs-bullets">
+            <li>
+              one explicitly <strong>extends</strong> the other (MISP's own <code>extends_uuid</code> field — a
+              real, directed relationship, so it keeps its arrowhead), or
+            </li>
+            <li>
+              they <strong>share a Tag</strong>, anywhere in either Event (its own Tags, or any of its Objects'/
+              Attributes' Tags), or
+            </li>
+            <li>they <strong>share a Galaxy Cluster</strong> (by id), anywhere in either Event, same reach as Tags.</li>
+          </ul>
           <p>
-            "Keeping the logic" while showing the fewest nodes possible means exactly this: every piece of threat
-            classification (TLP, threat actor, malware family, campaign, ...) anywhere in the input is still
-            visible, connected straight to its Event — only the raw structural nesting (which specific Object or
-            Attribute carried it) is dropped. <code>attributeCount</code>/<code>objectCount</code>/<code>tagCount</code>
-            on the Event still total the *whole* Event, including every nested Object's Attributes. Object
-            References can't be expressed at all here (both of its ends are always an Object or Attribute, neither
-            of which is a node in this variant) — silently dropped; GalaxyClusterRelation is unaffected, since
-            Galaxy Cluster nodes still exist and dedupe exactly as in every other variant.
+            One edge per distinct shared item — not one generic "related" edge — each labeled with the actual tag
+            name or cluster value, so <em>why</em> two Events are linked stays inspectable without adding a single
+            extra node. If Event A and Event B are both tagged <code>tlp:white</code> and both carry the same
+            "Cobalt Strike" cluster, that's two edges between them, not one.
+            <code>attributeCount</code>/<code>objectCount</code>/<code>tagCount</code> on the Event still total the
+            <em>whole</em> Event, same spirit as <code>event-root-overview</code>, even though none of it becomes a
+            node. Correlation is scoped to Event ↔ Event only — a standalone Object still gets its own point
+            (there's nothing else to represent it by), but never links to anything.
           </p>
 
           <h3>Rendering</h3>
