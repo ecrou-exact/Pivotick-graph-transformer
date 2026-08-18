@@ -6,6 +6,7 @@ import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
 import '../vendor/pivotick/pivotick.css'
 
 import { renderJsonViewer } from './jsonViewer.js'
+import { initThemeToggle } from './theme.js'
 
 // Vite-native glob import: every JSON file under demo/fixtures/, eagerly
 // parsed. Add fixtures there — no wiring needed here, this list updates
@@ -19,7 +20,6 @@ const uploadedFixtures = new Map<string, unknown>()
 const formatSelect = document.querySelector<HTMLSelectElement>('#format-select')!
 const variantSelect = document.querySelector<HTMLSelectElement>('#variant-select')!
 const fixtureSelect = document.querySelector<HTMLSelectElement>('#fixture-select')!
-const modeSelect = document.querySelector<HTMLSelectElement>('#mode-select')!
 const fullLabelsCheckbox = document.querySelector<HTMLInputElement>('#full-labels-checkbox')!
 const debugRadiusCheckbox = document.querySelector<HTMLInputElement>('#debug-radius-checkbox')!
 const form = document.querySelector<HTMLFormElement>('#controls')!
@@ -27,7 +27,6 @@ const statusEl = document.querySelector<HTMLElement>('#status')!
 const jsonOutput = document.querySelector<HTMLElement>('#json-output')!
 const outputSummaryMeta = document.querySelector<HTMLElement>('#output-summary-meta')!
 const container = document.querySelector<HTMLDivElement>('#pivotick-container')!
-const themeToggle = document.querySelector<HTMLButtonElement>('#theme-toggle')!
 const dropzone = document.querySelector<HTMLDivElement>('#dropzone')!
 const fileInput = document.querySelector<HTMLInputElement>('#file-input')!
 const pasteJson = document.querySelector<HTMLDetailsElement>('#paste-json')!
@@ -140,13 +139,12 @@ function render(): void {
   let data: ConversionResult
   try {
     const converter = ConverterRegistry.get(format, variantId)
-    // `mode`/`fullLabels` are only meaningful to converters that define
-    // them (currently just pivotick-transformer-misp's icons/simple/cards
-    // switch and its "never truncate a badge" toggle) — passed through
-    // unconditionally since ConverterOptions is free-form and a converter
-    // that doesn't look at a given key just ignores it.
+    // `fullLabels`/`debugRadius` are only meaningful to converters that
+    // define them (currently just pivotick-transformer-misp's "never
+    // truncate a badge" toggle and its edge-anchor debug overlay) —
+    // passed through unconditionally since ConverterOptions is free-form
+    // and a converter that doesn't look at a given key just ignores it.
     const toPivotick = converter.toPivotickOptions(fixture.data, {
-      mode: modeSelect.value,
       fullLabels: fullLabelsCheckbox.checked,
       debugRadius: debugRadiusCheckbox.checked,
     })
@@ -183,45 +181,6 @@ function render(): void {
     outputSummaryMeta.textContent = ''
   }
 }
-
-// ── Theme toggle ──────────────────────────────────────────────────────
-//
-// pivotick.css's [data-theme] rules are scoped to `.pivotick[data-theme=…]`
-// (the embedded widget's own root, set by its `UI.theme` option — see
-// UIManager.ts) — NOT to <html>. Our own page chrome is themed by the
-// :root[data-theme] rules in style.css instead. The toggle below drives
-// both: the attribute on <html> for our chrome, and either a live patch on
-// the widget's `.pivotick` root (if already rendered) or the `UI.theme`
-// option (on the next render()) for the widget.
-
-const THEME_KEY = 'pivotick-demo-theme'
-
-function effectiveTheme(): 'light' | 'dark' {
-  const stored = document.documentElement.dataset.theme
-  if (stored === 'light' || stored === 'dark') return stored
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
-function updateThemeToggleLabel(): void {
-  themeToggle.textContent = effectiveTheme() === 'dark' ? '☀️' : '🌙'
-}
-
-function applyTheme(theme: 'light' | 'dark'): void {
-  document.documentElement.dataset.theme = theme
-  localStorage.setItem(THEME_KEY, theme)
-  container.querySelector<HTMLElement>('.pivotick')?.setAttribute('data-theme', theme)
-  updateThemeToggleLabel()
-}
-
-function initTheme(): void {
-  const stored = localStorage.getItem(THEME_KEY)
-  if (stored === 'light' || stored === 'dark') document.documentElement.dataset.theme = stored
-  updateThemeToggleLabel()
-}
-
-themeToggle.addEventListener('click', () => {
-  applyTheme(effectiveTheme() === 'dark' ? 'light' : 'dark')
-})
 
 // ── Dropzone: drag & drop, or click to browse ────────────────────────
 
@@ -262,7 +221,6 @@ pasteLoadBtn.addEventListener('click', () => {
 })
 
 formatSelect.addEventListener('change', populateVariants)
-modeSelect.addEventListener('change', render)
 fullLabelsCheckbox.addEventListener('change', render)
 debugRadiusCheckbox.addEventListener('change', render)
 form.addEventListener('submit', (event) => {
@@ -270,6 +228,13 @@ form.addEventListener('submit', (event) => {
   render()
 })
 
-initTheme()
+// pivotick.css's [data-theme] rules are scoped to `.pivotick[data-theme=…]`
+// (the embedded widget's own root, set by its `UI.theme` option — see
+// UIManager.ts) — NOT to <html>. initThemeToggle() already flips <html>'s
+// [data-theme] for our own page chrome; this callback additionally patches
+// the widget's own root live, if it's already rendered.
+initThemeToggle((theme) => {
+  container.querySelector<HTMLElement>('.pivotick')?.setAttribute('data-theme', theme)
+})
 populateFormats()
 populateFixtures()

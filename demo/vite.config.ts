@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 import { defineConfig } from 'vite'
 
 // GITHUB_PAGES_BASE is set by .github/workflows/deploy-demo.yml to the repo
@@ -7,5 +9,15 @@ export default defineConfig({
   base: process.env.GITHUB_PAGES_BASE ?? '/',
   build: {
     outDir: 'dist',
+    // Multi-page build: Vite only bundles `index.html` by default. `docs.html`
+    // (the converter documentation page) needs to be listed explicitly here
+    // to be included in `vite build`'s output — `vite dev` serves it fine
+    // either way, since the dev server resolves any requested .html file.
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        docs: fileURLToPath(new URL('./docs.html', import.meta.url)),
+      },
+    },
   },
 })

@@ -1,15 +1,14 @@
 import { GraphConverter } from 'pivotick-transformer-core'
 import type { ConversionResult, ConverterOptions, ConverterVariantMeta, NodeId, NodeStyleMap, NodeTypeAccessor, RawEdge, RawNode, RenderNodeFn } from 'pivotick-transformer-core'
 
-import { detectMispEvent } from './detectMispEvent.js'
-import { MISP_ATTRIBUTE_ICONS, MISP_GALAXY_ICONS, MISP_GENERIC_ICONS, MISP_OBJECT_ICONS } from './icons.generated.js'
-import { cardGroupFor, classifyEntityType } from './mispKind.js'
-import type { MispCardGroup } from './mispKind.js'
-import { mispIconSvg } from './mispIconSvg.js'
-import { mispTagColor } from './mispTagColor.js'
-import { normalizeMispInput } from './normalizeMispInput.js'
+import { detectMispEvent } from '../../shared/detectMispEvent.js'
+import { MISP_ATTRIBUTE_ICONS, MISP_GALAXY_ICONS, MISP_GENERIC_ICONS, MISP_OBJECT_ICONS } from '../../shared/icons.generated.js'
+import { classifyEntityType } from '../../shared/mispKind.js'
+import { mispIconSvg } from '../../shared/mispIconSvg.js'
+import { mispTagColor } from '../../shared/mispTagColor.js'
+import { normalizeMispInput } from '../../shared/normalizeMispInput.js'
+import type { MispAttribute, MispGalaxy, MispGalaxyCluster, MispInput, MispObject, MispTag } from '../../shared/types.js'
 import stylesConfig from './styles.json' with { type: 'json' }
-import type { MispAttribute, MispGalaxy, MispGalaxyCluster, MispInput, MispObject, MispTag } from './types.js'
 
 // MISP represents a galaxy cluster's association two ways: the structured
 // Galaxy/GalaxyCluster arrays `addGalaxies` handles below, *and* as a
@@ -21,20 +20,8 @@ import type { MispAttribute, MispGalaxy, MispGalaxyCluster, MispInput, MispObjec
 // turning into a differently-shaped node. Its colour comes from
 // styles.json's "galaxyCluster" category (not a separate hardcoded
 // value), so it stays in sync with whatever a "real" GalaxyCluster node
-// is coloured. Only in `icons` mode — see `resolveMode()`.
+// is coloured.
 const GALAXY_TAG_PATTERN = /^misp-galaxy:([^=]+)="(.+)"$/
-
-/** Every entityType key this converter ever produces that isn't dynamic (event/tag are fixed; the rest come from the generated icon key lists). */
-function allKnownEntityTypes(): string[] {
-  return [
-    'event',
-    'tag',
-    ...Object.keys(MISP_ATTRIBUTE_ICONS),
-    ...Object.keys(MISP_OBJECT_ICONS).map((key) => `objects/${key}`),
-    ...Object.keys(MISP_GALAXY_ICONS).map((key) => `galaxies/${key}`),
-    ...Object.keys(MISP_GENERIC_ICONS).filter((key) => key !== 'event' && key !== 'tag'),
-  ]
-}
 
 /**
  * Resolves an edge's real style from styles.json's "edges" section, keyed
@@ -73,163 +60,22 @@ function edgeStyleFor(kind: keyof typeof stylesConfig.edges): Record<string, unk
   return { edge: structural ? { ...base, markerEnd: 'none' } : base }
 }
 
-// ── 'cards' mode rendering helpers ──────────────────────────────────────
+// ── node rendering helpers ────────────────────────────────────────────
 //
-// styles.json's "cards" section lists, per `MispCardGroup`, which extra
-// node.data fields to surface as readable rows below the title — same
-// "styles.json is the central config" approach as node/edge styling (see
-// docs/icons-and-styling.md): which fields show up, and how they're
-// labelled, is a JSON edit, not a code change. Only `formatCardValue`'s
-// small set of formats (values MISP itself encodes numerically/booleanly
-// — analysis level, threat level, booleans) needs code.
-
-interface CardField {
-  key: string
-  label: string
-  format?: 'boolean' | 'analysisLevel' | 'threatLevel'
-  /** Skip this row entirely when the value is exactly `0` (e.g. an empty count isn't worth a row). */
-  hideIfZero?: boolean
-  /** Clip long free-text values (e.g. a Comment or Description) so one verbose field can't blow up the card's size. */
-  truncate?: boolean
-}
-
-const MISP_ANALYSIS_LABELS: Record<string, string> = { '0': 'Initial', '1': 'Ongoing', '2': 'Completed' }
-const MISP_THREAT_LEVEL_LABELS: Record<string, string> = { '1': 'High', '2': 'Medium', '3': 'Low', '4': 'Undefined' }
-
-function formatCardValue(value: unknown, format: CardField['format']): string {
-  if (format === 'boolean') return value ? 'Yes' : 'No'
-  if (format === 'analysisLevel') return MISP_ANALYSIS_LABELS[String(value)] ?? String(value)
-  if (format === 'threatLevel') return MISP_THREAT_LEVEL_LABELS[String(value)] ?? String(value)
-  return String(value)
-}
-
-function truncateText(text: string, max = 90): string {
-  return text.length > max ? `${text.slice(0, max - 1)}…` : text
-}
-
-/** A pre-built badge element (an icon chip), or a short text mark to render as a plain colored badge. */
-type CardBadge = HTMLElement | string
-
-/**
- * The shared "readable card" shell — icon/mark badge + title + subtitle +
- * a handful of label/value rows — used by both `cards` mode (every node)
- * and `icons` mode (the Event node only, see `getRenderNode()`). Kept as
- * one function so both modes' cards look and behave identically; only
- * what goes in the badge and which fields are shown differs per caller.
- */
-function buildReadableCard(params: {
-  badge: CardBadge
-  accentColor: string
-  title: string
-  subtitle: string
-  fields: CardField[]
-  data: Record<string, unknown>
-  /** The Event card only: a visibly heavier border + bigger title, so it reads as the root of its cluster at a glance. */
-  emphasized?: boolean
-}): HTMLElement {
-  const { badge, accentColor, title, subtitle, fields, data, emphasized } = params
-
-  const card = document.createElement('div')
-  Object.assign(card.style, {
-    // Pivotick measures this element's getBoundingClientRect() to size its
-    // wrapping <foreignObject> (initially a 20x20 box it clips to — see
-    // NodeRenderer.render() in Pivotick's own renderer), then resizes the
-    // foreignObject to fit. A block-level box (plain `flex`) stretches to
-    // fill that initial 20px container instead of sizing to its own
-    // content, clipping everything — `inline-flex` shrink-to-fits instead.
-    display: 'inline-flex',
-    alignItems: 'flex-start',
-    gap: '6px',
-    padding: emphasized ? '5px 10px 5px 4px' : '3px 8px 3px 3px',
-    borderRadius: '8px',
-    background: '#ffffff',
-    border: `${emphasized ? '2.5px' : '1.5px'} solid ${accentColor}`,
-    boxShadow: '0 1px 3px rgba(0,0,0,.18)',
-    fontFamily: 'system-ui, sans-serif',
-    cursor: 'default',
-  })
-
-  let badgeEl: HTMLElement
-  if (typeof badge === 'string') {
-    badgeEl = document.createElement('span')
-    Object.assign(badgeEl.style, {
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minWidth: '22px',
-      height: '20px',
-      padding: '0 4px',
-      borderRadius: '5px',
-      background: accentColor,
-      color: '#fff',
-      fontWeight: '700',
-      fontSize: '9px',
-      flexShrink: '0',
-      marginTop: '1px',
-    })
-    badgeEl.textContent = badge
-  } else {
-    badgeEl = badge
-  }
-
-  const content = document.createElement('span')
-  Object.assign(content.style, { display: 'inline-flex', flexDirection: 'column', lineHeight: '1.3', gap: '1px' })
-
-  const titleEl = document.createElement('span')
-  Object.assign(titleEl.style, {
-    fontWeight: '600',
-    fontSize: emphasized ? '13px' : '11px',
-    color: '#0f172a',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    maxWidth: '220px',
-  })
-  titleEl.textContent = title
-
-  const subtitleEl = document.createElement('span')
-  Object.assign(subtitleEl.style, { fontSize: '9px', color: '#64748b' })
-  subtitleEl.textContent = subtitle
-
-  content.append(titleEl, subtitleEl)
-
-  for (const field of fields) {
-    const raw = data[field.key]
-    if (raw === undefined || raw === null || raw === '') continue
-    if (field.hideIfZero && raw === 0) continue
-
-    let text = formatCardValue(raw, field.format)
-    if (field.truncate) text = truncateText(text)
-
-    const row = document.createElement('span')
-    Object.assign(row.style, { fontSize: '9.5px', color: '#334155', whiteSpace: 'normal', maxWidth: '220px' })
-    const rowLabel = document.createElement('span')
-    Object.assign(rowLabel.style, { fontWeight: '600', color: '#64748b' })
-    rowLabel.textContent = `${field.label}: `
-    row.append(rowLabel, document.createTextNode(text))
-    content.append(row)
-  }
-
-  card.append(badgeEl, content)
-  return card
-}
-
-// ── 'icons' mode rendering helpers ──────────────────────────────────────
-//
-// 'icons' mode renders every node — Event included — as one consistent
-// badge (buildIconBadge): a coloured icon token plus the node's name,
-// same shell for every type, only the token's shape/colour/icon (and a
-// slightly larger token for Event) varying. This goes through
+// Every node — Event included — renders as one consistent badge
+// (buildIconBadge): a coloured icon token plus the node's name, same shell
+// for every type, only the token's shape/colour/icon (and a slightly larger
+// token for Event) varying. This goes through
 // `renderNode` rather than Pivotick's native shape+`nodeStyleMap`
-// rendering (still described by getDefaultStyleMap()'s 'icons' branch,
-// kept for consumers who use this converter without the badge look) only
-// because Pivotick's renderNode hook is all-or-nothing for the whole
-// graph — once it's set at all, every node is routed through it, with no
-// per-node opt-out back to native rendering (verified against Pivotick's
-// actual NodeRenderer.render() — see the note on RenderNodeFn in
+// rendering (still described by getDefaultStyleMap(), kept for consumers
+// who use this converter without the badge look) only because Pivotick's
+// renderNode hook is all-or-nothing for the whole graph — once it's set at
+// all, every node is routed through it, with no per-node opt-out back to
+// native rendering (verified against Pivotick's actual
+// NodeRenderer.render() — see the note on RenderNodeFn in
 // packages/core/src/types.ts).
 
-/** Same 'attribute' vs 'generic' split `getDefaultStyleMap()`'s 'icons' branch makes, minus event/tag (handled directly by entityType). */
+/** Same 'attribute' vs 'generic' split `getDefaultStyleMap()` makes, minus event/tag (handled directly by entityType). */
 const GENERIC_ICON_ENTITY_TYPES = new Set(Object.keys(MISP_GENERIC_ICONS).filter((key) => key !== 'event' && key !== 'tag'))
 
 function iconCategoryFor(entityType: string): 'event' | 'tag' | 'attribute' | 'object' | 'galaxyCluster' | 'generic' {
@@ -458,8 +304,8 @@ function buildTagChip(color: string, svgIcon: string | undefined, label: string,
 /**
  * A compact, fixed-size icon chip — shape (circle/square via CSS;
  * Pivotick's own hexagon approximated with `clip-path`) + colour + the
- * real misp-iconify icon, closely mirroring what `getDefaultStyleMap()`'s
- * 'icons' branch draws natively. Explicit width/height are set upfront
+ * real misp-iconify icon, closely mirroring what `getDefaultStyleMap()`
+ * draws natively. Explicit width/height are set upfront
  * (rather than relying on Pivotick's measure-then-resize loop, which
  * polls up to 300 animation frames per node waiting for non-zero content)
  * so hundreds of these on screen at once — a large MISP export easily has
@@ -505,9 +351,9 @@ function buildIconToken(shape: string, fillColor: string, iconTint: string, diam
 }
 
 /**
- * One consistent badge for every node in `icons` mode, Event included:
- * coloured icon token, the node's own name, and — new — a small kind-label
- * chip underneath (e.g. "Event", "Object", "Threat Actor") plus an
+ * One consistent badge for every node, Event included: coloured icon
+ * token, the node's own name, and a small kind-label chip underneath
+ * (e.g. "Event", "Object", "Threat Actor") plus an
  * optional muted secondary line for one more specific, genuinely useful
  * fact (an attribute's real type, an object's real template, a galaxy
  * cluster's real galaxy type, or an Event's org/date) — so reading the
@@ -598,8 +444,7 @@ function buildIconBadge(params: {
     // explicit width (the `fullLabel` case) stretches to fill its
     // containing block instead of sizing to its own content — and its
     // containing block, at the moment Pivotick first measures this
-    // element, is the wrapping <foreignObject>'s initial 20x20 clip box
-    // (see buildReadableCard()'s longer note on this same mechanism).
+    // element, is the wrapping <foreignObject>'s initial 20x20 clip box.
     // `inline-flex` shrink-to-fits regardless; an explicit width (every
     // non-fullLabel size) still wins either way, so this is safe there too.
     display: 'inline-flex',
@@ -680,13 +525,9 @@ function buildIconBadge(params: {
  * any mix of these — see `normalizeMispInput.ts`. Multiple Events/Objects
  * in one input all land in the same graph, side by side.
  *
- * `options.mode` picks the display mode (default `styles.json`'s
- * `defaultMode`, `'icons'`):
- * - `'icons'` — a real misp-iconify icon per specific type (410 keys).
- * - `'simple'` — shape + colour only, from a coarse 8-kind classification
- *   (`mispKind.ts`), no icons — a short text mark (e.g. `'TA'`) instead.
- * - `'cards'` — same coarse classification, rendered as a readable HTML
- *   card (via `getRenderNode()`) instead of an icon-only shape.
+ * Every node renders as one consistent icon badge — a real misp-iconify
+ * icon per specific type (410 keys) inside a coloured token, plus a coarse
+ * kind chip (`mispKind.ts`) underneath — see `getRenderNode()`.
  */
 export class MispEventRootConverter extends GraphConverter<MispInput> {
   readonly format = 'misp'
@@ -702,17 +543,11 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
     return detectMispEvent(input)
   }
 
-  private resolveMode(options?: ConverterOptions): string {
-    return (options?.mode as string | undefined) ?? stylesConfig.defaultMode
-  }
-
-  convert(input: MispInput, options?: ConverterOptions): ConversionResult {
+  convert(input: MispInput): ConversionResult {
     const { events, objects: standaloneObjects } = normalizeMispInput(input)
     if (events.length === 0 && standaloneObjects.length === 0) {
       throw new Error('Not MISP data: expected an Event, a standalone Object, or a list of either.')
     }
-
-    const iconsMode = this.resolveMode(options) === 'icons'
 
     const nodes: RawNode[] = []
     const edges: RawEdge[] = []
@@ -753,39 +588,29 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
           // tlp:red -> #FF2B2B) when it didn't carry one — real MISP
           // exports normally already carry the right colour directly on
           // the Tag, so that fallback mostly covers hand-built/incomplete
-          // input. Computed and carried as `data.colour` unconditionally
-          // (MISP tags are colored pills in its own UI, genuinely
-          // informative on its own) — only `icons` mode additionally
-          // *uses* it as the node's actual render style, below.
+          // input. Computed and carried as `data.colour` — used below as
+          // the node's actual render style.
           const colour = galaxyMatch ? (stylesConfig.icons.nodes.galaxyCluster.color as string) : mispTagColor(tag)
 
-          if (iconsMode) {
-            // Icon: the galaxy's own misp-iconify icon for a galaxy tag,
-            // otherwise none — attribute/object/event icons don't apply
-            // to a tag.
-            const svgIcon = galaxyMatch ? mispIconSvg(`galaxies/${galaxyMatch[1]}`) : undefined
-            nodes.push({
-              id: tagNodeId,
-              data: { label, entityType: 'tag', colour },
-              // Still structurally a tag node — same shape/size as every
-              // other tag (styles.json's "tag" category), only `color`
-              // and `svgIcon` are overridden here, per node. `colour` is
-              // the fill; `strokeColor` is pinned to a fixed dark neutral
-              // rather than following it (Pivotick's own default stroke
-              // is white), so the outline stays visible even for a
-              // white/near-white colour — and since svgIcon's currentColor
-              // context follows strokeColor, not color, the icon renders
-              // in that same dark neutral, readable against any fill
-              // colour instead of disappearing into it.
-              style: colour ? { color: colour, strokeColor: '#334155', strokeWidth: 1.5, ...(svgIcon ? { svgIcon } : {}) } : undefined,
-            })
-          } else {
-            // 'simple'/'cards': every node follows the flat kind-based
-            // style uniformly, tags included — no per-node shape/size
-            // exceptions. 'cards' mode still reads `data.colour` back out
-            // to accent the card itself — see getRenderNode().
-            nodes.push({ id: tagNodeId, data: { label, entityType: 'tag', colour } })
-          }
+          // Icon: the galaxy's own misp-iconify icon for a galaxy tag,
+          // otherwise none — attribute/object/event icons don't apply to a
+          // tag.
+          const svgIcon = galaxyMatch ? mispIconSvg(`galaxies/${galaxyMatch[1]}`) : undefined
+          nodes.push({
+            id: tagNodeId,
+            data: { label, entityType: 'tag', colour },
+            // Still structurally a tag node — same shape/size as every
+            // other tag (styles.json's "tag" category), only `color`
+            // and `svgIcon` are overridden here, per node. `colour` is
+            // the fill; `strokeColor` is pinned to a fixed dark neutral
+            // rather than following it (Pivotick's own default stroke
+            // is white), so the outline stays visible even for a
+            // white/near-white colour — and since svgIcon's currentColor
+            // context follows strokeColor, not color, the icon renders
+            // in that same dark neutral, readable against any fill
+            // colour instead of disappearing into it.
+            style: colour ? { color: colour, strokeColor: '#334155', strokeWidth: 1.5, ...(svgIcon ? { svgIcon } : {}) } : undefined,
+          })
         }
         edges.push({ from: parentId, to: tagNodeId, data: { kind: 'hasTag' }, style: edgeStyleFor('hasTag') })
       }
@@ -988,64 +813,41 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
     return (node) => (node.data?.entityType as string | undefined) ?? 'unknown'
   }
 
-  getDefaultStyleMap(options?: ConverterOptions): NodeStyleMap {
-    if (this.resolveMode(options) === 'icons') {
-      // shape/color per *category* comes from styles.json's "icons.nodes"
-      // section — a small, hand-edited config, not generated — so
-      // tweaking "objects should be squares" or "attributes should be
-      // green" is a one-line JSON edit, not a code change. The *icon* per
-      // specific key (domain vs ip-dst vs md5, ...) is what's actually
-      // per-key and machine-generated, from scripts/sync-icons.mjs —
-      // layered on top of the category style.
-      //
-      // Node labels (NodeStyle.text) are deliberately not set in this
-      // mode — with icons already carrying the entity type and hundreds
-      // of nodes on screen at once, always-on text under every node is
-      // clutter, not signal. node.data.label is still there for the
-      // sidebar/tooltip either way. Edge labels (Object Reference
-      // relationship_type, Object Attribute object_relation,
-      // GalaxyClusterRelation type) carry the actually-interesting
-      // relation names instead — see convert().
-      const nodeStyles = stylesConfig.icons.nodes
+  getDefaultStyleMap(): NodeStyleMap {
+    // shape/color per *category* comes from styles.json's "icons.nodes"
+    // section — a small, hand-edited config, not generated — so
+    // tweaking "objects should be squares" or "attributes should be
+    // green" is a one-line JSON edit, not a code change. The *icon* per
+    // specific key (domain vs ip-dst vs md5, ...) is what's actually
+    // per-key and machine-generated, from scripts/sync-icons.mjs —
+    // layered on top of the category style.
+    //
+    // Node labels (NodeStyle.text) are deliberately not set here — with
+    // icons already carrying the entity type and hundreds of nodes on
+    // screen at once, always-on text under every node is clutter, not
+    // signal. node.data.label is still there for the sidebar/tooltip
+    // either way. Edge labels (Object Reference relationship_type, Object
+    // Attribute object_relation, GalaxyClusterRelation type) carry the
+    // actually-interesting relation names instead — see convert().
+    const nodeStyles = stylesConfig.icons.nodes
 
-      const withIcon = (categoryStyle: Record<string, unknown>, entityType: string): Record<string, unknown> => {
-        const svgIcon = mispIconSvg(entityType)
-        return svgIcon ? { ...categoryStyle, svgIcon } : categoryStyle
-      }
-
-      const styleMap: NodeStyleMap = {
-        event: withIcon(nodeStyles.event, 'event'),
-        tag: withIcon(nodeStyles.tag, 'tag'),
-      }
-      for (const key of Object.keys(MISP_ATTRIBUTE_ICONS)) styleMap[key] = withIcon(nodeStyles.attribute, key)
-      for (const key of Object.keys(MISP_OBJECT_ICONS)) styleMap[`objects/${key}`] = withIcon(nodeStyles.object, `objects/${key}`)
-      for (const key of Object.keys(MISP_GALAXY_ICONS)) styleMap[`galaxies/${key}`] = withIcon(nodeStyles.galaxyCluster, `galaxies/${key}`)
-      for (const key of Object.keys(MISP_GENERIC_ICONS)) {
-        if (key === 'event' || key === 'tag') continue
-        styleMap[key] = withIcon(nodeStyles.generic, key)
-      }
-      return styleMap
+    const withIcon = (categoryStyle: Record<string, unknown>, entityType: string): Record<string, unknown> => {
+      const svgIcon = mispIconSvg(entityType)
+      return svgIcon ? { ...categoryStyle, svgIcon } : categoryStyle
     }
 
-    // 'simple' and 'cards' modes share the same flat, icon-free style: a
-    // coarse kind (mispKind.ts) drives shape/color/a short text mark. Every
-    // known key is enumerated up front rather than computed lazily per
-    // node, since NodeStyleMap is a plain lookup object, not a function —
-    // a genuinely unrecognized type (not in any of the generated icon key
-    // lists) falls through to getDefaultNodeStyle()'s 'other' style
-    // instead of getting its own entry here.
-    const styleMap: NodeStyleMap = {}
-    for (const entityType of allKnownEntityTypes()) {
-      const kind = stylesConfig.kinds[classifyEntityType(entityType)]
-      styleMap[entityType] = { shape: kind.shape, color: kind.color, size: kind.size, text: kind.mark }
+    const styleMap: NodeStyleMap = {
+      event: withIcon(nodeStyles.event, 'event'),
+      tag: withIcon(nodeStyles.tag, 'tag'),
+    }
+    for (const key of Object.keys(MISP_ATTRIBUTE_ICONS)) styleMap[key] = withIcon(nodeStyles.attribute, key)
+    for (const key of Object.keys(MISP_OBJECT_ICONS)) styleMap[`objects/${key}`] = withIcon(nodeStyles.object, `objects/${key}`)
+    for (const key of Object.keys(MISP_GALAXY_ICONS)) styleMap[`galaxies/${key}`] = withIcon(nodeStyles.galaxyCluster, `galaxies/${key}`)
+    for (const key of Object.keys(MISP_GENERIC_ICONS)) {
+      if (key === 'event' || key === 'tag') continue
+      styleMap[key] = withIcon(nodeStyles.generic, key)
     }
     return styleMap
-  }
-
-  getDefaultNodeStyle(options?: ConverterOptions): Record<string, unknown> {
-    if (this.resolveMode(options) === 'icons') return {}
-    const kind = stylesConfig.kinds.other
-    return { shape: kind.shape, color: kind.color, size: kind.size, text: kind.mark }
   }
 
   getDefaultEdgeStyle(): Record<string, unknown> {
@@ -1079,139 +881,74 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
     }
   }
 
-  getRenderNode(options?: ConverterOptions): RenderNodeFn | undefined {
-    const mode = this.resolveMode(options)
+  getRenderNode(options?: ConverterOptions): RenderNodeFn {
+    const nodeStyles = stylesConfig.icons.nodes
+    // 'ConverterOptions.fullLabels' (default off): never truncate a
+    // badge/tag's text, sizing it to whatever its content actually
+    // needs instead of the fixed, edge-anchor-friendly box sizes below
+    // — see buildIconBadge()'s and buildTagChip()'s `fullLabel` param
+    // for the tradeoff this makes.
+    const fullLabels = Boolean(options?.fullLabels)
+    // 'ConverterOptions.debugRadius' (default off): overlays a dashed
+    // circle on every node showing the actual edge-anchor radius
+    // Pivotick is using — see showDebugRadiusOverlay()'s doc comment.
+    // Diagnostic only, not meant to ship enabled.
+    const debugRadius = Boolean(options?.debugRadius)
 
-    if (mode === 'cards') {
-      // A readable card for every node — icon-badge + title + subtitle,
-      // plus a handful of "extra info" rows so the card actually answers
-      // "who/what is this" on its own, not just "what kind of thing is
-      // this". Modeled after adulau/threat-actor-explorer's
-      // renderReadableNode(), adapted to this converter's data. Built with
-      // DOM APIs only (buildReadableCard uses `textContent`, never
-      // `innerHTML`, for anything derived from MISP data), so a MISP
-      // value containing markup can't be interpreted as such.
-      return (node) => {
-        const data = node.getData?.()
-        if (!data) return undefined
-        const entityType = (data.entityType as string | undefined) ?? 'unknown'
-        const kindKey = classifyEntityType(entityType)
-        const kind = stylesConfig.kinds[kindKey]
-        const cardGroup: MispCardGroup = cardGroupFor(kindKey)
+    return (node) => {
+      const data = node.getData?.()
+      if (!data) return undefined
+      const entityType = (data.entityType as string | undefined) ?? 'unknown'
+      const isEvent = entityType === 'event'
 
-        // Badge accent: an attribute card is accented by its real MISP
-        // category (e.g. "Network activity" -> its own colour/mark)
-        // rather than the generic "attribute" kind, when known; a tag
-        // card is accented by the tag's own colour (its actual MISP UI
-        // colour, e.g. tlp:red -> red) rather than the generic grey "tag"
-        // kind. Both fall back to the kind's own colour/mark otherwise —
-        // every other card group always uses the kind's.
-        let accentColor = kind.color
-        let accentMark = kind.mark
-        if (cardGroup === 'attribute') {
-          const category = data.category as string | undefined
-          const categoryStyle = category ? (stylesConfig.categories as Record<string, { color: string; mark: string }>)[category] : undefined
-          if (categoryStyle) {
-            accentColor = categoryStyle.color
-            accentMark = categoryStyle.mark
-          }
-        } else if (cardGroup === 'tag' && typeof data.colour === 'string' && data.colour) {
-          accentColor = data.colour
-        }
+      // A tag (plain or galaxy-pattern) prefers its own per-node style
+      // override (set in convert()) over the generic "tag" category —
+      // that's where a galaxy-pattern tag's real galaxy icon and its
+      // resolved colour actually live, same source the native renderer
+      // itself would've used.
+      const nodeStyle = node.getStyle?.()
+      const categoryStyle = nodeStyles[iconCategoryFor(entityType)]
+      const svgIcon = (nodeStyle?.svgIcon as string | undefined) ?? mispIconSvg(entityType)
+      const fillColor = (nodeStyle?.color as string | undefined) ?? categoryStyle.color
+      const title = (data.label as string | undefined) ?? entityType
 
-        // Subtitle: the *specific* type, one level more precise than the
-        // coarse kind badge already shown — the object's real template
-        // name (e.g. 'domain-ip'), the attribute's real type (e.g.
-        // 'ip-dst'), the galaxy cluster's real galaxy type (e.g.
-        // 'threat-actor') — stripped of this converter's internal
-        // `objects/`/`galaxies/` entityType prefix, not itself meaningful
-        // to a reader.
-        const subtitle =
-          cardGroup === 'event' ? 'Event' : cardGroup === 'tag' ? 'Tag' : entityType.replace(/^objects\//, '').replace(/^galaxies\//, '')
-
-        return buildReadableCard({
-          badge: accentMark,
-          accentColor,
-          title: (data.label as string | undefined) ?? entityType,
-          subtitle,
-          fields: (stylesConfig.cards as Record<MispCardGroup, CardField[]>)[cardGroup] ?? [],
-          data,
-          emphasized: cardGroup === 'event',
-        })
+      // A galaxy-pattern tag is the only kind of tag that carries an
+      // icon override (see addTags() — plain tags never get an
+      // svgIcon), so its presence doubles as the "this needs more room"
+      // signal without having to plumb a separate flag through.
+      if (entityType === 'tag') {
+        const chip = buildTagChip(fillColor, svgIcon, title, Boolean(nodeStyle?.svgIcon), fullLabels)
+        scheduleMinRadiusCorrection(node, chip, debugRadius)
+        return chip
       }
+
+      const outlineColor = nodeStyle?.strokeColor as string | undefined
+
+      // The kind chip's own label/colour come from the finer 13-kind
+      // vocabulary (mispKind.ts), not the coarser 6-category one the
+      // icon token's shape/colour above uses — a "Threat Actor" cluster
+      // and a "Malware" cluster both render as the same purple square
+      // token (still unmistakably "some kind of galaxy cluster"), but
+      // their chips say which, in a colour of their own, exactly the
+      // kind of specific-yet-uncluttered info this badge is for.
+      const kindMeta = stylesConfig.kinds[classifyEntityType(entityType)]
+
+      const size = isEvent ? 'emphasized' : entityType.startsWith('galaxies/') ? 'wide' : 'normal'
+
+      const badge = buildIconBadge({
+        shape: categoryStyle.shape,
+        fillColor,
+        outlineColor,
+        svgIcon,
+        title,
+        kindLabel: kindMeta.label,
+        kindColor: kindMeta.color,
+        secondary: secondaryInfoFor(entityType, data),
+        size,
+        fullLabel: fullLabels,
+      })
+      scheduleMinRadiusCorrection(node, badge, debugRadius)
+      return badge
     }
-
-    if (mode === 'icons') {
-      const nodeStyles = stylesConfig.icons.nodes
-      // 'ConverterOptions.fullLabels' (default off): never truncate a
-      // badge/tag's text, sizing it to whatever its content actually
-      // needs instead of the fixed, edge-anchor-friendly box sizes below
-      // — see buildIconBadge()'s and buildTagChip()'s `fullLabel` param
-      // for the tradeoff this makes.
-      const fullLabels = Boolean(options?.fullLabels)
-      // 'ConverterOptions.debugRadius' (default off): overlays a dashed
-      // circle on every node showing the actual edge-anchor radius
-      // Pivotick is using — see showDebugRadiusOverlay()'s doc comment.
-      // Diagnostic only, not meant to ship enabled.
-      const debugRadius = Boolean(options?.debugRadius)
-
-      return (node) => {
-        const data = node.getData?.()
-        if (!data) return undefined
-        const entityType = (data.entityType as string | undefined) ?? 'unknown'
-        const isEvent = entityType === 'event'
-
-        // A tag (plain or galaxy-pattern) prefers its own per-node style
-        // override (set in convert(), only for `icons` mode) over the
-        // generic "tag" category — that's where a galaxy-pattern tag's
-        // real galaxy icon and its resolved colour actually live, same
-        // source the native renderer itself would've used.
-        const nodeStyle = node.getStyle?.()
-        const categoryStyle = nodeStyles[iconCategoryFor(entityType)]
-        const svgIcon = (nodeStyle?.svgIcon as string | undefined) ?? mispIconSvg(entityType)
-        const fillColor = (nodeStyle?.color as string | undefined) ?? categoryStyle.color
-        const title = (data.label as string | undefined) ?? entityType
-
-        // A galaxy-pattern tag is the only kind of tag that carries an
-        // icon override (see addTags() — plain tags never get an
-        // svgIcon), so its presence doubles as the "this needs more room"
-        // signal without having to plumb a separate flag through.
-        if (entityType === 'tag') {
-          const chip = buildTagChip(fillColor, svgIcon, title, Boolean(nodeStyle?.svgIcon), fullLabels)
-          scheduleMinRadiusCorrection(node, chip, debugRadius)
-          return chip
-        }
-
-        const outlineColor = nodeStyle?.strokeColor as string | undefined
-
-        // The kind chip's own label/colour come from the finer 13-kind
-        // vocabulary (mispKind.ts), not the coarser 6-category one the
-        // icon token's shape/colour above uses — a "Threat Actor" cluster
-        // and a "Malware" cluster both render as the same purple square
-        // token (still unmistakably "some kind of galaxy cluster"), but
-        // their chips say which, in a colour of their own, exactly the
-        // kind of specific-yet-uncluttered info this badge is for.
-        const kindMeta = stylesConfig.kinds[classifyEntityType(entityType)]
-
-        const size = isEvent ? 'emphasized' : entityType.startsWith('galaxies/') ? 'wide' : 'normal'
-
-        const badge = buildIconBadge({
-          shape: categoryStyle.shape,
-          fillColor,
-          outlineColor,
-          svgIcon,
-          title,
-          kindLabel: kindMeta.label,
-          kindColor: kindMeta.color,
-          secondary: secondaryInfoFor(entityType, data),
-          size,
-          fullLabel: fullLabels,
-        })
-        scheduleMinRadiusCorrection(node, badge, debugRadius)
-        return badge
-      }
-    }
-
-    return undefined
   }
 }

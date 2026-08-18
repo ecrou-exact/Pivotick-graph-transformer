@@ -16,7 +16,7 @@
     "ATTRIBUTION.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && cp src/styles.json dist/styles.json",
+    "build": "tsc -p tsconfig.json && mkdir -p dist/variants/event-root && cp src/variants/event-root/styles.json dist/variants/event-root/styles.json",
     "lint": "eslint 'src/**/*.ts'",
     "lint_fix": "eslint --fix 'src/**/*.ts'"
   },

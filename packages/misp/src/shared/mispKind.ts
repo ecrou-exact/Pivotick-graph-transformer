@@ -1,11 +1,12 @@
 /**
- * A fixed vocabulary of MISP entity "kinds" — for the `simple`/`cards`
- * display modes, which trade the precise per-key icon set (410
- * misp-iconify keys) for a handful of broad, immediately-readable
- * categories. The `event`/`tag`/`object`/`attribute` buckets mirror MISP's
- * own top-level entity types directly; the rest classify a galaxy
- * cluster's `type` string (e.g. `'threat-actor'`, `'ransomware'`) into
- * MISP's commonly-used galaxy families — modeled after
+ * A fixed vocabulary of MISP entity "kinds" — a handful of broad,
+ * immediately-readable categories driving the small kind chip shown under
+ * every node's badge (see `MispEventRootConverter.getRenderNode()`),
+ * alongside the precise per-key icon set (410 misp-iconify keys) each
+ * badge already carries. The `event`/`tag`/`object`/`attribute` buckets
+ * mirror MISP's own top-level entity types directly; the rest classify a
+ * galaxy cluster's `type` string (e.g. `'threat-actor'`, `'ransomware'`)
+ * into MISP's commonly-used galaxy families — modeled after
  * adulau/threat-actor-explorer's `KIND_STYLE`/`classifyRecord`
  * (github.com/adulau/threat-actor-explorer), which does the same kind of
  * bucketing for galaxy clusters specifically; extended here with more
@@ -27,14 +28,6 @@ export type MispKind =
   | 'sector'
   | 'country'
   | 'other'
-
-/**
- * Which "extra info" field set (`styles.json`'s `cards` section) a kind
- * should read from — every galaxy-derived kind (actor/malware/tool/...)
- * is still just a GalaxyCluster node underneath, so they all share one
- * field set (description/source) rather than each needing their own.
- */
-export type MispCardGroup = 'event' | 'tag' | 'object' | 'attribute' | 'galaxyCluster'
 
 // Keyword-matched against the galaxy `type` string — a heuristic, not
 // sourced from an authoritative field (MISP galaxies don't carry a "this
@@ -68,19 +61,6 @@ export function classifyEntityType(entityType: string): MispKind {
   // Bare attribute type, or one of the handful of "generic" misp-iconify
   // keys (report, sighting, ...) — both are attribute-ish in this coarse
   // vocabulary; there's no dedicated bucket fine-grained enough to be
-  // worth splitting further in a *simple*/*cards* mode.
+  // worth splitting further.
   return 'attribute'
-}
-
-/** Maps a `MispKind` down to its `MispCardGroup` — see `MispCardGroup`'s doc. */
-export function cardGroupFor(kind: MispKind): MispCardGroup {
-  switch (kind) {
-    case 'event':
-    case 'tag':
-    case 'object':
-    case 'attribute':
-      return kind
-    default:
-      return 'galaxyCluster'
-  }
 }

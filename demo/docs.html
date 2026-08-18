@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pivotick Graph Transformer — Docs</title>
+    <link rel="icon" type="image/svg+xml" href="./vendor/pivotick/logo.svg" />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <header id="site-nav">
+      <a class="brand" href="https://github.com/ecrou-exact/pivotick-graph-transformer">
+        <img src="./vendor/pivotick/logo.svg" alt="" class="brand-logo" />
+        <span class="brand-text">
+          <span class="brand-name">Pivotick</span>
+          <span class="brand-suffix">Graph Transformer</span>
+        </span>
+      </a>
+
+      <nav class="nav-links" aria-label="Main">
+        <a href="https://pivotick.github.io/Pivotick/" target="_blank" rel="noopener noreferrer">Pivotick</a>
+        <a href="#" class="active" aria-current="page">Docs</a>
+        <a href="./index.html">Demo</a>
+        <a href="https://github.com/ecrou-exact/pivotick-graph-transformer" target="_blank" rel="noopener noreferrer" class="icon-link" aria-label="GitHub repository">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.73.5.98 5.24.98 11.52c0 5.03 3.26 9.29 7.79 10.8.57.1.78-.25.78-.55 0-.27-.01-1.16-.02-2.11-3.17.69-3.84-1.36-3.84-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.25 3.34.96.1-.74.4-1.25.72-1.54-2.53-.29-5.19-1.27-5.19-5.63 0-1.24.44-2.26 1.17-3.06-.12-.29-.51-1.45.11-3.02 0 0 .96-.31 3.14 1.17.91-.25 1.89-.38 2.86-.39.97.01 1.95.14 2.86.39 2.18-1.48 3.14-1.17 3.14-1.17.62 1.57.23 2.73.11 3.02.73.8 1.17 1.82 1.17 3.06 0 4.37-2.66 5.34-5.2 5.62.41.36.77 1.07.77 2.15 0 1.55-.01 2.8-.01 3.18 0 .3.2.66.79.55A11.03 11.03 0 0 0 23.02 11.5C23.02 5.24 18.27.5 12 .5z" /></svg>
+        </a>
+        <button id="theme-toggle" type="button" aria-label="Toggle color theme"></button>
+      </nav>
+    </header>
+
+    <main class="docs-main">
+      <article class="docs-article">
+        <p class="docs-eyebrow">Converter documentation</p>
+        <h1>How each converter maps its source format onto a graph</h1>
+        <p class="docs-lede">
+          This page documents every source-format converter currently registered in this repository: what it turns
+          each node/edge into, and a full legend for the colors, shapes and edge styles you'll see when you render it
+          in the <a href="./index.html">Demo</a>. It updates itself as new formats and variants are added — see
+          <a href="https://github.com/ecrou-exact/pivotick-graph-transformer/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">CONTRIBUTING.md</a>
+          for how to add one.
+        </p>
+
+        <section class="docs-section" id="concepts">
+          <h2>Formats, variants, and the registry</h2>
+          <p>
+            Every converter in this repository extends one shared <code>GraphConverter</code> base class and produces
+            the same <code>{ nodes, edges }</code> shape Pivotick expects. Two ideas structure how converters are
+            organized:
+          </p>
+          <ul class="docs-bullets">
+            <li>
+              <strong>Format</strong> — the source data's identity, e.g. <code>misp</code>. Shared by every converter
+              that can read that kind of input, no matter how it maps it.
+            </li>
+            <li>
+              <strong>Variant</strong> — one mapping strategy for that format. A source format can have more than one:
+              different ways to turn the same data into a graph topology (which entities become nodes, which
+              relationships become edges). A converter's variant is a distinct choice about graph <em>shape</em> —
+              a pure styling toggle (like <strong>Full labels</strong>/<strong>Debug edge radius</strong>, see below)
+              is not a variant.
+            </li>
+          </ul>
+          <p>
+            Every registered format/variant is listed below — this section is generated directly from the
+            <code>ConverterRegistry</code>, the same lookup the Demo's format/variant pickers use, so it can never
+            drift out of sync with what's actually available.
+          </p>
+          <div id="docs-formats" class="docs-format-list"></div>
+        </section>
+
+        <section class="docs-section" id="misp">
+          <h2>MISP</h2>
+
+          <h3>Variant: Event as root node <code>(event-root)</code></h3>
+          <p>
+            Each MISP <strong>Event</strong> becomes one root/cluster node, with everything it carries hanging off of
+            it as children. A standalone <strong>Object</strong> given with no Event to attach to becomes its own
+            root instead — the converter accepts a single Event, a list of Events, a <code>{ response: [...] }</code>
+            <code>restSearch</code>-style wrapper, a standalone Object, or a list of Objects, any mix of these at
+            once, all landing in the same graph side by side.
+          </p>
+          <p>Concretely, here's what becomes what:</p>
+          <ul class="docs-bullets">
+            <li><strong>Event → root node.</strong> Its Attributes and Objects become its children.</li>
+            <li>
+              <strong>Object → child node</strong> of its Event (or its own root, if standalone), with its own nested
+              Attributes as further children.
+            </li>
+            <li><strong>Attribute → leaf node</strong>, child of whichever Event or Object it belongs to.</li>
+            <li>
+              <strong>Tag → shared node</strong>, deduplicated by name: a tag applied to five different Attributes is
+              one node with five incoming edges, not five copies of the same tag.
+            </li>
+            <li>
+              <strong>Galaxy Cluster → shared node</strong>, deduplicated by cluster id, same reasoning as Tags. MISP
+              also represents a cluster's association as a plain machine tag
+              (<code>misp-galaxy:type="value"</code>) — this converter recognizes that pattern and still treats it as
+              a Tag node structurally, only swapping in the galaxy's own icon and color so it reads as "a tag, but a
+              galaxy one".
+            </li>
+            <li>
+              <strong>Object Reference → extra labeled edge</strong> between whichever two nodes it names, on top of
+              the structural containment edges above. This is MISP's own explicit, named relationship between
+              Objects/Attributes (e.g. <em>"uses"</em>, <em>"dropped-by"</em>) — the edge's label is that real
+              relationship type.
+            </li>
+            <li>
+              <strong>Galaxy Cluster Relation → extra labeled edge</strong> between two Galaxy Cluster nodes, e.g. a
+              threat-actor cluster <em>"uses"</em> a malware cluster. Resolved by cluster UUID; skipped if the
+              referenced cluster wasn't part of the same input.
+            </li>
+            <li>
+              <strong>Sightings are not rendered as nodes.</strong> They're aggregated into a single
+              <code>sightingCount</code> shown on the owning Attribute — individual sighting timestamps aren't
+              graph-worthy entities on their own.
+            </li>
+          </ul>
+
+          <h3>Rendering</h3>
+          <p>
+            The variant above decides graph <em>topology</em> — what's a node, what's an edge. Independently, every
+            node <em>looks</em> the same way: a real, format-accurate icon per specific type (410 icons, vendored
+            from <a href="https://github.com/MISP/misp-iconify" target="_blank" rel="noopener noreferrer">misp-iconify</a>)
+            inside a colored token, plus the node's name and a small kind chip underneath (see the legend below).
+          </p>
+          <p>
+            Two toggles refine that default rendering: <strong>Full labels</strong> lets every badge size itself to
+            its full text instead of clipping long names — at the cost of the fixed-size boxes that keep the
+            edge-connection point predictable. <strong>Debug edge radius</strong> is a diagnostic overlay (a dashed
+            circle) showing exactly where Pivotick currently anchors each node's edges — not meant to stay on, just
+            useful while checking a custom-rendered badge isn't visibly overlapping its neighbors.
+          </p>
+
+          <h3>Node kind legend</h3>
+          <p>
+            Every node classifies into one of these 13 broad kinds, shown as the small chip under its icon badge —
+            alongside the badge's own icon/color, which comes from a finer 6-category split (event / tag / attribute
+            / object / galaxy cluster / generic) plus the specific misp-iconify icon layered on top.
+          </p>
+          <div id="docs-kind-legend"></div>
+
+          <h3>Edge legend</h3>
+          <p>
+            One rule decides whether an edge gets an arrowhead: edges that represent plain containment
+            ("this belongs to that" — an Event holding an Object, a Tag applied to something) never carry one, since
+            they're not a directed relationship. Edges that represent a real, named relationship an analyst cares
+            about — an Object Reference, a Galaxy Cluster Relation — keep theirs, and are usually labeled with the
+            actual relationship name from the source data.
+          </p>
+          <div id="docs-edge-legend"></div>
+        </section>
+      </article>
+    </main>
+
+    <script type="module" src="./src/docs.ts"></script>
+  </body>
+</html>

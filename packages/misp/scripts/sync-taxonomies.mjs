@@ -32,7 +32,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const pkgDir = path.join(__dirname, '..')
 const submoduleDir = path.join(pkgDir, 'vendor', 'misp-taxonomies')
-const srcDir = path.join(pkgDir, 'src')
+const srcDir = path.join(pkgDir, 'src', 'shared')
 
 const submoduleCommit = execFileSync('git', ['-C', submoduleDir, 'rev-parse', 'HEAD']).toString().trim()
 
@@ -80,4 +80,4 @@ export const MISP_TAXONOMY_COLORS: Readonly<Record<string, string>> = ${JSON.str
 `,
 )
 
-console.log(`Wrote src/taxonomyColors.generated.ts (${Object.keys(colors).length} coloured entries across ${readdirSync(submoduleDir).length} taxonomy folders)`)
+console.log(`Wrote src/shared/taxonomyColors.generated.ts (${Object.keys(colors).length} coloured entries across ${readdirSync(submoduleDir).length} taxonomy folders)`)

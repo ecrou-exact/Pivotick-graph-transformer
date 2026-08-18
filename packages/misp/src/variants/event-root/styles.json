@@ -1,6 +1,4 @@
 {
-  "defaultMode": "icons",
-
   "icons": {
     "nodes": {
       "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28 },
@@ -26,25 +24,6 @@
     "sector": { "shape": "square", "color": "#db2777", "size": 16, "mark": "SEC", "label": "Sector" },
     "country": { "shape": "square", "color": "#0d9488", "size": 16, "mark": "GEO", "label": "Country/Region" },
     "other": { "shape": "circle", "color": "#64748b", "size": 12, "mark": "?", "label": "Other" }
-  },
-
-  "categories": {
-    "Internal reference": { "color": "#64748b", "mark": "REF" },
-    "Targeting data": { "color": "#be123c", "mark": "TGT" },
-    "Antivirus detection": { "color": "#16a34a", "mark": "AV" },
-    "Payload delivery": { "color": "#ea580c", "mark": "DLV" },
-    "Artifacts dropped": { "color": "#d97706", "mark": "ART" },
-    "Payload installation": { "color": "#ca8a04", "mark": "INST" },
-    "Persistence mechanism": { "color": "#92400e", "mark": "PERS" },
-    "Network activity": { "color": "#0ea5e9", "mark": "NET" },
-    "Payload type": { "color": "#c2410c", "mark": "TYPE" },
-    "Attribution": { "color": "#a855f7", "mark": "ATTR" },
-    "External analysis": { "color": "#0891b2", "mark": "EXT" },
-    "Financial fraud": { "color": "#059669", "mark": "FIN" },
-    "Support Tool": { "color": "#f97316", "mark": "TOOL" },
-    "Social network": { "color": "#2563eb", "mark": "SOC" },
-    "Person": { "color": "#db2777", "mark": "PER" },
-    "Other": { "color": "#64748b", "mark": "OTH" }
   },
 
   "edges": {

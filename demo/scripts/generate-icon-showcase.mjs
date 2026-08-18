@@ -14,7 +14,7 @@ import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { MISP_ATTRIBUTE_ICONS, MISP_GALAXY_ICONS, MISP_OBJECT_ICONS } from '../../packages/misp/dist/icons.generated.js'
+import { MISP_ATTRIBUTE_ICONS, MISP_GALAXY_ICONS, MISP_OBJECT_ICONS } from '../../packages/misp/dist/shared/icons.generated.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const outPath = path.join(__dirname, '..', 'fixtures', 'misp', 'example-icon-showcase.json')
