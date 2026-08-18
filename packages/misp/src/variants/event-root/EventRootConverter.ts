@@ -15,7 +15,9 @@ import type { MispAttribute, MispGalaxyCluster, MispInput, MispObject } from '..
  * differs from the (planned) `object-refs-only` variant, and
  * `event-root-simplified` (`EventRootSimplifiedConverter`) for a variant
  * with the exact same entities/relationships but a collapsed-by-default,
- * expand-on-demand layout for large graphs.
+ * expand-on-demand layout for large graphs, and `event-root-overview`
+ * (`EventRootOverviewConverter`) for the coarsest option — Attributes
+ * dropped entirely, no expand/collapse, fewest nodes possible.
  *
  * Accepts a single Event, a list of Events, a `{ response: [...] }`
  * restSearch-style wrapper, a standalone Object, or a list of Objects —

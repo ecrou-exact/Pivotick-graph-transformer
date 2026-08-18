@@ -142,6 +142,43 @@
             currently hidden inside a collapsed Object.
           </p>
 
+          <h3>Variant: Event as root node, overview <code>(event-root-overview)</code></h3>
+          <p>
+            No expand/collapse anywhere — just fewer nodes that still tell a coherent story.
+            <strong>Attributes are dropped entirely</strong>: not rendered, not collapsed, not counted as nodes at
+            all. Only the "big picture" entities remain — Events, Objects, Tags, and Galaxy Clusters (threat actor /
+            malware / campaign classifications) — narrative context, without every raw indicator value (IPs, hashes,
+            domains, ...) cluttering the canvas.
+          </p>
+          <p>
+            An Object's <code>attributeCount</code>/<code>tagCount</code> are still carried on its node data
+            (visible in the sidebar/tooltip) even though the Attributes themselves never become nodes — "how much
+            detail did this collapse" stays answerable without rendering it. An Attribute's <em>own</em> Tags are
+            the one thing this variant genuinely can't show (there's no Attribute node for them to attach to), and
+            an Object Reference whose target is an Attribute silently doesn't resolve to any edge — both an accepted
+            trade-off of "fewest nodes possible." See <code>event-root-minimal</code> below for an even coarser
+            option that drops Objects too.
+          </p>
+
+          <h3>Variant: Event as root node, minimal <code>(event-root-minimal)</code></h3>
+          <p>
+            The smallest graph this converter can produce: one node per Event (or per standalone Object, when
+            there's no Event), plus the Tags and Galaxy Clusters reachable <em>anywhere</em> inside it — no Object
+            nodes, no Attribute nodes, no expand/collapse. An Object is fully absorbed into its owning Event: its
+            own Tags/Galaxies, and its Attributes' Tags/Galaxies, all roll straight up to the Event as a direct
+            edge.
+          </p>
+          <p>
+            "Keeping the logic" while showing the fewest nodes possible means exactly this: every piece of threat
+            classification (TLP, threat actor, malware family, campaign, ...) anywhere in the input is still
+            visible, connected straight to its Event — only the raw structural nesting (which specific Object or
+            Attribute carried it) is dropped. <code>attributeCount</code>/<code>objectCount</code>/<code>tagCount</code>
+            on the Event still total the *whole* Event, including every nested Object's Attributes. Object
+            References can't be expressed at all here (both of its ends are always an Object or Attribute, neither
+            of which is a node in this variant) — silently dropped; GalaxyClusterRelation is unaffected, since
+            Galaxy Cluster nodes still exist and dedupe exactly as in every other variant.
+          </p>
+
           <h3>Rendering</h3>
           <p>
             The variant above decides graph <em>topology</em> — what's a node, what's an edge. Independently, every
