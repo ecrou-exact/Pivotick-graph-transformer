@@ -20,6 +20,7 @@ const formatSelect = document.querySelector<HTMLSelectElement>('#format-select')
 const variantSelect = document.querySelector<HTMLSelectElement>('#variant-select')!
 const fixtureSelect = document.querySelector<HTMLSelectElement>('#fixture-select')!
 const modeSelect = document.querySelector<HTMLSelectElement>('#mode-select')!
+const fullLabelsCheckbox = document.querySelector<HTMLInputElement>('#full-labels-checkbox')!
 const form = document.querySelector<HTMLFormElement>('#controls')!
 const statusEl = document.querySelector<HTMLElement>('#status')!
 const jsonOutput = document.querySelector<HTMLElement>('#json-output')!
@@ -138,11 +139,12 @@ function render(): void {
   let data: ConversionResult
   try {
     const converter = ConverterRegistry.get(format, variantId)
-    // `mode` is only meaningful to converters that define one (currently
-    // just pivotick-transformer-misp's icons/simple/cards switch) — passed
-    // through unconditionally since ConverterOptions is free-form and a
-    // converter that doesn't look at it just ignores the key.
-    const toPivotick = converter.toPivotickOptions(fixture.data, { mode: modeSelect.value })
+    // `mode`/`fullLabels` are only meaningful to converters that define
+    // them (currently just pivotick-transformer-misp's icons/simple/cards
+    // switch and its "never truncate a badge" toggle) — passed through
+    // unconditionally since ConverterOptions is free-form and a converter
+    // that doesn't look at a given key just ignores it.
+    const toPivotick = converter.toPivotickOptions(fixture.data, { mode: modeSelect.value, fullLabels: fullLabelsCheckbox.checked })
     data = toPivotick.data
 
     renderJsonViewer(jsonOutput, data)
@@ -249,6 +251,7 @@ pasteLoadBtn.addEventListener('click', () => {
 
 formatSelect.addEventListener('change', populateVariants)
 modeSelect.addEventListener('change', render)
+fullLabelsCheckbox.addEventListener('change', render)
 form.addEventListener('submit', (event) => {
   event.preventDefault()
   render()

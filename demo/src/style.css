@@ -205,6 +205,12 @@ main {
   color: var(--vp-c-text-2);
 }
 
+#controls label.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 #controls select {
   min-width: 11rem;
   padding: 0.4rem 0.6rem;

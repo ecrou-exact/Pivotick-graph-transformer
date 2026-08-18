@@ -251,7 +251,7 @@ function contrastTextColor(hexColor: string): string {
  * recognizes on sight, so matching it (plus an icon, which MISP's own
  * pills don't have) beats inventing a new one.
  */
-function buildTagChip(color: string, svgIcon: string | undefined, label: string): HTMLElement {
+function buildTagChip(color: string, svgIcon: string | undefined, label: string, wide: boolean, fullLabel: boolean): HTMLElement {
   const textColor = contrastTextColor(color)
 
   const chip = document.createElement('div')
@@ -273,10 +273,27 @@ function buildTagChip(color: string, svgIcon: string | undefined, label: string)
     // approximates the real edge-touching point well when the box is
     // close to square; a wide-short pill still leaves a gap above/below
     // even once the size is fixed.
-    width: '92px',
-    minHeight: '26px',
+    //
+    // `wide` — a galaxy-pattern tag's label is `type="value"` (e.g.
+    // `mitre-attack-pattern="Phishing - T1566"`), routinely much longer
+    // than a plain tag's own name, so it gets a bigger box rather than
+    // clipping MITRE ATT&CK-style names down to a couple of words.
+    //
+    // `fullLabel` opts out of all of the above: no fixed size, no
+    // clipping — every tag renders at whatever size its full name needs.
+    // This trades away the edge-anchor mitigation entirely (an
+    // organically-sized, possibly very wide chip is exactly the
+    // elongated-box case that mitigation exists for) in favour of never
+    // hiding any part of a name — the caller's explicit choice, exposed
+    // as `ConverterOptions.fullLabels`.
+    ...(fullLabel
+      ? {}
+      : {
+          width: wide ? '140px' : '92px',
+          minHeight: wide ? '40px' : '26px',
+          overflow: 'hidden',
+        }),
     boxSizing: 'border-box',
-    overflow: 'hidden',
     display: 'inline-flex',
     alignItems: 'center',
     gap: '5px',
@@ -314,11 +331,9 @@ function buildTagChip(color: string, svgIcon: string | undefined, label: string)
     lineHeight: '1.25',
     color: textColor,
     minWidth: '0',
-    display: '-webkit-box',
-    webkitLineClamp: '2',
-    webkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-    wordBreak: 'break-word',
+    ...(fullLabel
+      ? { whiteSpace: 'nowrap' }
+      : { display: '-webkit-box', webkitLineClamp: '2', webkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }),
   })
   labelEl.textContent = label
 
@@ -408,9 +423,27 @@ function buildIconBadge(params: {
   kindLabel: string
   kindColor: string
   secondary?: string
-  emphasized: boolean
+  /**
+   * 'emphasized' — the Event, unmistakably each cluster's root.
+   * 'wide' — galaxy clusters specifically: MITRE ATT&CK technique names
+   * and threat-actor/malware names routinely run much longer than an
+   * attribute value, so they get more room than the 'normal' size before
+   * `overflow: hidden` starts clipping.
+   */
+  size: 'normal' | 'wide' | 'emphasized'
+  /**
+   * Opts out of the fixed-size/clipping behaviour above entirely: the
+   * badge sizes itself to whatever its title/kind chip/secondary text
+   * actually need, in full, never truncated. Trades away the edge-anchor
+   * mitigation (an organically-sized, possibly very wide badge is exactly
+   * the elongated-box case that mitigation exists for) for guaranteeing
+   * every name is fully visible — the caller's explicit choice, exposed
+   * as `ConverterOptions.fullLabels`.
+   */
+  fullLabel: boolean
 }): HTMLElement {
-  const { shape, fillColor, outlineColor, svgIcon, title, kindLabel, kindColor, secondary, emphasized } = params
+  const { shape, fillColor, outlineColor, svgIcon, title, kindLabel, kindColor, secondary, size, fullLabel } = params
+  const emphasized = size === 'emphasized'
   const borderColor = outlineColor ?? fillColor
   const iconTint = outlineColor ?? '#ffffff'
 
@@ -435,11 +468,23 @@ function buildIconBadge(params: {
     // approximates the real edge-touching point well when the box is
     // close to square; a wide-short box still leaves a gap above/below
     // even once its size is fixed and predictable.
-    width: emphasized ? '150px' : '112px',
-    minHeight: emphasized ? '58px' : '42px',
+    ...(fullLabel
+      ? {}
+      : {
+          width: size === 'emphasized' ? '150px' : size === 'wide' ? '148px' : '112px',
+          minHeight: size === 'emphasized' ? '58px' : size === 'wide' ? '56px' : '42px',
+          overflow: 'hidden',
+        }),
     boxSizing: 'border-box',
-    overflow: 'hidden',
-    display: 'flex',
+    // `inline-flex`, not `flex`: a block-level flex container with no
+    // explicit width (the `fullLabel` case) stretches to fill its
+    // containing block instead of sizing to its own content — and its
+    // containing block, at the moment Pivotick first measures this
+    // element, is the wrapping <foreignObject>'s initial 20x20 clip box
+    // (see buildReadableCard()'s longer note on this same mechanism).
+    // `inline-flex` shrink-to-fits regardless; an explicit width (every
+    // non-fullLabel size) still wins either way, so this is safe there too.
+    display: 'inline-flex',
     alignItems: 'flex-start',
     gap: '7px',
     padding: emphasized ? '6px 10px' : '4px 7px',
@@ -463,11 +508,9 @@ function buildIconBadge(params: {
     fontWeight: emphasized ? '700' : '600',
     lineHeight: '1.25',
     color: '#0f172a',
-    display: '-webkit-box',
-    webkitLineClamp: emphasized ? '3' : '2',
-    webkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-    wordBreak: 'break-word',
+    ...(fullLabel
+      ? { whiteSpace: 'nowrap' }
+      : { display: '-webkit-box', webkitLineClamp: emphasized ? '3' : '2', webkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }),
   })
   titleEl.textContent = title
 
@@ -495,10 +538,9 @@ function buildIconBadge(params: {
     Object.assign(secondaryEl.style, {
       fontSize: emphasized ? '10px' : '8.5px',
       color: '#64748b',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
       minWidth: '0',
+      ...(fullLabel ? {} : { overflow: 'hidden', textOverflow: 'ellipsis' }),
     })
     secondaryEl.textContent = secondary
     metaRow.append(secondaryEl)
@@ -982,6 +1024,12 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
 
     if (mode === 'icons') {
       const nodeStyles = stylesConfig.icons.nodes
+      // 'ConverterOptions.fullLabels' (default off): never truncate a
+      // badge/tag's text, sizing it to whatever its content actually
+      // needs instead of the fixed, edge-anchor-friendly box sizes below
+      // — see buildIconBadge()'s and buildTagChip()'s `fullLabel` param
+      // for the tradeoff this makes.
+      const fullLabels = Boolean(options?.fullLabels)
 
       return (node) => {
         const data = node.getData?.()
@@ -1000,7 +1048,11 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
         const fillColor = (nodeStyle?.color as string | undefined) ?? categoryStyle.color
         const title = (data.label as string | undefined) ?? entityType
 
-        if (entityType === 'tag') return buildTagChip(fillColor, svgIcon, title)
+        // A galaxy-pattern tag is the only kind of tag that carries an
+        // icon override (see addTags() — plain tags never get an
+        // svgIcon), so its presence doubles as the "this needs more room"
+        // signal without having to plumb a separate flag through.
+        if (entityType === 'tag') return buildTagChip(fillColor, svgIcon, title, Boolean(nodeStyle?.svgIcon), fullLabels)
 
         const outlineColor = nodeStyle?.strokeColor as string | undefined
 
@@ -1013,6 +1065,8 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
         // kind of specific-yet-uncluttered info this badge is for.
         const kindMeta = stylesConfig.kinds[classifyEntityType(entityType)]
 
+        const size = isEvent ? 'emphasized' : entityType.startsWith('galaxies/') ? 'wide' : 'normal'
+
         return buildIconBadge({
           shape: categoryStyle.shape,
           fillColor,
@@ -1022,7 +1076,8 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
           kindLabel: kindMeta.label,
           kindColor: kindMeta.color,
           secondary: secondaryInfoFor(entityType, data),
-          emphasized: isEvent,
+          size,
+          fullLabel: fullLabels,
         })
       }
     }
