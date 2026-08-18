@@ -16,7 +16,7 @@
     "ATTRIBUTION.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && mkdir -p dist/shared && cp src/shared/styles.json src/shared/styles.flat.json dist/shared/",
+    "build": "tsc -p tsconfig.json && mkdir -p dist/shared && cp src/shared/styles.json src/shared/styles.flat.json src/shared/styles.minimal.json dist/shared/",
     "lint": "eslint 'src/**/*.ts'",
     "lint_fix": "eslint --fix 'src/**/*.ts'"
   },

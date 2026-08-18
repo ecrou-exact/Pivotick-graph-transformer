@@ -6,32 +6,45 @@ import { classifyEntityType } from './mispKind.js'
 import { mispIconSvg } from './mispIconSvg.js'
 import flatStylesConfig from './styles.flat.json' with { type: 'json' }
 import stylesConfig from './styles.json' with { type: 'json' }
+import minimalStylesConfig from './styles.minimal.json' with { type: 'json' }
 import type { MispInput } from './types.js'
 
 // ── node rendering helpers ────────────────────────────────────────────
 //
-// Two interchangeable "looks," picked via `ConverterOptions.style`
-// ('card', the default, or 'flat') — a pure styling choice, not a variant
-// (see CONTRIBUTING.md's note on the distinction): every MISP variant's
-// `convert()` output renders identically either way, only the DOM/CSS
-// `getRenderNode()` builds for each node changes.
+// Four interchangeable "looks," picked via `ConverterOptions.style` — a
+// pure styling choice, not a variant (see CONTRIBUTING.md's note on the
+// distinction): every MISP variant's `convert()` output renders
+// identically regardless of style, only the DOM/CSS `getRenderNode()`
+// builds for each node changes.
 //
-// - 'card' (buildIconBadge/buildTagChip, styles.json): a white card with
-//   a coloured border and a boxed icon token — the original look.
-// - 'flat' (buildFlatBadge/buildFlatTagChip, styles.flat.json): a soft
+// - 'card' (default) — buildIconBadge/buildTagChip, styles.json: a white
+//   card with a coloured border and a boxed icon token — the original
+//   look.
+// - 'flat' — buildFlatBadge/buildFlatTagChip, styles.flat.json: a soft
 //   colour-tinted chip with a circular icon avatar and a coloured left
 //   accent bar, no border/shadow beyond a thin neutral hairline — a
 //   calmer, more compact alternative that leans on tint instead of an
 //   outline to carry each kind's colour.
+// - 'label' — buildMinimalBadge (showLabel: true), styles.minimal.json:
+//   just the icon token and the node's name side by side, nothing else —
+//   no kind chip, no secondary line, no card/tint/border at all.
+// - 'icon' — buildMinimalBadge (showLabel: false): the icon token alone,
+//   no text whatsoever — the smallest possible representation of a node.
+//   ('label' and 'icon' share one function/config since 'icon' is
+//   exactly 'label' with the text half omitted — see buildMinimalBadge().)
 //
-// Both read the *same* icons.nodes/kinds colour-and-icon mapping (shared
-// styles.json) — only the shell around that colour/icon differs, so the
-// two looks stay one coherent visual language, never a different palette
-// per mode.
+// All four read the *same* icons.nodes/kinds colour-and-icon mapping
+// (shared styles.json) — only the shell around that colour/icon differs,
+// so every look stays one coherent visual language, never a different
+// palette per mode. Tags render through whichever generic badge builder
+// the active style uses too in 'label'/'icon' mode (unlike 'card'/'flat',
+// which give Tags their own pill treatment) — at this level of
+// minimalism there's no room left for a Tag-specific shape to add
+// anything.
 //
 // This goes through `renderNode` rather than Pivotick's native
 // shape+`nodeStyleMap` rendering (still described by getDefaultStyleMap(),
-// kept for consumers who use this converter without either badge look)
+// kept for consumers who use this converter without any of these looks)
 // only because Pivotick's renderNode hook is all-or-nothing for the whole
 // graph — once it's set at all, every node is routed through it, with no
 // per-node opt-out back to native rendering (verified against Pivotick's
@@ -622,6 +635,99 @@ function buildFlatBadge(params: {
   return badge
 }
 
+// ── 'label'/'icon' modes ─────────────────────────────────────────────
+//
+// The two plainest looks: just the icon token (colour + svg icon) and,
+// for 'label' only, the node's own name beside it. No kind chip, no
+// secondary line, no card/tint/border — see this file's top comment for
+// why one function covers both.
+
+/**
+ * 'label'/'icon' modes' entire node: a small coloured circle (icon
+ * token) plus, when `showLabel` is true, the node's name in plain text
+ * beside it — nothing else drawn at all (no background, no border) other
+ * than those two elements. `showLabel: false` (the 'icon' mode) simply
+ * omits the label span, leaving the bare token as the whole node — since
+ * a circle's own bounding box is already square, Pivotick's default
+ * `max(width,height)/2` edge-anchor radius (see the note on
+ * `RenderNodeFn` in packages/core/src/types.ts) lands exactly right for
+ * it with no extra care needed, unlike every wider-than-tall badge above.
+ */
+function buildMinimalBadge(params: {
+  fillColor: string
+  outlineColor: string | undefined
+  svgIcon: string | undefined
+  title: string
+  size: 'normal' | 'wide' | 'emphasized'
+  fullLabel: boolean
+  showLabel: boolean
+}): HTMLElement {
+  const { fillColor, outlineColor, svgIcon, title, size, fullLabel, showLabel } = params
+  const cfg = minimalStylesConfig.badge.sizes[size]
+  // Same reasoning as buildIconToken()'s `iconTint`: the icon's
+  // currentColor context defaults to white (vivid enough fill colours
+  // stay legible with a white icon on top) but follows the tag-only
+  // `strokeColor` override for a pale fill (e.g. `tlp:white`), where
+  // white-on-white would vanish.
+  const iconTint = outlineColor ?? '#ffffff'
+
+  const wrap = document.createElement('div')
+  Object.assign(wrap.style, {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: showLabel ? `${cfg.gap}px` : '0',
+    boxSizing: 'border-box',
+    fontFamily: minimalStylesConfig.badge.fontFamily,
+    cursor: 'default',
+    // Fixed width only when there's a label to clip — 'icon' mode (no
+    // label at all) never needs one: the token's own fixed diameter
+    // already gives it a small, predictable, perfectly square footprint.
+    ...(showLabel && !fullLabel ? { width: `${cfg.iconDiameter + cfg.gap + cfg.maxLabelWidth}px`, overflow: 'hidden' } : {}),
+  })
+
+  const token = document.createElement('div')
+  Object.assign(token.style, {
+    width: `${cfg.iconDiameter}px`,
+    height: `${cfg.iconDiameter}px`,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: fillColor,
+    color: iconTint,
+    boxSizing: 'border-box',
+    flexShrink: '0',
+  })
+  if (svgIcon) {
+    const iconWrap = document.createElement('span')
+    Object.assign(iconWrap.style, { width: '62%', height: '62%', display: 'flex' })
+    // Trusted markup — see buildIconToken()'s identical note.
+    iconWrap.innerHTML = svgIcon
+    const svgEl = iconWrap.firstElementChild
+    if (svgEl) {
+      svgEl.setAttribute('width', '100%')
+      svgEl.setAttribute('height', '100%')
+    }
+    token.append(iconWrap)
+  }
+  wrap.append(token)
+
+  if (showLabel) {
+    const labelEl = document.createElement('span')
+    Object.assign(labelEl.style, {
+      fontSize: `${cfg.labelFontSize}px`,
+      fontWeight: String(cfg.labelFontWeight),
+      color: '#0f172a',
+      minWidth: '0',
+      ...(fullLabel ? { whiteSpace: 'nowrap' } : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
+    })
+    labelEl.textContent = title
+    wrap.append(labelEl)
+  }
+
+  return wrap
+}
+
 /**
  * Shared MISP rendering base: every MISP variant — regardless of graph
  * *topology* (e.g. `event-root`'s flat containment edges vs.
@@ -713,11 +819,11 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
     // — see buildIconBadge()'s and buildTagChip()'s `fullLabel` param
     // for the tradeoff this makes.
     const fullLabels = Boolean(options?.fullLabels)
-    // 'ConverterOptions.style' ('card', the default, or 'flat') — see
-    // this file's top comment for what each look is. A pure rendering
-    // choice, not a variant: every node's underlying data is identical
-    // either way.
-    const flat = options?.style === 'flat'
+    // 'ConverterOptions.style' ('card', the default; or 'flat'/'label'/
+    // 'icon') — see this file's top comment for what each look is. A
+    // pure rendering choice, not a variant: every node's underlying data
+    // is identical no matter which one is picked.
+    const style = (options?.style as string | undefined) ?? 'card'
 
     return (node) => {
       const data = node.getData?.()
@@ -725,23 +831,28 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
       const entityType = (data.entityType as string | undefined) ?? 'unknown'
       const isEvent = entityType === 'event'
 
-      // A tag (plain or galaxy-pattern) prefers its own per-node style
-      // override (set by addMispTags()) over the generic "tag" category
-      // — that's where a galaxy-pattern tag's real galaxy icon and its
-      // resolved colour actually live, same source the native renderer
-      // itself would've used.
       const nodeStyle = node.getStyle?.()
       const categoryStyle = nodeStyles[iconCategoryFor(entityType)]
       const svgIcon = (nodeStyle?.svgIcon as string | undefined) ?? mispIconSvg(entityType)
       const fillColor = (nodeStyle?.color as string | undefined) ?? categoryStyle.color
       const title = (data.label as string | undefined) ?? entityType
+      const outlineColor = nodeStyle?.strokeColor as string | undefined
+      const size = isEvent ? 'emphasized' : entityType.startsWith('galaxies/') ? 'wide' : 'normal'
 
-      // A galaxy-pattern tag is the only kind of tag that carries an
-      // icon override (see addMispTags() — plain tags never get an
-      // svgIcon), so its presence doubles as the "this needs more room"
-      // signal without having to plumb a separate flag through.
+      // 'label'/'icon': every entity type, Tag included, renders through
+      // the one generic minimal badge — see this file's top comment for
+      // why Tags don't get their own shape at this level of minimalism.
+      if (style === 'label' || style === 'icon') {
+        return buildMinimalBadge({ fillColor, outlineColor, svgIcon, title, size, fullLabel: fullLabels, showLabel: style === 'label' })
+      }
+
+      // A tag (plain or galaxy-pattern) prefers its own per-node style
+      // override (set by addMispTags()) over the generic "tag" category
+      // — that's where a galaxy-pattern tag's real galaxy icon and its
+      // resolved colour actually live, same source the native renderer
+      // itself would've used.
       if (entityType === 'tag') {
-        return flat
+        return style === 'flat'
           ? buildFlatTagChip(fillColor, svgIcon, title, Boolean(nodeStyle?.svgIcon), fullLabels)
           : buildTagChip(fillColor, svgIcon, title, Boolean(nodeStyle?.svgIcon), fullLabels)
       }
@@ -754,11 +865,9 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
       // their chips say which, in a colour of their own, exactly the
       // kind of specific-yet-uncluttered info this badge is for.
       const kindMeta = stylesConfig.kinds[classifyEntityType(entityType)]
-
-      const size = isEvent ? 'emphasized' : entityType.startsWith('galaxies/') ? 'wide' : 'normal'
       const secondary = secondaryInfoFor(entityType, data)
 
-      if (flat) {
+      if (style === 'flat') {
         return buildFlatBadge({
           fillColor,
           svgIcon,
@@ -771,7 +880,6 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
         })
       }
 
-      const outlineColor = nodeStyle?.strokeColor as string | undefined
       return buildIconBadge({
         shape: categoryStyle.shape,
         fillColor,

@@ -231,9 +231,22 @@
               bar, no border/shadow beyond a thin neutral hairline — a calmer, more compact alternative that leans
               on tint instead of an outline to carry each kind's color.
             </li>
+            <li>
+              <strong>Label</strong> — just the icon token and the node's name side by side, nothing else: no kind
+              chip, no secondary line, no card/tint/border at all.
+            </li>
+            <li>
+              <strong>Icon</strong> — the icon token alone, no text whatsoever: the smallest possible representation
+              of a node.
+            </li>
           </ul>
           <p>
-            One more toggle refines either style: <strong>Full labels</strong> lets every badge size itself to its
+            <strong>Label</strong> and <strong>Icon</strong> also differ from <strong>Card</strong>/<strong>Flat</strong>
+            in one more way: Tags don't get their own pill shape at this level of minimalism — a Tag renders through
+            the same generic icon-token-plus-optional-label treatment as every other entity type.
+          </p>
+          <p>
+            One more toggle refines any style: <strong>Full labels</strong> lets every badge size itself to its
             full text instead of clipping long names.
           </p>
 

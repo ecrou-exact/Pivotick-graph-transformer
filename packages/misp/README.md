@@ -110,20 +110,26 @@ Tag colour is the Tag's own `colour` if the input set one (the normal case — M
 
 One exception: a Tag named `misp-galaxy:<type>="<value>"` (this is literally `GalaxyCluster.tag_name` — MISP tags a galaxy cluster association this way as often as, or instead of, the structured `Galaxy`/`GalaxyCluster` arrays `addGalaxies` handles) stays a tag structurally — same shape/size as any other tag — but its `color` and icon are overridden to the galaxy category's purple and the galaxy's own misp-iconify icon, ignoring its own `colour`, so it reads as "a tag, but a galaxy one" rather than a generic one. It's deduped by tag name, not cluster id, so the rare case of the same cluster appearing both as a Tag and in the structured arrays ends up as two nodes, not merged into one.
 
-### Two node looks: `card` and `flat`
+### Four node looks: `card`, `flat`, `label`, `icon`
 
-`ConverterOptions.style` picks how every node is actually drawn — a pure rendering choice, not a variant (every variant's underlying nodes/edges are identical either way; see `MispIconRenderingConverter`, shared by every variant):
+`ConverterOptions.style` picks how every node is actually drawn — a pure rendering choice, not a variant (every variant's underlying nodes/edges are identical no matter which one is picked; see `MispIconRenderingConverter`, shared by every variant):
 
 - `'card'` (the default, or when unset) — a white card, a coloured border, and a boxed icon token: the original look.
 - `'flat'` — a soft colour-tinted chip with a circular icon avatar and a coloured left accent bar, no border/shadow beyond a thin neutral hairline; a calmer, more compact alternative that leans on tint instead of an outline to carry each kind's colour.
+- `'label'` — just the icon token and the node's name side by side, nothing else: no kind chip, no secondary line, no card/tint/border at all.
+- `'icon'` — the icon token alone, no text whatsoever: the smallest possible representation of a node.
 
 ```ts
 const { data, render } = ConverterRegistry.get('misp').toPivotickOptions(mispEventJson, { style: 'flat' })
 ```
 
-Both looks read the exact same `icons.nodes`/`kinds` colour-and-icon mapping from `styles.json` — only the shell around that colour/icon differs, so switching styles never changes what a colour or icon *means*, just how it's drawn. `flat`'s own layout numbers (chip sizes, tint opacity, accent width) live in a second, `badge`-only config, [`src/shared/styles.flat.json`](./src/shared/styles.flat.json) — edit that file to tune `flat` mode without touching `card`'s own `styles.json`. `flat` also sidesteps `card`'s light/dark text-contrast branching entirely: a light tint of any colour (even a near-white one like `tlp:white`) is always light enough for the fixed dark title text to read clearly, so there's no `contrastTextColor()`-style special-casing to get right.
+All four read the exact same `icons.nodes`/`kinds` colour-and-icon mapping from `styles.json` — only the shell around that colour/icon differs, so switching styles never changes what a colour or icon *means*, just how it's drawn.
 
-For anything beyond `styles.json`/`styles.flat.json`, override the returned render options yourself — they're plain objects:
+`flat`'s own layout numbers (chip sizes, tint opacity, accent width) live in a second, `badge`-only config, [`src/shared/styles.flat.json`](./src/shared/styles.flat.json) — edit that file to tune `flat` mode without touching `card`'s own `styles.json`. `flat` also sidesteps `card`'s light/dark text-contrast branching entirely: a light tint of any colour (even a near-white one like `tlp:white`) is always light enough for the fixed dark title text to read clearly, so there's no `contrastTextColor()`-style special-casing to get right.
+
+`label` and `icon` share one function and one config, [`src/shared/styles.minimal.json`](./src/shared/styles.minimal.json) — `icon` is exactly `label` with the text half omitted, not a separate implementation. Both also differ from `card`/`flat` in one more way: **Tags don't get their own pill shape** at this level of minimalism — a Tag renders through the same generic icon-token-plus-optional-label function as every other entity type, since there's no room left for a Tag-specific treatment to add anything once everything else is already this plain.
+
+For anything beyond these JSON files, override the returned render options yourself — they're plain objects:
 
 ```ts
 const { data, render } = ConverterRegistry.get('misp').toPivotickOptions(mispEventJson)
