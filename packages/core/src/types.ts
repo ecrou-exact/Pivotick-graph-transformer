@@ -59,12 +59,10 @@ export type NodeStyleMap = Record<string, Record<string, unknown>>
  * function returns, Pivotick measures the element via
  * `getBoundingClientRect()` and calls `setCircleRadius(max(width,height)/2)`
  * itself, treating the node as a circle of that radius for edge-anchor
- * math no matter its real (e.g. rectangular) shape. A converter whose
- * card is wider than it is tall can correct that afterwards — see
- * `pivotick-transformer-misp`'s `scheduleMinRadiusCorrection()` — to
- * `min(width,height)/2` instead, which stays fully inside the card's
- * real footprint in every direction rather than overshooting it in the
- * narrow one.
+ * math no matter its real (e.g. rectangular) shape. Exposed here for a
+ * converter that wants to override Pivotick's own measurement, but no
+ * converter in this repo currently does — Pivotick's default is used
+ * as-is.
  */
 export type RenderNodeFn = (node: {
   getData?: () => Record<string, unknown> | undefined

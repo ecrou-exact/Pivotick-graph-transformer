@@ -84,79 +84,6 @@ function contrastTextColor(hexColor: string): string {
 }
 
 /**
- * Debug aid for `scheduleMinRadiusCorrection()` (`ConverterOptions.debugRadius`)
- * — draws a dashed circle centred on the card, sized to exactly the
- * diameter Pivotick is currently using as this node's edge-anchor
- * boundary, updated every time the correction re-asserts it. Lets you
- * see directly, in a real render, whether the correction is actually
- * taking effect and where its edge really sits relative to the visible
- * card, instead of guessing from screenshots or source-reading alone.
- * Not meant to ship enabled — purely a diagnostic.
- */
-function showDebugRadiusOverlay(element: HTMLElement, radius: number): void {
-  let overlay = element.querySelector<HTMLElement>(':scope > [data-debug-radius]')
-  if (!overlay) {
-    overlay = document.createElement('div')
-    overlay.setAttribute('data-debug-radius', '')
-    Object.assign(overlay.style, {
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      borderRadius: '50%',
-      border: '2px dashed #ef4444',
-      background: 'rgba(239,68,68,0.08)',
-      pointerEvents: 'none',
-      boxSizing: 'border-box',
-      zIndex: '9999',
-    })
-    element.style.position = 'relative'
-    element.append(overlay)
-  }
-  const diameter = `${radius * 2}px`
-  overlay.style.width = diameter
-  overlay.style.height = diameter
-}
-
-/**
- * Corrects Pivotick's own edge-anchor radius for a custom-rendered node
- * from `max(width,height)/2` down to `min(width,height)/2` — see the
- * longer note on `RenderNodeFn` in packages/core/src/types.ts for why,
- * and why this is safe to do at all (edges are drawn *behind* nodes in
- * Pivotick's SVG — verified: `edgeGroup` is appended, and therefore
- * painted, before `nodeGroup` — so an edge endpoint that now lands
- * inside the card's real footprint is simply hidden under the card's own
- * opaque background, reading as a direct connection instead of stopping
- * short).
- *
- * Re-asserts every animation frame for ~1.5s after mount, rather than
- * trying to land exactly one frame after Pivotick's own correction: a
- * single-shot, precisely-timed override was tried first and, tested live,
- * didn't visibly change anything — Pivotick's own measure-and-correct
- * pass (`NodeRenderer.render()`'s retry loop, up to 300 frames if a
- * measurement briefly comes back zero) isn't guaranteed to land on any
- * particular frame, so a one-shot override risks running *before* it and
- * being overwritten right back. Repeatedly re-applying for a whole second
- * costs nothing noticeable and just wins regardless of exactly when
- * Pivotick's own pass (or passes) happen.
- */
-function scheduleMinRadiusCorrection(node: { getCircleRadius?: () => number | undefined; setCircleRadius?: (radius: number) => void }, element: HTMLElement, debug: boolean): void {
-  let framesLeft = 90
-  const tick = (): void => {
-    if (!element.isConnected) return
-    const rect = element.getBoundingClientRect()
-    if (rect.width > 0 && rect.height > 0) {
-      const target = 0.5 * Math.min(rect.width, rect.height)
-      node.setCircleRadius?.(target)
-      if (debug) showDebugRadiusOverlay(element, node.getCircleRadius?.() ?? target)
-    }
-    framesLeft -= 1
-    if (framesLeft > 0) requestAnimationFrame(tick)
-  }
-  requestAnimationFrame(tick)
-}
-
-/**
  * Tags and galaxy-pattern tags render as MISP's own real tag pill —
  * solid colour, small rounded corners, the tag's actual name printed
  * directly on it — rather than the white-card-with-coloured-border look
@@ -561,11 +488,6 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
     // — see buildIconBadge()'s and buildTagChip()'s `fullLabel` param
     // for the tradeoff this makes.
     const fullLabels = Boolean(options?.fullLabels)
-    // 'ConverterOptions.debugRadius' (default off): overlays a dashed
-    // circle on every node showing the actual edge-anchor radius
-    // Pivotick is using — see showDebugRadiusOverlay()'s doc comment.
-    // Diagnostic only, not meant to ship enabled.
-    const debugRadius = Boolean(options?.debugRadius)
 
     return (node) => {
       const data = node.getData?.()
@@ -589,9 +511,7 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
       // svgIcon), so its presence doubles as the "this needs more room"
       // signal without having to plumb a separate flag through.
       if (entityType === 'tag') {
-        const chip = buildTagChip(fillColor, svgIcon, title, Boolean(nodeStyle?.svgIcon), fullLabels)
-        scheduleMinRadiusCorrection(node, chip, debugRadius)
-        return chip
+        return buildTagChip(fillColor, svgIcon, title, Boolean(nodeStyle?.svgIcon), fullLabels)
       }
 
       const outlineColor = nodeStyle?.strokeColor as string | undefined
@@ -619,7 +539,6 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
         size,
         fullLabel: fullLabels,
       })
-      scheduleMinRadiusCorrection(node, badge, debugRadius)
       return badge
     }
   }
