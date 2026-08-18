@@ -20,6 +20,7 @@ const uploadedFixtures = new Map<string, unknown>()
 const formatSelect = document.querySelector<HTMLSelectElement>('#format-select')!
 const variantSelect = document.querySelector<HTMLSelectElement>('#variant-select')!
 const fixtureSelect = document.querySelector<HTMLSelectElement>('#fixture-select')!
+const styleSelect = document.querySelector<HTMLSelectElement>('#style-select')!
 const fullLabelsCheckbox = document.querySelector<HTMLInputElement>('#full-labels-checkbox')!
 const form = document.querySelector<HTMLFormElement>('#controls')!
 const statusEl = document.querySelector<HTMLElement>('#status')!
@@ -138,13 +139,14 @@ function render(): void {
   let data: ConversionResult
   try {
     const converter = ConverterRegistry.get(format, variantId)
-    // `fullLabels` is only meaningful to converters that define it
-    // (currently just pivotick-transformer-misp's "never truncate a
-    // badge" toggle) — passed through unconditionally since
-    // ConverterOptions is free-form and a converter that doesn't look at
-    // a given key just ignores it.
+    // `fullLabels`/`style` are only meaningful to converters that define
+    // them (currently just pivotick-transformer-misp's "never truncate a
+    // badge" toggle and its card/flat rendering choice) — passed through
+    // unconditionally since ConverterOptions is free-form and a
+    // converter that doesn't look at a given key just ignores it.
     const toPivotick = converter.toPivotickOptions(fixture.data, {
       fullLabels: fullLabelsCheckbox.checked,
+      style: styleSelect.value,
     })
     data = toPivotick.data
 
@@ -219,6 +221,7 @@ pasteLoadBtn.addEventListener('click', () => {
 })
 
 formatSelect.addEventListener('change', populateVariants)
+styleSelect.addEventListener('change', render)
 fullLabelsCheckbox.addEventListener('change', render)
 form.addEventListener('submit', (event) => {
   event.preventDefault()

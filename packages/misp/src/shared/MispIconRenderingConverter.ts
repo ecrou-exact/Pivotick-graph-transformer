@@ -4,22 +4,38 @@ import type { ConverterOptions, NodeStyleMap, NodeTypeAccessor, RenderNodeFn } f
 import { MISP_ATTRIBUTE_ICONS, MISP_GALAXY_ICONS, MISP_GENERIC_ICONS, MISP_OBJECT_ICONS } from './icons.generated.js'
 import { classifyEntityType } from './mispKind.js'
 import { mispIconSvg } from './mispIconSvg.js'
+import flatStylesConfig from './styles.flat.json' with { type: 'json' }
 import stylesConfig from './styles.json' with { type: 'json' }
 import type { MispInput } from './types.js'
 
 // ── node rendering helpers ────────────────────────────────────────────
 //
-// Every node — Event included — renders as one consistent badge
-// (buildIconBadge): a coloured icon token plus the node's name, same shell
-// for every type, only the token's shape/colour/icon (and a slightly larger
-// token for Event) varying. This goes through
-// `renderNode` rather than Pivotick's native shape+`nodeStyleMap`
-// rendering (still described by getDefaultStyleMap(), kept for consumers
-// who use this converter without the badge look) only because Pivotick's
-// renderNode hook is all-or-nothing for the whole graph — once it's set at
-// all, every node is routed through it, with no per-node opt-out back to
-// native rendering (verified against Pivotick's actual
-// NodeRenderer.render() — see the note on RenderNodeFn in
+// Two interchangeable "looks," picked via `ConverterOptions.style`
+// ('card', the default, or 'flat') — a pure styling choice, not a variant
+// (see CONTRIBUTING.md's note on the distinction): every MISP variant's
+// `convert()` output renders identically either way, only the DOM/CSS
+// `getRenderNode()` builds for each node changes.
+//
+// - 'card' (buildIconBadge/buildTagChip, styles.json): a white card with
+//   a coloured border and a boxed icon token — the original look.
+// - 'flat' (buildFlatBadge/buildFlatTagChip, styles.flat.json): a soft
+//   colour-tinted chip with a circular icon avatar and a coloured left
+//   accent bar, no border/shadow beyond a thin neutral hairline — a
+//   calmer, more compact alternative that leans on tint instead of an
+//   outline to carry each kind's colour.
+//
+// Both read the *same* icons.nodes/kinds colour-and-icon mapping (shared
+// styles.json) — only the shell around that colour/icon differs, so the
+// two looks stay one coherent visual language, never a different palette
+// per mode.
+//
+// This goes through `renderNode` rather than Pivotick's native
+// shape+`nodeStyleMap` rendering (still described by getDefaultStyleMap(),
+// kept for consumers who use this converter without either badge look)
+// only because Pivotick's renderNode hook is all-or-nothing for the whole
+// graph — once it's set at all, every node is routed through it, with no
+// per-node opt-out back to native rendering (verified against Pivotick's
+// actual NodeRenderer.render() — see the note on RenderNodeFn in
 // packages/core/src/types.ts).
 
 /** Same 'attribute' vs 'generic' split `getDefaultStyleMap()` makes, minus event/tag (handled directly by entityType). */
@@ -81,6 +97,26 @@ function contrastTextColor(hexColor: string): string {
   const b = parseInt(hex.slice(4, 6), 16)
   const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255
   return luma > threshold ? dark : light
+}
+
+/**
+ * 'flat' mode's entire colour strategy in one function: a *light tint* of
+ * `hexColor` (mixed toward the badge's own white/near-white background at
+ * `opacity`), never the solid colour itself. This is what lets 'flat'
+ * mode's text stay a single fixed dark neutral everywhere — unlike
+ * 'card' mode's `contrastTextColor()`, which has to flip between light
+ * and dark per tag colour because a solid fill can be dark *or* light.
+ * A light tint of any colour, including a near-white one like
+ * `tlp:white`, is always light enough for dark text to read clearly on —
+ * one less thing to special-case.
+ */
+function tintColor(hexColor: string, opacity: number): string {
+  const hex = hexColor.replace('#', '')
+  if (hex.length !== 6) return `rgba(148, 163, 184, ${opacity})`
+  const r = parseInt(hex.slice(0, 2), 16)
+  const g = parseInt(hex.slice(2, 4), 16)
+  const b = parseInt(hex.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`
 }
 
 /**
@@ -397,6 +433,195 @@ function buildIconBadge(params: {
   return badge
 }
 
+// ── 'flat' mode ──────────────────────────────────────────────────────
+//
+// A calmer alternative to buildIconBadge()/buildTagChip() above: a
+// colour-tinted chip instead of a white card with a coloured border —
+// see the file's top-of-file comment for the two looks' overall
+// rationale. Reads styles.flat.json instead of styles.json's "badge"
+// section, but the same icons.nodes/kinds colour-and-icon mapping either
+// way (both passed in by the caller, `getRenderNode()`).
+
+/** 'flat' mode's icon avatar: always a circle (unlike buildIconToken()'s per-category shape), since a uniform silhouette is what lets the coloured chip itself, not the token, carry each kind's shape-of-the-day. */
+function buildFlatAvatar(fillColor: string, diameter: number, svgIcon: string | undefined): HTMLElement {
+  const avatar = document.createElement('div')
+  Object.assign(avatar.style, {
+    width: `${diameter}px`,
+    height: `${diameter}px`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '50%',
+    background: fillColor,
+    // Unlike 'card' mode's buildIconToken() (which has to pick between a
+    // white or dark icon tint depending on the fill), the avatar is
+    // always the kind's full, solid colour — vivid enough on its own —
+    // so the icon is always white, no contrast branching needed.
+    color: '#ffffff',
+    boxSizing: 'border-box',
+    flexShrink: '0',
+  })
+
+  if (svgIcon) {
+    const iconWrap = document.createElement('span')
+    Object.assign(iconWrap.style, { width: '58%', height: '58%', display: 'flex' })
+    // Trusted markup — see buildIconToken()'s identical note.
+    iconWrap.innerHTML = svgIcon
+    const svgEl = iconWrap.firstElementChild
+    if (svgEl) {
+      svgEl.setAttribute('width', '100%')
+      svgEl.setAttribute('height', '100%')
+    }
+    avatar.append(iconWrap)
+  }
+
+  return avatar
+}
+
+/**
+ * 'flat' mode's Tag/galaxy-pattern-tag pill: a light tint of the tag's
+ * own colour (see `tintColor()`) instead of 'card' mode's solid fill —
+ * text stays a fixed dark neutral regardless of the tag's colour, which
+ * sidesteps `contrastTextColor()`'s light/dark branching entirely (a
+ * light tint is always light enough for dark text). A thin neutral
+ * hairline border keeps a near-white tag (e.g. `tlp:white`) visible
+ * against a light/white canvas, same reasoning as 'card' mode's outline.
+ */
+function buildFlatTagChip(color: string, svgIcon: string | undefined, label: string, wide: boolean, fullLabel: boolean): HTMLElement {
+  const cfg = flatStylesConfig.badge.tag
+  const size = cfg.sizes[wide ? 'wide' : 'normal']
+
+  const chip = document.createElement('div')
+  Object.assign(chip.style, {
+    ...(fullLabel ? {} : { width: `${size.width}px`, minHeight: `${size.minHeight}px`, overflow: 'hidden' }),
+    boxSizing: 'border-box',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: cfg.padding,
+    borderRadius: `${cfg.borderRadius}px`,
+    background: tintColor(color, cfg.tintOpacity),
+    border: `1px solid ${flatStylesConfig.badge.borderColor}`,
+    borderLeft: `${flatStylesConfig.badge.accentWidth}px solid ${color}`,
+    fontFamily: flatStylesConfig.badge.fontFamily,
+    cursor: 'default',
+  })
+
+  if (svgIcon) {
+    const iconWrap = document.createElement('span')
+    Object.assign(iconWrap.style, { width: `${cfg.iconSize}px`, height: `${cfg.iconSize}px`, display: 'flex', flexShrink: '0', color })
+    // Trusted markup — see buildIconToken()'s identical note.
+    iconWrap.innerHTML = svgIcon
+    const svgEl = iconWrap.firstElementChild
+    if (svgEl) {
+      svgEl.setAttribute('width', '100%')
+      svgEl.setAttribute('height', '100%')
+    }
+    chip.append(iconWrap)
+  }
+
+  const labelEl = document.createElement('span')
+  Object.assign(labelEl.style, {
+    fontSize: `${cfg.fontSize}px`,
+    fontWeight: String(cfg.fontWeight),
+    lineHeight: '1.25',
+    color: '#0f172a',
+    minWidth: '0',
+    ...(fullLabel ? { whiteSpace: 'nowrap' } : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
+  })
+  labelEl.textContent = label
+
+  chip.append(labelEl)
+  return chip
+}
+
+/**
+ * 'flat' mode's badge for every other entity type: a circular avatar
+ * (`buildFlatAvatar`) plus a title/kind/secondary text stack, inside a
+ * chip tinted with the kind's own colour and a coloured left accent bar
+ * — see the file's top comment for why this reads as a distinct,
+ * coherent alternative to `buildIconBadge()` rather than a re-skin of it.
+ * Same params as `buildIconBadge()` (this is a drop-in alternative render
+ * path, picked by `getRenderNode()` based on `ConverterOptions.style`).
+ */
+function buildFlatBadge(params: {
+  fillColor: string
+  svgIcon: string | undefined
+  title: string
+  kindLabel: string
+  kindColor: string
+  secondary?: string
+  size: 'normal' | 'wide' | 'emphasized'
+  fullLabel: boolean
+}): HTMLElement {
+  const { fillColor, svgIcon, title, kindLabel, kindColor, secondary, size, fullLabel } = params
+  const cfg = flatStylesConfig.badge.sizes[size]
+
+  const badge = document.createElement('div')
+  Object.assign(badge.style, {
+    ...(fullLabel ? {} : { width: `${cfg.width}px`, minHeight: `${cfg.minHeight}px`, overflow: 'hidden' }),
+    boxSizing: 'border-box',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: cfg.padding,
+    borderRadius: `${cfg.borderRadius}px`,
+    background: tintColor(fillColor, cfg.tintOpacity),
+    border: `1px solid ${flatStylesConfig.badge.borderColor}`,
+    borderLeft: `${flatStylesConfig.badge.accentWidth}px solid ${fillColor}`,
+    fontFamily: flatStylesConfig.badge.fontFamily,
+    cursor: 'default',
+  })
+
+  const avatar = buildFlatAvatar(fillColor, cfg.avatarDiameter, svgIcon)
+
+  const content = document.createElement('span')
+  Object.assign(content.style, { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '0', flex: '1' })
+
+  const titleEl = document.createElement('span')
+  Object.assign(titleEl.style, {
+    fontSize: `${cfg.titleFontSize}px`,
+    fontWeight: String(cfg.titleFontWeight),
+    lineHeight: '1.3',
+    color: '#0f172a',
+    minWidth: '0',
+    ...(fullLabel ? { whiteSpace: 'nowrap' } : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
+  })
+  titleEl.textContent = title
+
+  const metaRow = document.createElement('span')
+  Object.assign(metaRow.style, { display: 'flex', alignItems: 'center', gap: '4px', minWidth: '0' })
+
+  const kindEl = document.createElement('span')
+  Object.assign(kindEl.style, {
+    fontSize: `${cfg.kindFontSize}px`,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    color: kindColor,
+    whiteSpace: 'nowrap',
+    flexShrink: '0',
+  })
+  kindEl.textContent = kindLabel
+  metaRow.append(kindEl)
+
+  if (secondary) {
+    const secondaryEl = document.createElement('span')
+    Object.assign(secondaryEl.style, {
+      fontSize: `${cfg.secondaryFontSize}px`,
+      color: '#64748b',
+      minWidth: '0',
+      ...(fullLabel ? {} : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
+    })
+    secondaryEl.textContent = `· ${secondary}`
+    metaRow.append(secondaryEl)
+  }
+
+  content.append(titleEl, metaRow)
+  badge.append(avatar, content)
+  return badge
+}
+
 /**
  * Shared MISP rendering base: every MISP variant — regardless of graph
  * *topology* (e.g. `event-root`'s flat containment edges vs.
@@ -488,6 +713,11 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
     // — see buildIconBadge()'s and buildTagChip()'s `fullLabel` param
     // for the tradeoff this makes.
     const fullLabels = Boolean(options?.fullLabels)
+    // 'ConverterOptions.style' ('card', the default, or 'flat') — see
+    // this file's top comment for what each look is. A pure rendering
+    // choice, not a variant: every node's underlying data is identical
+    // either way.
+    const flat = options?.style === 'flat'
 
     return (node) => {
       const data = node.getData?.()
@@ -511,10 +741,10 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
       // svgIcon), so its presence doubles as the "this needs more room"
       // signal without having to plumb a separate flag through.
       if (entityType === 'tag') {
-        return buildTagChip(fillColor, svgIcon, title, Boolean(nodeStyle?.svgIcon), fullLabels)
+        return flat
+          ? buildFlatTagChip(fillColor, svgIcon, title, Boolean(nodeStyle?.svgIcon), fullLabels)
+          : buildTagChip(fillColor, svgIcon, title, Boolean(nodeStyle?.svgIcon), fullLabels)
       }
-
-      const outlineColor = nodeStyle?.strokeColor as string | undefined
 
       // The kind chip's own label/colour come from the finer 13-kind
       // vocabulary (mispKind.ts), not the coarser 6-category one the
@@ -526,8 +756,23 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
       const kindMeta = stylesConfig.kinds[classifyEntityType(entityType)]
 
       const size = isEvent ? 'emphasized' : entityType.startsWith('galaxies/') ? 'wide' : 'normal'
+      const secondary = secondaryInfoFor(entityType, data)
 
-      const badge = buildIconBadge({
+      if (flat) {
+        return buildFlatBadge({
+          fillColor,
+          svgIcon,
+          title,
+          kindLabel: kindMeta.label,
+          kindColor: kindMeta.color,
+          secondary,
+          size,
+          fullLabel: fullLabels,
+        })
+      }
+
+      const outlineColor = nodeStyle?.strokeColor as string | undefined
+      return buildIconBadge({
         shape: categoryStyle.shape,
         fillColor,
         outlineColor,
@@ -535,11 +780,10 @@ export abstract class MispIconRenderingConverter extends GraphConverter<MispInpu
         title,
         kindLabel: kindMeta.label,
         kindColor: kindMeta.color,
-        secondary: secondaryInfoFor(entityType, data),
+        secondary,
         size,
         fullLabel: fullLabels,
       })
-      return badge
     }
   }
 }

@@ -110,7 +110,20 @@ Tag colour is the Tag's own `colour` if the input set one (the normal case — M
 
 One exception: a Tag named `misp-galaxy:<type>="<value>"` (this is literally `GalaxyCluster.tag_name` — MISP tags a galaxy cluster association this way as often as, or instead of, the structured `Galaxy`/`GalaxyCluster` arrays `addGalaxies` handles) stays a tag structurally — same shape/size as any other tag — but its `color` and icon are overridden to the galaxy category's purple and the galaxy's own misp-iconify icon, ignoring its own `colour`, so it reads as "a tag, but a galaxy one" rather than a generic one. It's deduped by tag name, not cluster id, so the rare case of the same cluster appearing both as a Tag and in the structured arrays ends up as two nodes, not merged into one.
 
-For anything beyond `styles.json`, override the returned render options yourself — they're plain objects:
+### Two node looks: `card` and `flat`
+
+`ConverterOptions.style` picks how every node is actually drawn — a pure rendering choice, not a variant (every variant's underlying nodes/edges are identical either way; see `MispIconRenderingConverter`, shared by every variant):
+
+- `'card'` (the default, or when unset) — a white card, a coloured border, and a boxed icon token: the original look.
+- `'flat'` — a soft colour-tinted chip with a circular icon avatar and a coloured left accent bar, no border/shadow beyond a thin neutral hairline; a calmer, more compact alternative that leans on tint instead of an outline to carry each kind's colour.
+
+```ts
+const { data, render } = ConverterRegistry.get('misp').toPivotickOptions(mispEventJson, { style: 'flat' })
+```
+
+Both looks read the exact same `icons.nodes`/`kinds` colour-and-icon mapping from `styles.json` — only the shell around that colour/icon differs, so switching styles never changes what a colour or icon *means*, just how it's drawn. `flat`'s own layout numbers (chip sizes, tint opacity, accent width) live in a second, `badge`-only config, [`src/shared/styles.flat.json`](./src/shared/styles.flat.json) — edit that file to tune `flat` mode without touching `card`'s own `styles.json`. `flat` also sidesteps `card`'s light/dark text-contrast branching entirely: a light tint of any colour (even a near-white one like `tlp:white`) is always light enough for the fixed dark title text to read clearly, so there's no `contrastTextColor()`-style special-casing to get right.
+
+For anything beyond `styles.json`/`styles.flat.json`, override the returned render options yourself — they're plain objects:
 
 ```ts
 const { data, render } = ConverterRegistry.get('misp').toPivotickOptions(mispEventJson)

@@ -217,13 +217,24 @@
           <h3>Rendering</h3>
           <p>
             The variant above decides graph <em>topology</em> — what's a node, what's an edge. Independently, every
-            node <em>looks</em> the same way: a real, format-accurate icon per specific type (410 icons, vendored
-            from <a href="https://github.com/MISP/misp-iconify" target="_blank" rel="noopener noreferrer">misp-iconify</a>)
-            inside a colored token, plus the node's name and a small kind chip underneath (see the legend below).
+            node always carries the same real, format-accurate icon per specific type (410 icons, vendored from
+            <a href="https://github.com/MISP/misp-iconify" target="_blank" rel="noopener noreferrer">misp-iconify</a>)
+            and the same colors (see the legend below) — the <strong>Style</strong> picker only changes the shell
+            drawn around that icon/color, never what it means:
           </p>
+          <ul class="docs-bullets">
+            <li>
+              <strong>Card</strong> (default) — a white card, a colored border, and a boxed icon token.
+            </li>
+            <li>
+              <strong>Flat</strong> — a soft color-tinted chip with a circular icon avatar and a colored left accent
+              bar, no border/shadow beyond a thin neutral hairline — a calmer, more compact alternative that leans
+              on tint instead of an outline to carry each kind's color.
+            </li>
+          </ul>
           <p>
-            One toggle refines that default rendering: <strong>Full labels</strong> lets every badge size itself to
-            its full text instead of clipping long names.
+            One more toggle refines either style: <strong>Full labels</strong> lets every badge size itself to its
+            full text instead of clipping long names.
           </p>
 
           <h3>Node kind legend</h3>
