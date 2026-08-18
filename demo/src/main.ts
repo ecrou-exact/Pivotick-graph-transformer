@@ -21,6 +21,7 @@ const variantSelect = document.querySelector<HTMLSelectElement>('#variant-select
 const fixtureSelect = document.querySelector<HTMLSelectElement>('#fixture-select')!
 const modeSelect = document.querySelector<HTMLSelectElement>('#mode-select')!
 const fullLabelsCheckbox = document.querySelector<HTMLInputElement>('#full-labels-checkbox')!
+const debugRadiusCheckbox = document.querySelector<HTMLInputElement>('#debug-radius-checkbox')!
 const form = document.querySelector<HTMLFormElement>('#controls')!
 const statusEl = document.querySelector<HTMLElement>('#status')!
 const jsonOutput = document.querySelector<HTMLElement>('#json-output')!
@@ -144,7 +145,11 @@ function render(): void {
     // switch and its "never truncate a badge" toggle) — passed through
     // unconditionally since ConverterOptions is free-form and a converter
     // that doesn't look at a given key just ignores it.
-    const toPivotick = converter.toPivotickOptions(fixture.data, { mode: modeSelect.value, fullLabels: fullLabelsCheckbox.checked })
+    const toPivotick = converter.toPivotickOptions(fixture.data, {
+      mode: modeSelect.value,
+      fullLabels: fullLabelsCheckbox.checked,
+      debugRadius: debugRadiusCheckbox.checked,
+    })
     data = toPivotick.data
 
     renderJsonViewer(jsonOutput, data)
@@ -163,6 +168,13 @@ function render(): void {
       // own via inherited --pvt-* custom properties.
       UI: { mode: 'full', ...(theme ? { theme } : {}) },
     })
+    // Wider default spacing (Pivotick's own 'loose' physics preset —
+    // more link distance/repulsion, less crowding) — mainly requested to
+    // give the custom-rendered cards more breathing room, since a tighter
+    // layout makes their approximate circular edge-anchor radius (see
+    // pivotick-transformer-misp's scheduleMinRadiusCorrection()) more
+    // likely to visibly overlap a neighbour.
+    pivotickInstance.simulation?.applyPhysicsPreset('loose')
 
     statusEl.textContent = `Rendered ${data.nodes.length} node(s), ${data.edges.length} edge(s) with ${format}/${variantId}.`
   } catch (error) {
@@ -252,6 +264,7 @@ pasteLoadBtn.addEventListener('click', () => {
 formatSelect.addEventListener('change', populateVariants)
 modeSelect.addEventListener('change', render)
 fullLabelsCheckbox.addEventListener('change', render)
+debugRadiusCheckbox.addEventListener('change', render)
 form.addEventListener('submit', (event) => {
   event.preventDefault()
   render()

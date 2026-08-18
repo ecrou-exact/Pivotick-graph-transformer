@@ -53,10 +53,24 @@ export type NodeStyleMap = Record<string, Record<string, unknown>>
  * empty, never-resized box), not a shape/icon fallback — a converter that
  * wants most nodes to still look icon/shape-like needs to build that look
  * itself for every node this function is called with.
+ *
+ * `getCircleRadius`/`setCircleRadius` are also real, public methods on
+ * Pivotick's `Node` class (verified against its source) — after this
+ * function returns, Pivotick measures the element via
+ * `getBoundingClientRect()` and calls `setCircleRadius(max(width,height)/2)`
+ * itself, treating the node as a circle of that radius for edge-anchor
+ * math no matter its real (e.g. rectangular) shape. A converter whose
+ * card is wider than it is tall can correct that afterwards — see
+ * `pivotick-transformer-misp`'s `scheduleMinRadiusCorrection()` — to
+ * `min(width,height)/2` instead, which stays fully inside the card's
+ * real footprint in every direction rather than overshooting it in the
+ * narrow one.
  */
 export type RenderNodeFn = (node: {
   getData?: () => Record<string, unknown> | undefined
   getStyle?: () => Record<string, unknown> | undefined
+  getCircleRadius?: () => number | undefined
+  setCircleRadius?: (radius: number) => void
 }) => HTMLElement | string | undefined
 
 export interface ConversionResult {
