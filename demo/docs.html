@@ -190,6 +190,31 @@
             (there's nothing else to represent it by), but never links to anything.
           </p>
 
+          <h3>Variant: Indicator correlation <code>(indicator-correlation)</code></h3>
+          <p>
+            Every variant above is rooted on the Event — Attributes are keyed by their own uuid, so the same
+            indicator value repeated in two different Events becomes two disconnected nodes, one per Event, even
+            though it's genuinely the same IOC. This variant deduplicates Attributes by <strong>type + value</strong>
+            instead — MISP's own correlation key (the "Attribute is also in other events" feature in MISP's own UI).
+            The same <code>ip-dst</code> value seen in three Events becomes <em>one</em> shared node with an edge to
+            each Event/Object that carries it, so shared infrastructure/indicators become the graph's actual
+            connective tissue instead of invisible coincidences. Events and Objects are satellites around whichever
+            indicators connect them — the opposite emphasis from every other variant here, better for pivot-style
+            investigation ("where else has this hash shown up") than for reading one Event's own story.
+          </p>
+          <p>
+            This is a simplification of MISP's real correlation engine, which also accounts for warninglists and
+            type-compatible cross-matching (e.g. <code>domain</code> vs <code>hostname</code>) — here it's a plain
+            exact <code>(type, value)</code> match, nothing fuzzier. When the same value repeats, only the
+            <em>first</em> occurrence's category/relation/comment/sighting-count fields are kept on the shared node
+            (later occurrences might disagree on these); a running <code>occurrenceCount</code> counts every
+            occurrence, and the badge shows it directly (e.g. "ip-dst · in 3 events") whenever it's more than 1.
+            Tags/Galaxies on a since-merged Attribute all attach to the one shared node, same dedup <code>event-root</code>
+            already uses for Tags/Clusters — so a <code>tlp:red</code> tag in one Event and a <code>tlp:white</code>
+            tag on the same value in another both end up as edges from the one indicator node, which is the correct
+            (if occasionally contradictory-looking) picture of what the raw data actually says.
+          </p>
+
           <h3>Rendering</h3>
           <p>
             The variant above decides graph <em>topology</em> — what's a node, what's an edge. Independently, every

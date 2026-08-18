@@ -43,17 +43,26 @@ function iconCategoryFor(entityType: string): 'event' | 'tag' | 'attribute' | 'o
  * of this converter's internal `objects/`/`galaxies/` entityType prefix,
  * not itself meaningful to a reader), or — the one case with no more
  * specific "type" to show — the Event's org and/or date.
+ *
+ * `data.occurrenceCount` (only ever set by `indicator-correlation`, which
+ * dedupes Attributes by type+value instead of by uuid) gets appended when
+ * present and above 1 — the whole point of that variant is showing "this
+ * indicator is shared," so the badge should say so directly rather than
+ * making the reader count incoming edges.
  */
 function secondaryInfoFor(entityType: string, data: Record<string, unknown>): string | undefined {
+  const occurrenceCount = typeof data.occurrenceCount === 'number' ? data.occurrenceCount : undefined
+  const correlationSuffix = occurrenceCount && occurrenceCount > 1 ? ` · in ${occurrenceCount} events` : ''
+
   if (entityType === 'event') {
     const org = data.org as string | undefined
     const date = data.date as string | undefined
     if (org && date) return `${org} · ${date}`
     return org ?? date
   }
-  if (entityType.startsWith('objects/')) return entityType.slice('objects/'.length)
-  if (entityType.startsWith('galaxies/')) return entityType.slice('galaxies/'.length)
-  return entityType
+  if (entityType.startsWith('objects/')) return entityType.slice('objects/'.length) + correlationSuffix
+  if (entityType.startsWith('galaxies/')) return entityType.slice('galaxies/'.length) + correlationSuffix
+  return entityType + correlationSuffix
 }
 
 /**
