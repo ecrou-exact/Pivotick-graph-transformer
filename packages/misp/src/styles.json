@@ -49,12 +49,54 @@
 
   "edges": {
     "default": { "strokeColor": "#94a3b8", "strokeWidth": 1 },
-    "hasObject": { "strokeColor": "#cbd5e1", "strokeWidth": 1.2 },
-    "hasAttribute": { "strokeColor": "#bae6fd", "strokeWidth": 1 },
-    "hasTag": { "strokeColor": "#94a3b8", "strokeWidth": 1, "dashed": true },
-    "hasGalaxy": { "strokeColor": "#a855f7", "strokeWidth": 1, "dashed": true },
-    "reference": { "strokeColor": "#7c3aed", "strokeWidth": 1.5 },
-    "clusterRelation": { "strokeColor": "#a855f7", "strokeWidth": 1.5 }
+    "hasObject": { "strokeColor": "#64748b", "strokeWidth": 1, "structural": true },
+    "hasAttribute": { "strokeColor": "#0ea5e9", "strokeWidth": 1, "structural": true },
+    "hasTag": { "strokeColor": "#64748b", "strokeWidth": 1, "dashed": true, "structural": true },
+    "hasGalaxy": { "strokeColor": "#8b5cf6", "strokeWidth": 1, "dashed": true, "structural": true },
+    "reference": { "strokeColor": "#7c3aed", "strokeWidth": 2.5 },
+    "clusterRelation": { "strokeColor": "#c026d3", "strokeWidth": 2.5 }
+  },
+
+  "badge": {
+    "fontFamily": "system-ui, -apple-system, sans-serif",
+    "shapeStyle": {
+      "circle": { "borderRadius": "50%" },
+      "square": { "borderRadius": "4px" },
+      "hexagon": { "clipPath": "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)" }
+    },
+    "contrast": { "threshold": 0.6, "light": "#ffffff", "dark": "#0f172a" },
+    "sizes": {
+      "normal": {
+        "width": 112, "minHeight": 42, "iconDiameter": 18,
+        "padding": "4px 7px", "borderRadius": 6, "borderWidth": 1.5,
+        "boxShadow": "0 1px 2px rgba(15,23,42,.15)",
+        "titleFontSize": 11, "titleFontWeight": 600, "titleLineClamp": 2,
+        "kindChipFontSize": 8, "secondaryFontSize": 8.5
+      },
+      "wide": {
+        "width": 148, "minHeight": 56, "iconDiameter": 18,
+        "padding": "4px 7px", "borderRadius": 6, "borderWidth": 1.5,
+        "boxShadow": "0 1px 2px rgba(15,23,42,.15)",
+        "titleFontSize": 11, "titleFontWeight": 600, "titleLineClamp": 2,
+        "kindChipFontSize": 8, "secondaryFontSize": 8.5
+      },
+      "emphasized": {
+        "width": 150, "minHeight": 58, "iconDiameter": 28,
+        "padding": "6px 10px", "borderRadius": 8, "borderWidth": 3,
+        "boxShadow": "0 2px 6px rgba(15,23,42,.22)",
+        "titleFontSize": 15, "titleFontWeight": 700, "titleLineClamp": 3,
+        "kindChipFontSize": 9, "secondaryFontSize": 10
+      }
+    },
+    "tag": {
+      "fontSize": 10.5, "fontWeight": 600, "borderRadius": 4,
+      "border": "1px solid rgba(0,0,0,.45)", "boxShadow": "0 1px 2px rgba(15,23,42,.2)",
+      "padding": "4px 8px", "iconSize": 14, "lineClamp": 2,
+      "sizes": {
+        "normal": { "width": 92, "minHeight": 26 },
+        "wide": { "width": 140, "minHeight": 40 }
+      }
+    }
   },
 
   "cards": {

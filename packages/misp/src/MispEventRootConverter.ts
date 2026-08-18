@@ -36,6 +36,43 @@ function allKnownEntityTypes(): string[] {
   ]
 }
 
+/**
+ * Resolves an edge's real style from styles.json's "edges" section, keyed
+ * by the same `kind` string set on `edge.data`, and attaches it directly
+ * to each `RawEdge.style` at `convert()` time.
+ *
+ * Each kind's own `"structural": true` flag (styles.json) is what decides
+ * whether it loses its arrowhead — *structural* kinds (hasObject/
+ * hasAttribute/hasTag/hasGalaxy — "this belongs to that") aren't real
+ * directed relationships, just containment, so they render with no
+ * arrowhead; the rest (reference/clusterRelation — an Object Reference's
+ * relationship_type, a GalaxyClusterRelation's type, e.g. "uses"/
+ * "dropped-by") are real named, directional relationships an analyst
+ * cares about, so they keep theirs. A maintainer reclassifying a kind (or
+ * adding a new one) only ever edits that flag, not this function.
+ *
+ * This has to happen per-edge, not through a single `styleCb` on
+ * `RendererOptions.defaultEdgeStyle` — verified directly against
+ * Pivotick's own renderer (`EdgeRenderer.getEdgeStyle()`): it only ever
+ * calls `edge.getEdgeStyle()?.styleCb` (the *per-edge* style's callback),
+ * and reads `defaultEdgeStyle`'s fields individually as plain fallback
+ * values — `defaultEdgeStyle.styleCb` is never invoked.
+ *
+ * The returned object is nested under an `edge` key — `{ edge: {
+ * strokeColor, ... } }`, not the flat style object itself — because
+ * `Edge.getEdgeStyle()` reads `this.style?.edge`, not `this.style`
+ * directly (verified against Pivotick's real `Edge` class, and matching
+ * adulau/threat-actor-explorer's own `style: { edge: {...}, label: {...}
+ * }` shape). An earlier version of this function returned the flat shape,
+ * which `getEdgeStyle()` silently read as `{}` (its `?? {}` fallback) —
+ * so every edge fell through to the flat default regardless of its real
+ * kind, same end symptom as the `styleCb`-on-`defaultEdgeStyle` bug above.
+ */
+function edgeStyleFor(kind: keyof typeof stylesConfig.edges): Record<string, unknown> {
+  const { structural, ...base } = stylesConfig.edges[kind] as Record<string, unknown>
+  return { edge: structural ? { ...base, markerEnd: 'none' } : base }
+}
+
 // ── 'cards' mode rendering helpers ──────────────────────────────────────
 //
 // styles.json's "cards" section lists, per `MispCardGroup`, which extra
@@ -234,13 +271,14 @@ function secondaryInfoFor(entityType: string, data: Record<string, unknown>): st
  * `buildIconBadge()` draws for every other entity type.
  */
 function contrastTextColor(hexColor: string): string {
+  const { threshold, light, dark } = stylesConfig.badge.contrast
   const hex = hexColor.replace('#', '')
-  if (hex.length !== 6) return '#ffffff'
+  if (hex.length !== 6) return light
   const r = parseInt(hex.slice(0, 2), 16)
   const g = parseInt(hex.slice(2, 4), 16)
   const b = parseInt(hex.slice(4, 6), 16)
   const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luma > 0.6 ? '#0f172a' : '#ffffff'
+  return luma > threshold ? dark : light
 }
 
 /**
@@ -253,6 +291,8 @@ function contrastTextColor(hexColor: string): string {
  */
 function buildTagChip(color: string, svgIcon: string | undefined, label: string, wide: boolean, fullLabel: boolean): HTMLElement {
   const textColor = contrastTextColor(color)
+  const cfg = stylesConfig.badge.tag
+  const size = cfg.sizes[wide ? 'wide' : 'normal']
 
   const chip = document.createElement('div')
   Object.assign(chip.style, {
@@ -272,7 +312,8 @@ function buildTagChip(color: string, svgIcon: string | undefined, label: string,
     // (not just "fixed") for the same reason — max(w,h)/2 only
     // approximates the real edge-touching point well when the box is
     // close to square; a wide-short pill still leaves a gap above/below
-    // even once the size is fixed.
+    // even once the size is fixed. Both sizes (styles.json's
+    // "badge.tag.sizes") are the caller's choice — see `wide` below.
     //
     // `wide` — a galaxy-pattern tag's label is `type="value"` (e.g.
     // `mitre-attack-pattern="Phishing - T1566"`), routinely much longer
@@ -289,31 +330,31 @@ function buildTagChip(color: string, svgIcon: string | undefined, label: string,
     ...(fullLabel
       ? {}
       : {
-          width: wide ? '140px' : '92px',
-          minHeight: wide ? '40px' : '26px',
+          width: `${size.width}px`,
+          minHeight: `${size.minHeight}px`,
           overflow: 'hidden',
         }),
     boxSizing: 'border-box',
     display: 'inline-flex',
     alignItems: 'center',
     gap: '5px',
-    padding: '4px 8px',
-    borderRadius: '4px',
+    padding: cfg.padding,
+    borderRadius: `${cfg.borderRadius}px`,
     background: color,
     // A thin dark outline on every tag, not just pale ones — a solid
     // near-white MISP tag colour (e.g. `tlp:white`, MISP's own default)
     // would otherwise vanish edge-to-edge against a light/white canvas.
     // Deliberately not colour-dependent (unlike the text/icon tint), so
     // every tag gets the same subtle, consistent ring.
-    border: '1px solid rgba(0,0,0,.45)',
-    boxShadow: '0 1px 2px rgba(15,23,42,.2)',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
+    border: cfg.border,
+    boxShadow: cfg.boxShadow,
+    fontFamily: stylesConfig.badge.fontFamily,
     cursor: 'default',
   })
 
   if (svgIcon) {
     const iconWrap = document.createElement('span')
-    Object.assign(iconWrap.style, { width: '14px', height: '14px', display: 'flex', flexShrink: '0', color: textColor })
+    Object.assign(iconWrap.style, { width: `${cfg.iconSize}px`, height: `${cfg.iconSize}px`, display: 'flex', flexShrink: '0', color: textColor })
     // Trusted markup — see buildIconToken()'s identical note.
     iconWrap.innerHTML = svgIcon
     const svgEl = iconWrap.firstElementChild
@@ -326,14 +367,14 @@ function buildTagChip(color: string, svgIcon: string | undefined, label: string,
 
   const labelEl = document.createElement('span')
   Object.assign(labelEl.style, {
-    fontSize: '10.5px',
-    fontWeight: '600',
+    fontSize: `${cfg.fontSize}px`,
+    fontWeight: String(cfg.fontWeight),
     lineHeight: '1.25',
     color: textColor,
     minWidth: '0',
     ...(fullLabel
       ? { whiteSpace: 'nowrap' }
-      : { display: '-webkit-box', webkitLineClamp: '2', webkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }),
+      : { display: '-webkit-box', webkitLineClamp: String(cfg.lineClamp), webkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }),
   })
   labelEl.textContent = label
 
@@ -369,9 +410,7 @@ function buildIconToken(shape: string, fillColor: string, iconTint: string, diam
     color: iconTint,
     boxSizing: 'border-box',
     flexShrink: '0',
-    ...(shape === 'circle' ? { borderRadius: '50%' } : {}),
-    ...(shape === 'square' ? { borderRadius: '4px' } : {}),
-    ...(shape === 'hexagon' ? { clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' } : {}),
+    ...((stylesConfig.badge.shapeStyle as Record<string, Record<string, string>>)[shape] ?? {}),
   })
 
   if (svgIcon) {
@@ -446,6 +485,12 @@ function buildIconBadge(params: {
   const emphasized = size === 'emphasized'
   const borderColor = outlineColor ?? fillColor
   const iconTint = outlineColor ?? '#ffffff'
+  // Every concrete pixel/font/spacing value below (styles.json's
+  // "badge.sizes.<size>") is the tunable part — a maintainer changing how
+  // big/bold an Event badge is only ever edits that JSON. What *isn't*
+  // there (the fixed-vs-fullLabel branching, inline-flex, the DOM tree
+  // itself) is structural, not a design choice.
+  const cfg = stylesConfig.badge.sizes[size]
 
   const badge = document.createElement('div')
   Object.assign(badge.style, {
@@ -471,8 +516,8 @@ function buildIconBadge(params: {
     ...(fullLabel
       ? {}
       : {
-          width: size === 'emphasized' ? '150px' : size === 'wide' ? '148px' : '112px',
-          minHeight: size === 'emphasized' ? '58px' : size === 'wide' ? '56px' : '42px',
+          width: `${cfg.width}px`,
+          minHeight: `${cfg.minHeight}px`,
           overflow: 'hidden',
         }),
     boxSizing: 'border-box',
@@ -487,16 +532,16 @@ function buildIconBadge(params: {
     display: 'inline-flex',
     alignItems: 'flex-start',
     gap: '7px',
-    padding: emphasized ? '6px 10px' : '4px 7px',
-    borderRadius: emphasized ? '8px' : '6px',
+    padding: cfg.padding,
+    borderRadius: `${cfg.borderRadius}px`,
     background: '#ffffff',
-    border: `${emphasized ? '3px' : '1.5px'} solid ${borderColor}`,
-    boxShadow: emphasized ? '0 2px 6px rgba(15,23,42,.22)' : '0 1px 2px rgba(15,23,42,.15)',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
+    border: `${cfg.borderWidth}px solid ${borderColor}`,
+    boxShadow: cfg.boxShadow,
+    fontFamily: stylesConfig.badge.fontFamily,
     cursor: 'default',
   })
 
-  const token = buildIconToken(shape, fillColor, iconTint, emphasized ? 28 : 18, svgIcon)
+  const token = buildIconToken(shape, fillColor, iconTint, cfg.iconDiameter, svgIcon)
   Object.assign(token.style, { marginTop: emphasized ? '1px' : '0.5px' })
 
   const content = document.createElement('span')
@@ -504,13 +549,13 @@ function buildIconBadge(params: {
 
   const titleEl = document.createElement('span')
   Object.assign(titleEl.style, {
-    fontSize: emphasized ? '15px' : '11px',
-    fontWeight: emphasized ? '700' : '600',
+    fontSize: `${cfg.titleFontSize}px`,
+    fontWeight: String(cfg.titleFontWeight),
     lineHeight: '1.25',
     color: '#0f172a',
     ...(fullLabel
       ? { whiteSpace: 'nowrap' }
-      : { display: '-webkit-box', webkitLineClamp: emphasized ? '3' : '2', webkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }),
+      : { display: '-webkit-box', webkitLineClamp: String(cfg.titleLineClamp), webkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }),
   })
   titleEl.textContent = title
 
@@ -519,7 +564,7 @@ function buildIconBadge(params: {
 
   const kindChip = document.createElement('span')
   Object.assign(kindChip.style, {
-    fontSize: emphasized ? '9px' : '8px',
+    fontSize: `${cfg.kindChipFontSize}px`,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: '0.04em',
@@ -536,7 +581,7 @@ function buildIconBadge(params: {
   if (secondary) {
     const secondaryEl = document.createElement('span')
     Object.assign(secondaryEl.style, {
-      fontSize: emphasized ? '10px' : '8.5px',
+      fontSize: `${cfg.secondaryFontSize}px`,
       color: '#64748b',
       whiteSpace: 'nowrap',
       minWidth: '0',
@@ -669,7 +714,7 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
             nodes.push({ id: tagNodeId, data: { label, entityType: 'tag', colour } })
           }
         }
-        edges.push({ from: parentId, to: tagNodeId, data: { kind: 'hasTag' } })
+        edges.push({ from: parentId, to: tagNodeId, data: { kind: 'hasTag' }, style: edgeStyleFor('hasTag') })
       }
     }
 
@@ -687,7 +732,7 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
               data: { label: cluster.value, entityType: `galaxies/${galaxy.type}`, description: cluster.description, source: cluster.source },
             })
           }
-          edges.push({ from: parentId, to: clusterNodeId, data: { kind: 'hasGalaxy' } })
+          edges.push({ from: parentId, to: clusterNodeId, data: { kind: 'hasGalaxy' }, style: edgeStyleFor('hasGalaxy') })
         }
       }
     }
@@ -729,6 +774,7 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
         data: attribute.object_relation
           ? { label: attribute.object_relation, kind: 'hasAttribute', category: attribute.category }
           : { kind: 'hasAttribute', category: attribute.category },
+        style: edgeStyleFor('hasAttribute'),
       })
       addTags(attribute.Tag, attributeNodeId)
       addGalaxies(attribute.Galaxy, attributeNodeId)
@@ -755,7 +801,12 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
       nodeIdByUuid.set(object.uuid, objectNodeId)
       if (parentId) {
         const metaCategory = object['meta-category']
-        edges.push({ from: parentId, to: objectNodeId, data: metaCategory ? { label: metaCategory, kind: 'hasObject' } : { kind: 'hasObject' } })
+        edges.push({
+          from: parentId,
+          to: objectNodeId,
+          data: metaCategory ? { label: metaCategory, kind: 'hasObject' } : { kind: 'hasObject' },
+          style: edgeStyleFor('hasObject'),
+        })
       }
       addTags(object.Tag, objectNodeId)
       addGalaxies(object.Galaxy, objectNodeId)
@@ -828,6 +879,7 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
           from: fromId,
           to: toId,
           data: { label: reference.relationship_type ?? '', relationshipType: reference.relationship_type, kind: 'reference' },
+          style: edgeStyleFor('reference'),
         })
       }
     }
@@ -848,6 +900,7 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
           from: fromId,
           to: toId,
           data: { label: relation.referenced_galaxy_cluster_type, kind: 'clusterRelation' },
+          style: edgeStyleFor('clusterRelation'),
         })
       }
     }
@@ -923,20 +976,13 @@ export class MispEventRootConverter extends GraphConverter<MispInput> {
   }
 
   getDefaultEdgeStyle(): Record<string, unknown> {
-    // styles.json's "edges" section is keyed by the `kind` convert() sets
-    // on each edge's data (structure/tag/galaxy/reference/clusterRelation)
-    // — styleCb reads it back per edge, same "small hand-edited JSON is
-    // the source of truth" approach as node styling. Shared across every
-    // display mode — edge styling doesn't get noticeably simpler by
-    // dropping it, unlike node icons.
-    const edgeStyles = stylesConfig.edges
-    return {
-      ...edgeStyles.default,
-      styleCb: (edge: { getData?: () => Record<string, unknown> | undefined }): Record<string, unknown> => {
-        const kind = edge.getData?.()?.kind as string | undefined
-        return kind && kind in edgeStyles ? edgeStyles[kind as keyof typeof edgeStyles] : {}
-      },
-    }
+    // Just the flat fallback — every edge's real, kind-specific style
+    // (styles.json's "edges" section) is resolved and attached directly
+    // to its own `RawEdge.style` in convert() via `edgeStyleFor()`. See
+    // that function's doc comment for why: `styleCb` only works as a
+    // *per-edge* style callback in Pivotick's real renderer, never as a
+    // `defaultEdgeStyle` one.
+    return stylesConfig.edges.default
   }
 
   getMarkerStyleMap(): Record<string, unknown> {
