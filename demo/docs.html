@@ -116,6 +116,32 @@
             </li>
           </ul>
 
+          <h3>Variant: Event as root node, simplified <code>(event-root-simplified)</code></h3>
+          <p>
+            Same entities and relationships as <code>event-root</code> above — nothing about <em>what</em> becomes a
+            node or edge changes. The difference is <em>default visibility</em>, scoped to one relationship only:
+            each <strong>Object</strong>'s own Attributes nest as children of that Object, collapsed by default,
+            using Pivotick's own built-in expand/collapse feature — a small "+" control appears on any node with
+            children; clicking it reveals them, "−" collapses them back.
+          </p>
+          <p>
+            This is deliberately scoped to <em>only</em> Object → Attribute: an Object is where a MISP export's
+            Attribute count actually explodes (a <code>file</code> or <code>domain-ip</code> Object can easily carry
+            dozens of Attributes), whereas an Event's own top-level Attributes/Objects are usually few enough to read
+            directly — so the <strong>Event node itself has no "+" control</strong> and stays flat/always-expanded,
+            exactly like <code>event-root</code>. Concretely: an Event with 3 Objects, each holding 20 Attributes,
+            still shows the Event and all 3 Objects immediately (4 nodes) — only each Object's 20 Attributes start
+            collapsed behind its own "+", one Object at a time.
+          </p>
+          <p>
+            <strong>Tags and Galaxy Clusters are unaffected either way</strong> — they always stay flat, deduplicated
+            nodes connected by an ordinary edge, in both variants, never nested as children. A node can only be
+            nested under one parent in Pivotick's model, but the same tag (e.g. <code>tlp:white</code>) routinely
+            attaches to many different entities — nesting it would force either duplicating it per parent or
+            picking one arbitrary "owner." Pivotick still re-anchors a Tag/Cluster's edge sensibly when its target is
+            currently hidden inside a collapsed Object.
+          </p>
+
           <h3>Rendering</h3>
           <p>
             The variant above decides graph <em>topology</em> — what's a node, what's an edge. Independently, every

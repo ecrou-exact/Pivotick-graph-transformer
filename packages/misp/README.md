@@ -21,9 +21,18 @@ All Events/Objects found in one input land in the same graph. See [`src/shared/t
 
 | id | name | description |
 |---|---|---|
-| `event-root` (default) | Event as root node | The Event is a cluster node; Attributes and Objects are its children. |
+| `event-root` (default) | Event as root node | The Event is a cluster node; Attributes and Objects are its children, all rendered as flat, always-visible nodes. |
+| `event-root-simplified` | Event as root node (simplified) | Same entities/relationships as `event-root`, but each Object nests its own Attributes as collapsed children — see below. |
 
 A future `object-refs-only` variant (no Event node, edges only from explicit Object References) is planned — see the repo root [CONTRIBUTING.md](../../CONTRIBUTING.md#multiple-variants-for-the-same-format).
+
+### `event-root-simplified`: an Object's Attributes collapse by default
+
+A MISP Object (`file`, `domain-ip`, ...) can easily carry dozens of Attributes, which makes `event-root`'s always-fully-expanded flat layout hard to read at a glance. `event-root-simplified` maps the exact same entities and relationships, but an Object's own Attributes are nested directly as [`RawNode.children`](../core/src/types.ts) on that Object, with `expanded: false` — Pivotick's own built-in expand/collapse feature (a small "+" control; click it to reveal that Object's Attributes, "−" to collapse them again).
+
+This is deliberately scoped to *only* Object → Attribute: an Event's own top-level Attributes/Objects are usually few enough to read directly, so the Event node stays flat/always-expanded, exactly like `event-root`, with no "+" control of its own. So a MISP Event with 3 Objects, each holding 20 Attributes, still shows the Event and all 3 Objects immediately (4 nodes) — only each Object's 20 Attributes start collapsed behind its own "+", one Object at a time. Nothing about the graph's *data* changes — same nodes, same edges, same styling (`MispIconRenderingConverter`, shared by both variants) — only which nodes start visible.
+
+Tags and Galaxy Clusters are the one exception: they always stay flat, deduplicated nodes connected by an ordinary edge in both variants, never nested as `children` — a node can only be nested under one parent in Pivotick's model, but the same tag (e.g. `tlp:white`) routinely attaches to many different entities, and nesting it would force either duplicating it per parent or picking one arbitrary "owner." Pivotick still re-anchors a Tag/Cluster's edge sensibly when its target is currently hidden inside a collapsed ancestor.
 
 ## Usage
 
@@ -40,7 +49,7 @@ No second import needed for icons — see below.
 
 `getDefaultStyleMap()` ships a real icon (inline SVG, via Pivotick's `NodeStyle.svgIcon` — see [`../../docs/icons-and-styling.md`](../../docs/icons-and-styling.md) for why that's the mechanism, not `iconClass`) for every attribute type / object / galaxy cluster type [misp-iconify](https://github.com/MISP/misp-iconify) covers (410 keys), falling back to shape/color only for the rest. Node labels aren't shown as on-canvas text on purpose — with icons already carrying the type and hundreds of nodes on screen at once, that's clutter, not signal; `node.data.label` is still there for the sidebar/tooltip. Edges carry the actually-interesting labels instead: an Object Reference's `relationship_type`, an Object Attribute's `object_relation`, a GalaxyClusterRelation's type.
 
-**Shape, color, and edge styling are configuration, not code** — [`src/variants/event-root/styles.json`](./src/variants/event-root/styles.json) is a small, hand-maintained file:
+**Shape, color, and edge styling are configuration, not code** — [`src/shared/styles.json`](./src/shared/styles.json) is a small, hand-maintained file:
 
 ```json
 {

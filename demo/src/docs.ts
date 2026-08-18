@@ -10,7 +10,7 @@ import { initThemeToggle } from './theme.js'
 // truth for every color/shape/mark shown below, so importing it directly
 // (rather than hand-copying values here) means this legend can never drift
 // out of sync with what actually renders in the Demo.
-import mispStylesRaw from '../../packages/misp/dist/variants/event-root/styles.json' with { type: 'json' }
+import mispStylesRaw from '../../packages/misp/dist/shared/styles.json' with { type: 'json' }
 
 interface KindStyle {
   shape: string
