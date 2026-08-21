@@ -1,5 +1,5 @@
 import { ConverterRegistry } from 'pivotick-transformer-core'
-import type { ConversionResult } from 'pivotick-transformer-core'
+import type { ConversionResult, PivotickRenderOptions, RawEdge, RawNode } from 'pivotick-transformer-core'
 import { toDot } from 'pivotick-transformer-dot'
 import 'pivotick-transformer-misp'
 
@@ -259,6 +259,75 @@ function renderPlainTextOutput(target: HTMLElement, text: string): void {
 }
 
 /**
+ * Relative-luminance contrast pick (standard sRGB luma coefficients, not
+ * tied to any one converter's palette) — for a node filled with
+ * `hexColor`, which of black/white text stays readable on it. Mirrors
+ * what MISP's own badge rendering already does for the same reason (see
+ * `packages/misp/src/shared/styles.json`'s `badge.contrast`), just
+ * reimplemented generically here rather than importing that MISP-specific
+ * config into a view meant to work with any registered converter.
+ */
+function readableTextColor(hexColor: string): string {
+  const match = /^#([0-9a-f]{6})$/i.exec(hexColor)
+  if (!match) return '#000000'
+  const channel = (offset: number): number => parseInt(match[1].slice(offset, offset + 2), 16) / 255
+  const luminance = 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4)
+  return luminance > 0.6 ? '#0f172a' : '#ffffff'
+}
+
+/**
+ * Best-effort translation of a node's resolved Pivotick style — via
+ * whichever `GraphConverter` produced it, through the same
+ * `nodeTypeAccessor`/`nodeStyleMap`/`defaultNodeStyle` mechanism Pivotick
+ * itself uses (`toPivickOptions().render`, passed in as `render`) — into
+ * DOT attributes. Deliberately narrow: `color` and `shape` are the only
+ * two concepts common enough to map with any confidence (every shape
+ * name this repo's converters use — hexagon/square/circle — is already a
+ * real Graphviz shape keyword); a style's icon SVGs, pixel sizes, etc.
+ * have no sane DOT equivalent and are left alone. This lives here rather
+ * than in `pivotick-transformer-dot` itself because it's inherently
+ * tied to *this* rendering convention — a future converter for a
+ * different format is free to shape its own style objects differently.
+ */
+function dotNodeAttributes(node: RawNode, render: PivotickRenderOptions): Record<string, string> {
+  const type = render.nodeTypeAccessor?.(node)
+  const style = (type !== undefined ? render.nodeStyleMap?.[type] : undefined) ?? render.defaultNodeStyle
+  if (!style) return {}
+
+  const attrs: Record<string, string> = {}
+  if (typeof style.shape === 'string') attrs.shape = style.shape
+  if (typeof style.color === 'string') {
+    attrs.style = 'filled'
+    attrs.color = style.color
+    attrs.fillcolor = style.color
+    attrs.fontcolor = readableTextColor(style.color)
+  }
+  return attrs
+}
+
+/**
+ * Same idea as `dotNodeAttributes()`, but edge style needs no render-side
+ * lookup — every converter that wants its edges actually styled in
+ * Pivotick has to attach `{ edge: { strokeColor, strokeWidth, dashed,
+ * markerEnd } }` directly to `RawEdge.style` in the first place (verified
+ * against Pivotick's real `Edge.getEdgeStyle()`, which reads `this.style
+ * ?.edge` — see `packages/misp/src/shared/edgeStyleFor.ts`'s doc), so
+ * it's already sitting right there on the edge this function is called
+ * with.
+ */
+function dotEdgeAttributes(edge: RawEdge): Record<string, string> {
+  const edgeStyle = (edge.style as { edge?: Record<string, unknown> } | undefined)?.edge
+  if (!edgeStyle) return {}
+
+  const attrs: Record<string, string> = {}
+  if (typeof edgeStyle.strokeColor === 'string') attrs.color = edgeStyle.strokeColor
+  if (typeof edgeStyle.strokeWidth === 'number') attrs.penwidth = String(edgeStyle.strokeWidth)
+  if (edgeStyle.dashed === true) attrs.style = 'dashed'
+  if (edgeStyle.markerEnd === 'none') attrs.arrowhead = 'none'
+  return attrs
+}
+
+/**
  * The `.dot` View option's counterpart to constructing a `Pivotick`
  * instance: shows the raw DOT source in the "Converted output" panel
  * (more useful here than the usual JSON — it's the actual artifact being
@@ -271,8 +340,11 @@ function renderPlainTextOutput(target: HTMLElement, text: string): void {
  * switched to a different fixture or back to the Pivotick view, whose
  * result this must then not clobber.
  */
-async function renderDotView(data: ConversionResult, format: string, variantId: string, generation: number): Promise<void> {
-  const dotSource = toDot(data)
+async function renderDotView(data: ConversionResult, render: PivotickRenderOptions, format: string, variantId: string, generation: number): Promise<void> {
+  const dotSource = toDot(data, {
+    nodeAttributes: (node) => dotNodeAttributes(node, render),
+    edgeAttributes: dotEdgeAttributes,
+  })
   renderPlainTextOutput(jsonOutput, dotSource)
 
   try {
@@ -429,7 +501,7 @@ function render(): void {
       pivotickInstance = undefined
       container.innerHTML = ''
       statusEl.textContent = 'Loading Graphviz…'
-      void renderDotView(data, format, variantId, generation)
+      void renderDotView(data, toPivotick.render, format, variantId, generation)
       return
     }
 
