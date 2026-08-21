@@ -3,7 +3,7 @@ import type { ConversionResult, PivotickRenderOptions, RawEdge, RawNode } from '
 import { toDot } from 'pivotick-transformer-dot'
 import 'pivotick-transformer-misp'
 
-import type { Viz } from '@viz-js/viz'
+import type { ImageSize, Viz } from '@viz-js/viz'
 import { select } from 'd3-selection'
 
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
@@ -276,6 +276,63 @@ function readableTextColor(hexColor: string): string {
 }
 
 /**
+ * Extracts a raw `<svg>` string's own intrinsic size from its `viewBox`
+ * — misp-iconify's icons are ordinary SVG-icon-pack output, not a
+ * uniform grid: attribute icons are `0 0 24 24`, but plenty of galaxy
+ * icons (converted from other icon packs) are wide/short or tall/narrow
+ * (e.g. `0 0 640 448`). Graphviz needs a real width/height to lay a node
+ * out around an `image` attribute (see `dotNodeIcon()`), and it can't
+ * measure a `data:` URI itself (`@viz-js/viz` runs sandboxed, no image
+ * decoding) — this is what that size comes from, scaled to `targetHeight`
+ * points tall with the aspect ratio preserved. Returns `undefined` for
+ * anything that isn't a plain numeric `viewBox` (defensive — every icon
+ * this repo vendors has one, but this only ever gates an optional visual
+ * extra, never a correctness-critical path).
+ */
+function svgIconSize(svg: string, targetHeight: number): { width: number; height: number } | undefined {
+  const match = /viewBox="[\d.-]+ [\d.-]+ ([\d.]+) ([\d.]+)"/.exec(svg)
+  if (!match) return undefined
+  const [viewBoxWidth, viewBoxHeight] = [Number(match[1]), Number(match[2])]
+  if (!viewBoxWidth || !viewBoxHeight) return undefined
+  return { width: targetHeight * (viewBoxWidth / viewBoxHeight), height: targetHeight }
+}
+
+/**
+ * Builds a `data:image/svg+xml` URI Graphviz's `image` node attribute can
+ * reference — every icon here (`icons.generated.ts`, from misp-iconify)
+ * draws with `stroke="currentColor"`, meaning it renders invisibly
+ * (inherits nothing) once it's its own standalone image document rather
+ * than inline in the page, so `color` is set directly on the root `<svg>`
+ * to give `currentColor` something to resolve to, same fix Pivotick's own
+ * badge rendering needs for the same reason (see `mispTagsAndGalaxies.ts`
+ * on why a Tag's icon "follows strokeColor, not color").
+ */
+function svgIconDataUri(svg: string, color: string): string {
+  const colored = svg.replace('<svg ', `<svg color="${color}" `)
+  return `data:image/svg+xml,${encodeURIComponent(colored)}`
+}
+
+const ICON_TARGET_HEIGHT_POINTS = 20
+
+/**
+ * Resolves a node style's `svgIcon` (if any) into a Graphviz `image`
+ * attribute value plus the `ImageSize` entry that must accompany it in
+ * `SVGRenderOptions.images` — see `svgIconSize()`'s doc for why Graphviz
+ * needs telling. `iconColor` is whatever `dotNodeAttributes()` already
+ * decided the node's icon/text should read in (its `strokeColor`
+ * override, or a contrast pick against the fill) — kept as a plain
+ * parameter here rather than recomputed, so the two stay in sync by
+ * construction rather than by two call sites agreeing on the same logic.
+ */
+function dotNodeIcon(style: Record<string, unknown>, iconColor: string): { image: string; size: ImageSize } | undefined {
+  if (typeof style.svgIcon !== 'string') return undefined
+  const size = svgIconSize(style.svgIcon, ICON_TARGET_HEIGHT_POINTS)
+  if (!size) return undefined
+  const image = svgIconDataUri(style.svgIcon, iconColor)
+  return { image, size: { name: image, ...size } }
+}
+
+/**
  * Best-effort translation of a node's resolved Pivotick style into DOT
  * attributes. Two layers, matching how Pivotick's own renderer resolves a
  * node's style (verified against its real `NodeDrawer`): a category
@@ -288,18 +345,26 @@ function readableTextColor(hexColor: string): string {
  *
  * Deliberately narrow on which fields get mapped: `shape`/`color` (every
  * shape name this repo's converters use — hexagon/square/circle — is
- * already a real Graphviz shape keyword) and `strokeColor`/`strokeWidth`
+ * already a real Graphviz shape keyword), `strokeColor`/`strokeWidth`
  * for the border — mirroring why MISP sets a `strokeColor` on light Tags
  * at all: fill alone can wash out the node against a similarly light
  * background (see the `tlp:white`-legible-even-though-white case in
- * that same doc), so it stays worth carrying over here too. Icon SVGs,
- * pixel sizes, etc. have no sane DOT equivalent and are left alone. This
- * lives here rather than in `pivotick-transformer-dot` itself because
- * it's inherently tied to *this* rendering convention — a future
- * converter for a different format is free to shape its own style
- * objects differently.
+ * that same doc), so it stays worth carrying over here too — and
+ * `svgIcon` via `dotNodeIcon()`, MISP's real misp-iconify icon per
+ * entity type. Pixel sizes and anything else with no sane DOT equivalent
+ * are left alone. This lives here rather than in `pivotick-transformer-
+ * dot` itself because it's inherently tied to *this* rendering
+ * convention — a future converter for a different format is free to
+ * shape its own style objects differently.
+ *
+ * `icons` collects one `ImageSize` per distinct icon actually used
+ * (deduped by data URI, since the same icon appears on every node of a
+ * given type) — the caller hands the accumulated values to
+ * `viz.renderSVGElement()`'s own `images` option once every node has been
+ * visited, since Graphviz needs each image's size declared up front, not
+ * discoverable mid-layout.
  */
-function dotNodeAttributes(node: RawNode, render: PivotickRenderOptions): Record<string, string> {
+function dotNodeAttributes(node: RawNode, render: PivotickRenderOptions, icons: Map<string, ImageSize>): Record<string, string> {
   const type = render.nodeTypeAccessor?.(node)
   const categoryStyle = (type !== undefined ? render.nodeStyleMap?.[type] : undefined) ?? render.defaultNodeStyle
   const style = { ...categoryStyle, ...node.style }
@@ -317,6 +382,24 @@ function dotNodeAttributes(node: RawNode, render: PivotickRenderOptions): Record
   // fill colour here, which a same-as-fill border wouldn't.
   if (typeof style.strokeColor === 'string') attrs.color = style.strokeColor
   if (typeof style.strokeWidth === 'number') attrs.penwidth = String(style.strokeWidth)
+
+  const iconColor = typeof style.strokeColor === 'string' ? style.strokeColor : readableTextColor(typeof style.color === 'string' ? style.color : '#64748b')
+  const icon = dotNodeIcon(style, iconColor)
+  if (icon) {
+    attrs.image = icon.image
+    icons.set(icon.image, icon.size)
+    // Graphviz centers both an `image` and a `label` on the node by
+    // default (`imagepos`/`labelloc` both default to middle) — with
+    // neither told otherwise they land exactly on top of each other,
+    // label text obscuring the icon underneath it. Stacking them (icon
+    // above, text below, matching Pivotick's own badge layout) needs
+    // `height` bumped past Graphviz's own default too — otherwise the
+    // shape only grows to fit whichever of the two is taller, not both
+    // stacked, and they still overlap.
+    attrs.imagepos = 'tc'
+    attrs.labelloc = 'b'
+    attrs.height = String((ICON_TARGET_HEIGHT_POINTS + 28) / 72)
+  }
   return attrs
 }
 
@@ -358,8 +441,9 @@ function dotEdgeAttributes(edge: RawEdge, render: PivotickRenderOptions): Record
  * result this must then not clobber.
  */
 async function renderDotView(data: ConversionResult, render: PivotickRenderOptions, format: string, variantId: string, generation: number): Promise<void> {
+  const icons = new Map<string, ImageSize>()
   const dotSource = toDot(data, {
-    nodeAttributes: (node) => dotNodeAttributes(node, render),
+    nodeAttributes: (node) => dotNodeAttributes(node, render, icons),
     edgeAttributes: (edge) => dotEdgeAttributes(edge, render),
   })
   renderPlainTextOutput(jsonOutput, dotSource)
@@ -367,7 +451,7 @@ async function renderDotView(data: ConversionResult, render: PivotickRenderOptio
   try {
     const viz = await getViz()
     if (generation !== renderGeneration) return
-    const svg = viz.renderSVGElement(dotSource)
+    const svg = viz.renderSVGElement(dotSource, { images: [...icons.values()] })
     container.replaceChildren(svg)
     statusEl.textContent = `Rendered ${data.nodes.length} node(s), ${data.edges.length} edge(s) with ${format}/${variantId} as .dot (Graphviz).`
   } catch (error) {
