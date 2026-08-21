@@ -1,0 +1,26 @@
+{
+  "name": "pivotick-transformer-dot",
+  "version": "0.0.1",
+  "description": "Exports Pivotick's nodes/edges graph shape to the Graphviz DOT language",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint 'src/**/*.ts'",
+    "lint_fix": "eslint --fix 'src/**/*.ts'"
+  },
+  "dependencies": {
+    "pivotick-transformer-core": "*"
+  },
+  "license": "MIT"
+}
