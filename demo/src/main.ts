@@ -364,13 +364,33 @@ function dotNodeIcon(style: Record<string, unknown>, iconColor: string): { image
  * visited, since Graphviz needs each image's size declared up front, not
  * discoverable mid-layout.
  */
+/**
+ * Graphviz's `circle` and `square` node shapes force `regular=true` —
+ * width and height locked equal — baked into those two shape names
+ * specifically (confirmed empirically: an explicit `regular="false"`
+ * attribute is silently ignored on them, so it can't be overridden
+ * node-by-node). Harmless for a short label, but a longer one still has
+ * to fit, so *both* dimensions balloon out to its width — dramatically,
+ * for a node whose label is a full sentence — dwarfing everything drawn
+ * inside, including a fixed-size icon meant to sit near its top edge.
+ * `ellipse`/`box` (Graphviz's *actual* default, non-regular shapes) read
+ * as the same "round" / "sharp-cornered" shape family at a glance —
+ * genuinely circular/square for a short label, same as before — but
+ * scale their two dimensions independently, so a long label just widens
+ * the node instead of inflating it into a giant square/circle.
+ */
+const DOT_NON_REGULAR_SHAPE: Record<string, string> = {
+  circle: 'ellipse',
+  square: 'box',
+}
+
 function dotNodeAttributes(node: RawNode, render: PivotickRenderOptions, icons: Map<string, ImageSize>): Record<string, string> {
   const type = render.nodeTypeAccessor?.(node)
   const categoryStyle = (type !== undefined ? render.nodeStyleMap?.[type] : undefined) ?? render.defaultNodeStyle
   const style = { ...categoryStyle, ...node.style }
 
   const attrs: Record<string, string> = {}
-  if (typeof style.shape === 'string') attrs.shape = style.shape
+  if (typeof style.shape === 'string') attrs.shape = DOT_NON_REGULAR_SHAPE[style.shape] ?? style.shape
   if (typeof style.color === 'string') {
     attrs.style = 'filled'
     attrs.fillcolor = style.color
