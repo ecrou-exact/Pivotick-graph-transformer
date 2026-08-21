@@ -12,7 +12,7 @@
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "lint_fix": "npm run lint_fix --workspaces --if-present",
-    "demo": "npm run build --workspace=pivotick-transformer-core --workspace=pivotick-transformer-misp && npm run dev --workspace=pivotick-transformer-demo"
+    "demo": "npm run build --workspace=pivotick-transformer-core --workspace=pivotick-transformer-dot --workspace=pivotick-transformer-graphml --workspace=pivotick-transformer-misp && npm run dev --workspace=pivotick-transformer-demo"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

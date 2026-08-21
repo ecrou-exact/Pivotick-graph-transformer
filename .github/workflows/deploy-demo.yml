@@ -28,7 +28,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build --workspace=pivotick-transformer-core --workspace=pivotick-transformer-misp
+      - run: npm run build --workspace=pivotick-transformer-core --workspace=pivotick-transformer-dot --workspace=pivotick-transformer-graphml --workspace=pivotick-transformer-misp
       - run: npm run build --workspace=pivotick-transformer-demo
         env:
           GITHUB_PAGES_BASE: /${{ github.event.repository.name }}/
