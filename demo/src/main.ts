@@ -1,7 +1,9 @@
 import { ConverterRegistry } from 'pivotick-transformer-core'
 import type { ConversionResult } from 'pivotick-transformer-core'
+import { toDot } from 'pivotick-transformer-dot'
 import 'pivotick-transformer-misp'
 
+import type { Viz } from '@viz-js/viz'
 import { select } from 'd3-selection'
 
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
@@ -22,6 +24,7 @@ const uploadedFixtures = new Map<string, unknown>()
 const formatSelect = document.querySelector<HTMLSelectElement>('#format-select')!
 const variantSelect = document.querySelector<HTMLSelectElement>('#variant-select')!
 const fixtureSelect = document.querySelector<HTMLSelectElement>('#fixture-select')!
+const viewSelect = document.querySelector<HTMLSelectElement>('#view-select')!
 const styleSelect = document.querySelector<HTMLSelectElement>('#style-select')!
 const smartZoomCheckbox = document.querySelector<HTMLInputElement>('#smart-zoom-checkbox')!
 const fullLabelsCheckbox = document.querySelector<HTMLInputElement>('#full-labels-checkbox')!
@@ -58,21 +61,31 @@ function styleForZoomScale(k: number): 'card' | 'label' | 'icon' {
 let smartZoomCurrentStyle: 'card' | 'label' | 'icon' = 'card'
 let smartZoomDebounceTimer: ReturnType<typeof setTimeout> | undefined
 
-// Bumped once at the top of every `render()` call. A `canvasZoom`
-// listener attached by `attachSmartZoom()` closes over the generation
-// value current at attach time — if a *newer* render() has since run
-// (bumping this further) by the time the listener's own debounce timer
-// fires, that listener is stale (its instance has already been replaced)
-// and must not call render() again. Without this guard, restoring the
-// captured zoom transform onto a freshly-created instance (see
-// `restoreZoomTransform()`) can itself dispatch a `canvasZoom` event —
-// if that lands on the *already-reattached* listener (observed in
-// practice to depend on d3-zoom's own internal scheduling, not always
-// perfectly synchronous), it would otherwise re-enter `render()` and
-// repeat forever. This turns "only the single most current listener may
-// ever trigger another render" into an invariant, independent of
-// exactly which echo/ordering caused the extra event.
-let smartZoomGeneration = 0
+// Bumped once at the top of every `render()` call — a general "which
+// render() call is this" counter that anything async started by a given
+// render() can check against later to tell whether it's still the most
+// current one.
+//
+// Smart zoom needs this: a `canvasZoom` listener attached by
+// `attachSmartZoom()` closes over the generation value current at attach
+// time — if a *newer* render() has since run (bumping this further) by
+// the time the listener's own debounce timer fires, that listener is
+// stale (its instance has already been replaced) and must not call
+// render() again. Without this guard, restoring the captured zoom
+// transform onto a freshly-created instance (see `restoreZoomTransform()`)
+// can itself dispatch a `canvasZoom` event — if that lands on the
+// *already-reattached* listener (observed in practice to depend on
+// d3-zoom's own internal scheduling, not always perfectly synchronous),
+// it would otherwise re-enter `render()` and repeat forever. This turns
+// "only the single most current listener may ever trigger another
+// render" into an invariant, independent of exactly which echo/ordering
+// caused the extra event.
+//
+// The `.dot` view (see `renderDotView()`) needs the same guard for a
+// different reason: loading the Graphviz WASM instance is asynchronous,
+// so a slow first load finishing after the user has already switched
+// fixture/view again must not overwrite what's on screen by then.
+let renderGeneration = 0
 
 /** A d3-zoom `ZoomTransform`'s own shape — just the three fields anything here reads/passes through. */
 interface ZoomTransformLike {
@@ -197,15 +210,15 @@ function attachSmartZoom(instance: Pivotick): void {
   const graphInteraction = (instance as unknown as PivotickZoomAccess).renderer?.getGraphInteraction?.()
   if (!graphInteraction) return
 
-  // See `smartZoomGeneration`'s doc: this listener is only allowed to act
+  // See `renderGeneration`'s doc: this listener is only allowed to act
   // while it's still the one attached by the *current* render() call.
-  const generationAtAttach = smartZoomGeneration
+  const generationAtAttach = renderGeneration
 
   graphInteraction.on('canvasZoom', (event) => {
-    if (generationAtAttach !== smartZoomGeneration) return
+    if (generationAtAttach !== renderGeneration) return
     if (smartZoomDebounceTimer !== undefined) clearTimeout(smartZoomDebounceTimer)
     smartZoomDebounceTimer = setTimeout(() => {
-      if (generationAtAttach !== smartZoomGeneration) return
+      if (generationAtAttach !== renderGeneration) return
       const nextStyle = styleForZoomScale(event.transform.k)
       if (nextStyle !== smartZoomCurrentStyle) {
         smartZoomCurrentStyle = nextStyle
@@ -213,6 +226,65 @@ function attachSmartZoom(instance: Pivotick): void {
       }
     }, 500)
   })
+}
+
+// ── .dot view ─────────────────────────────────────────────────────────
+//
+// An alternative to the interactive Pivotick canvas: run the exact same
+// converted `data` through `pivotick-transformer-dot`'s `toDot()` and lay
+// it out with a real Graphviz build (`@viz-js/viz`, compiled to WASM) —
+// mainly so `pivotick-transformer-dot` has somewhere to actually prove
+// its output is valid, laid-out-able DOT, not just well-formed text.
+
+let vizInstancePromise: Promise<Viz> | undefined
+
+/**
+ * Loads the WASM Graphviz build on first use only; every later call
+ * reuses the same instance. A dynamic `import()` — not a static one at
+ * the top of this file — so the (multi-MB, wasm-bundling) module is its
+ * own chunk, fetched only by someone who actually opens the `.dot` view,
+ * not by every visitor of the default Pivotick-canvas view.
+ */
+function getViz(): Promise<Viz> {
+  vizInstancePromise ??= import('@viz-js/viz').then((viz) => viz.instance())
+  return vizInstancePromise
+}
+
+/** Replaces `target`'s content with a plain, non-interactive text block — used for the DOT source, as opposed to `renderJsonViewer()`'s tree view for the usual nodes/edges JSON. */
+function renderPlainTextOutput(target: HTMLElement, text: string): void {
+  const pre = document.createElement('pre')
+  pre.className = 'dot-source-output'
+  pre.textContent = text
+  target.replaceChildren(pre)
+}
+
+/**
+ * The `.dot` View option's counterpart to constructing a `Pivotick`
+ * instance: shows the raw DOT source in the "Converted output" panel
+ * (more useful here than the usual JSON — it's the actual artifact being
+ * checked), then, once Graphviz has laid it out, the resulting SVG in the
+ * graph area.
+ *
+ * `generation` is `renderGeneration`'s value as of the `render()` call
+ * that kicked this off — loading the WASM build is only ever slow on the
+ * very first call, but that's enough time for the user to have already
+ * switched to a different fixture or back to the Pivotick view, whose
+ * result this must then not clobber.
+ */
+async function renderDotView(data: ConversionResult, format: string, variantId: string, generation: number): Promise<void> {
+  const dotSource = toDot(data)
+  renderPlainTextOutput(jsonOutput, dotSource)
+
+  try {
+    const viz = await getViz()
+    if (generation !== renderGeneration) return
+    const svg = viz.renderSVGElement(dotSource)
+    container.replaceChildren(svg)
+    statusEl.textContent = `Rendered ${data.nodes.length} node(s), ${data.edges.length} edge(s) with ${format}/${variantId} as .dot (Graphviz).`
+  } catch (error) {
+    if (generation !== renderGeneration) return
+    statusEl.textContent = `Graphviz couldn't render this .dot output: ${error instanceof Error ? error.message : String(error)}`
+  }
 }
 
 function populateFormats(): void {
@@ -308,8 +380,10 @@ async function handleFiles(files: FileList): Promise<void> {
 
 function render(): void {
   // Invalidates any Smart zoom listener still attached from a previous
-  // instance — see `smartZoomGeneration`'s doc.
-  smartZoomGeneration++
+  // instance, and any still-loading `.dot` view render — see
+  // `renderGeneration`'s doc.
+  renderGeneration++
+  const generation = renderGeneration
 
   const fixture = getFixtureData(fixtureSelect.value)
   if (!fixture.found) {
@@ -319,14 +393,21 @@ function render(): void {
 
   const format = formatSelect.value
   const variantId = variantSelect.value
+  const isDotView = viewSelect.value === 'dot'
 
-  // Smart zoom (when on) drives the Style dropdown automatically — see
-  // attachSmartZoom()'s doc — and keeps the dropdown itself disabled and
-  // in sync so its displayed value never lies about what's actually
+  // Smart zoom only makes sense for the Pivotick canvas — the `.dot` view
+  // is a static Graphviz layout with no zoom-index of its own to drive it
+  // from, so it's greyed out (but left checked, so switching back to
+  // Pivotick resumes it) and never consulted for `style` below.
+  smartZoomCheckbox.disabled = isDotView
+  const smartZoomActive = !isDotView && smartZoomCheckbox.checked
+  // Smart zoom (when active) drives the Style dropdown automatically —
+  // see attachSmartZoom()'s doc — and keeps the dropdown itself disabled
+  // and in sync so its displayed value never lies about what's actually
   // rendering.
-  styleSelect.disabled = smartZoomCheckbox.checked
-  if (smartZoomCheckbox.checked) styleSelect.value = smartZoomCurrentStyle
-  const style = smartZoomCheckbox.checked ? smartZoomCurrentStyle : styleSelect.value
+  styleSelect.disabled = smartZoomActive
+  if (smartZoomActive) styleSelect.value = smartZoomCurrentStyle
+  const style = smartZoomActive ? smartZoomCurrentStyle : styleSelect.value
 
   let data: ConversionResult
   try {
@@ -341,9 +422,18 @@ function render(): void {
       style,
     })
     data = toPivotick.data
+    outputSummaryMeta.textContent = `${data.nodes.length} node(s), ${data.edges.length} edge(s)`
+
+    if (isDotView) {
+      pivotickInstance?.destroy()
+      pivotickInstance = undefined
+      container.innerHTML = ''
+      statusEl.textContent = 'Loading Graphviz…'
+      void renderDotView(data, format, variantId, generation)
+      return
+    }
 
     renderJsonViewer(jsonOutput, data)
-    outputSummaryMeta.textContent = `${data.nodes.length} node(s), ${data.edges.length} edge(s)`
 
     const previousZoomTransform = captureZoomTransform(pivotickInstance)
     pivotickInstance?.destroy()
@@ -423,6 +513,7 @@ pasteLoadBtn.addEventListener('click', () => {
 })
 
 formatSelect.addEventListener('change', populateVariants)
+viewSelect.addEventListener('change', render)
 styleSelect.addEventListener('change', render)
 smartZoomCheckbox.addEventListener('change', render)
 fullLabelsCheckbox.addEventListener('change', render)
