@@ -1,7 +1,7 @@
-import type { ConversionResult, ConverterVariantMeta, NodeId, RawEdge, RawNode } from 'pivotick-transformer-core'
+import type { ConversionResult, ConverterOptions, ConverterVariantMeta, NodeId, RawEdge, RawNode } from 'pivotick-transformer-core'
 
 import { detectMispEvent } from '../../shared/detectMispEvent.js'
-import { edgeStyleFor } from '../../shared/edgeStyleFor.js'
+import { edgeStyleFor, shouldLabelEdges } from '../../shared/edgeStyleFor.js'
 import { buildClusterRelationEdges, buildObjectReferenceEdges } from '../../shared/mispCrossReferenceEdges.js'
 import { MispIconRenderingConverter } from '../../shared/MispIconRenderingConverter.js'
 import { addMispGalaxies, addMispTags } from '../../shared/mispTagsAndGalaxies.js'
@@ -48,12 +48,13 @@ export class MispEventRootSimplifiedConverter extends MispIconRenderingConverter
     return detectMispEvent(input)
   }
 
-  convert(input: MispInput): ConversionResult {
+  convert(input: MispInput, options?: ConverterOptions): ConversionResult {
     const { events, objects: standaloneObjects } = normalizeMispInput(input)
     if (events.length === 0 && standaloneObjects.length === 0) {
       throw new Error('Not MISP data: expected an Event, a standalone Object, or a list of either.')
     }
 
+    const showEdgeLabels = shouldLabelEdges(options)
     const nodes: RawNode[] = []
     const edges: RawEdge[] = []
     const nodeIdByUuid = new Map<string, NodeId>()
@@ -100,9 +101,10 @@ export class MispEventRootSimplifiedConverter extends MispIconRenderingConverter
       edges.push({
         from: parentId,
         to: node.id,
-        data: attribute.object_relation
-          ? { label: attribute.object_relation, kind: 'hasAttribute', category: attribute.category }
-          : { kind: 'hasAttribute', category: attribute.category },
+        data:
+          attribute.object_relation && showEdgeLabels
+            ? { label: attribute.object_relation, kind: 'hasAttribute', category: attribute.category }
+            : { kind: 'hasAttribute', category: attribute.category },
         style: edgeStyleFor('hasAttribute'),
       })
     }
@@ -139,7 +141,7 @@ export class MispEventRootSimplifiedConverter extends MispIconRenderingConverter
         edges.push({
           from: parentId,
           to: objectNodeId,
-          data: metaCategory ? { label: metaCategory, kind: 'hasObject' } : { kind: 'hasObject' },
+          data: metaCategory && showEdgeLabels ? { label: metaCategory, kind: 'hasObject' } : { kind: 'hasObject' },
           style: edgeStyleFor('hasObject'),
         })
       }
@@ -197,8 +199,8 @@ export class MispEventRootSimplifiedConverter extends MispIconRenderingConverter
     // nested inside a collapsed Object. See
     // buildObjectReferenceEdges()/buildClusterRelationEdges().
     const allObjects = [...events.flatMap((event) => event.Object ?? []), ...standaloneObjects]
-    edges.push(...buildObjectReferenceEdges(allObjects, nodeIdByUuid))
-    edges.push(...buildClusterRelationEdges(seenClusters, clusterNodeIdById, clusterNodeIdByUuid))
+    edges.push(...buildObjectReferenceEdges(allObjects, nodeIdByUuid, options))
+    edges.push(...buildClusterRelationEdges(seenClusters, clusterNodeIdById, clusterNodeIdByUuid, options))
 
     return { nodes, edges }
   }

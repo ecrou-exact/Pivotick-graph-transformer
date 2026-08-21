@@ -1,6 +1,6 @@
-import type { NodeId, RawEdge } from 'pivotick-transformer-core'
+import type { ConverterOptions, NodeId, RawEdge } from 'pivotick-transformer-core'
 
-import { edgeStyleFor } from './edgeStyleFor.js'
+import { edgeStyleFor, shouldLabelEdges } from './edgeStyleFor.js'
 import type { MispGalaxyCluster, MispObject } from './types.js'
 
 /**
@@ -13,7 +13,8 @@ import type { MispGalaxyCluster, MispObject } from './types.js'
  * caller created. `nodeIdByUuid` must already contain every Object/
  * Attribute node the variant created.
  */
-export function buildObjectReferenceEdges(objects: MispObject[], nodeIdByUuid: Map<string, NodeId>): RawEdge[] {
+export function buildObjectReferenceEdges(objects: MispObject[], nodeIdByUuid: Map<string, NodeId>, options?: ConverterOptions): RawEdge[] {
+  const showLabels = shouldLabelEdges(options)
   const edges: RawEdge[] = []
   for (const object of objects) {
     const fromId = nodeIdByUuid.get(object.uuid)
@@ -24,14 +25,15 @@ export function buildObjectReferenceEdges(objects: MispObject[], nodeIdByUuid: M
       if (!toId) continue
       // `label` is what Pivotick actually shows on the edge (see
       // EdgeDrawer.ts's edgeLabelGetter — reads edge.getData().label
-      // directly, no render-option wiring needed). Purely structural
-      // edges are left unlabeled on purpose — Object References are
-      // MISP's actual named relationships, so that's where a label earns
-      // its place instead of adding clutter.
+      // directly, no render-option wiring needed) — see
+      // `shouldLabelEdges()`'s doc for why `'icon'` style omits it.
+      // Purely structural edges are left unlabeled on purpose otherwise —
+      // Object References are MISP's actual named relationships, so
+      // that's where a label earns its place instead of adding clutter.
       edges.push({
         from: fromId,
         to: toId,
-        data: { label: reference.relationship_type ?? '', relationshipType: reference.relationship_type, kind: 'reference' },
+        data: { ...(showLabels ? { label: reference.relationship_type ?? '' } : {}), relationshipType: reference.relationship_type, kind: 'reference' },
         style: edgeStyleFor('reference'),
       })
     }
@@ -47,7 +49,13 @@ export function buildObjectReferenceEdges(objects: MispObject[], nodeIdByUuid: M
  * its uuid is empty in the source data). `seenClusters` must be every
  * GalaxyCluster the variant created a node for (see `addMispGalaxies()`).
  */
-export function buildClusterRelationEdges(seenClusters: MispGalaxyCluster[], clusterNodeIdById: Map<string, NodeId>, clusterNodeIdByUuid: Map<string, NodeId>): RawEdge[] {
+export function buildClusterRelationEdges(
+  seenClusters: MispGalaxyCluster[],
+  clusterNodeIdById: Map<string, NodeId>,
+  clusterNodeIdByUuid: Map<string, NodeId>,
+  options?: ConverterOptions,
+): RawEdge[] {
+  const showLabels = shouldLabelEdges(options)
   const edges: RawEdge[] = []
   for (const cluster of seenClusters) {
     const fromId = clusterNodeIdById.get(cluster.id)
@@ -59,7 +67,7 @@ export function buildClusterRelationEdges(seenClusters: MispGalaxyCluster[], clu
       edges.push({
         from: fromId,
         to: toId,
-        data: { label: relation.referenced_galaxy_cluster_type, kind: 'clusterRelation' },
+        data: { ...(showLabels ? { label: relation.referenced_galaxy_cluster_type } : {}), kind: 'clusterRelation' },
         style: edgeStyleFor('clusterRelation'),
       })
     }

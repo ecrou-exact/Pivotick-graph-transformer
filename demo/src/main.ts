@@ -2,6 +2,8 @@ import { ConverterRegistry } from 'pivotick-transformer-core'
 import type { ConversionResult } from 'pivotick-transformer-core'
 import 'pivotick-transformer-misp'
 
+import { select } from 'd3-selection'
+
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
 import '../vendor/pivotick/pivotick.css'
 
@@ -21,6 +23,7 @@ const formatSelect = document.querySelector<HTMLSelectElement>('#format-select')
 const variantSelect = document.querySelector<HTMLSelectElement>('#variant-select')!
 const fixtureSelect = document.querySelector<HTMLSelectElement>('#fixture-select')!
 const styleSelect = document.querySelector<HTMLSelectElement>('#style-select')!
+const smartZoomCheckbox = document.querySelector<HTMLInputElement>('#smart-zoom-checkbox')!
 const fullLabelsCheckbox = document.querySelector<HTMLInputElement>('#full-labels-checkbox')!
 const form = document.querySelector<HTMLFormElement>('#controls')!
 const statusEl = document.querySelector<HTMLElement>('#status')!
@@ -34,6 +37,183 @@ const pasteTextarea = document.querySelector<HTMLTextAreaElement>('#paste-textar
 const pasteLoadBtn = document.querySelector<HTMLButtonElement>('#paste-load-btn')!
 
 let pivotickInstance: Pivotick | undefined
+
+// ── Smart zoom ────────────────────────────────────────────────────────
+//
+// When enabled, the Style dropdown is driven automatically from
+// Pivotick's own current zoom level instead of picked by hand: zoomed in
+// shows 'card' (full detail), a middle band shows 'label' (icon + name
+// only), and zoomed out past that shows 'icon' (icon only) — cheaper to
+// render once you're too zoomed out for per-node detail to be legible
+// anyway.
+const SMART_ZOOM_CARD_MIN_SCALE = 1
+const SMART_ZOOM_LABEL_MIN_SCALE = 0.4
+
+function styleForZoomScale(k: number): 'card' | 'label' | 'icon' {
+  if (k >= SMART_ZOOM_CARD_MIN_SCALE) return 'card'
+  if (k >= SMART_ZOOM_LABEL_MIN_SCALE) return 'label'
+  return 'icon'
+}
+
+let smartZoomCurrentStyle: 'card' | 'label' | 'icon' = 'card'
+let smartZoomDebounceTimer: ReturnType<typeof setTimeout> | undefined
+
+// Bumped once at the top of every `render()` call. A `canvasZoom`
+// listener attached by `attachSmartZoom()` closes over the generation
+// value current at attach time — if a *newer* render() has since run
+// (bumping this further) by the time the listener's own debounce timer
+// fires, that listener is stale (its instance has already been replaced)
+// and must not call render() again. Without this guard, restoring the
+// captured zoom transform onto a freshly-created instance (see
+// `restoreZoomTransform()`) can itself dispatch a `canvasZoom` event —
+// if that lands on the *already-reattached* listener (observed in
+// practice to depend on d3-zoom's own internal scheduling, not always
+// perfectly synchronous), it would otherwise re-enter `render()` and
+// repeat forever. This turns "only the single most current listener may
+// ever trigger another render" into an invariant, independent of
+// exactly which echo/ordering caused the extra event.
+let smartZoomGeneration = 0
+
+/** A d3-zoom `ZoomTransform`'s own shape — just the three fields anything here reads/passes through. */
+interface ZoomTransformLike {
+  k: number
+  x: number
+  y: number
+}
+
+/**
+ * Pivotick's `renderer` — and its `getGraphInteraction()` (whose
+ * `on('canvasZoom', ...)` fires on every zoom/pan tick with the current
+ * d3-zoom transform), `getZoomTransform()`, and `getZoomBehavior()`
+ * methods — are real public methods on a constructed instance, verified
+ * directly against the vendored bundle
+ * (demo/vendor/pivotick/index-Bzoqf7dC.js), but aren't declared in the
+ * hand-maintained vendor/pivotick/pivotick.es.d.ts, which only covers
+ * what this file already used before Smart zoom (constructor/destroy/
+ * simulation). Typed here instead of touching that file, which is meant
+ * to only grow with what's actually used.
+ */
+interface PivotickZoomAccess {
+  renderer?: {
+    getGraphInteraction?: () => { on: (eventName: string, callback: (event: { transform: ZoomTransformLike }) => void) => void } | undefined
+    getZoomTransform?: () => ZoomTransformLike | undefined
+    getZoomBehavior?: () => { transform: (selection: unknown, transform: ZoomTransformLike) => void } | undefined
+    // Present on every renderer (verified in the vendored bundle) but not
+    // otherwise used by this file — see `disableAutoFitOnLoad()`'s doc for
+    // why it's typed here just to be overwritten with a no-op.
+    fitAndCenterWhenSettled?: (scale?: number) => void
+  }
+}
+
+/** Reads the current pan/zoom transform off an instance about to be destroyed, so `restoreZoomTransform()` can reapply it to its replacement. `undefined` on the very first render (no prior instance yet). */
+function captureZoomTransform(instance: Pivotick | undefined): ZoomTransformLike | undefined {
+  return (instance as unknown as PivotickZoomAccess | undefined)?.renderer?.getZoomTransform?.()
+}
+
+/**
+ * Every `new Pivotick(...)` construction — not just Smart zoom's own
+ * threshold-crossing recreations — schedules an automatic "fit and
+ * center the whole graph" pass on its own, verified directly against the
+ * vendored bundle: the constructor's `startAndRender()` (fired
+ * fire-and-forget, not awaited) does `await simulation.start(); await
+ * simulation.waitForSimulationStop(); renderer.fitAndCenterWhenSettled()`
+ * — the last step polls the layout's bounding box until it stops
+ * changing (up to ~3s) and then snaps the zoom/pan to fit the *entire*
+ * graph in view, unconditionally, with no constructor option to skip it.
+ *
+ * That directly fights `restoreZoomTransform()`: it fires asynchronously,
+ * well after this file's own synchronous `render()` has already restored
+ * the previous transform, silently overwriting it back to a "fit
+ * everything" view moments later — and since that's a real zoom change,
+ * it dispatches its own `canvasZoom` event too, which Smart zoom's
+ * listener (still the current generation) would otherwise treat as
+ * genuine input and recompute the style bucket from, cascading into
+ * repeated, never-settling re-renders.
+ *
+ * There's no supported constructor/`RendererOptions` flag to opt out
+ * (confirmed against the vendored source), so this overwrites the
+ * instance's own `renderer.fitAndCenterWhenSettled` with a no-op right
+ * after construction — before the async chain above ever gets to call
+ * it. Deliberately narrow: only this one always-on, on-load pass is
+ * disabled; `fitAndCenter()` itself (e.g. a manual "fit view" toolbar
+ * button, if the UI exposes one) is left untouched.
+ */
+function disableAutoFitOnLoad(instance: Pivotick): void {
+  const renderer = (instance as unknown as PivotickZoomAccess).renderer
+  if (renderer) renderer.fitAndCenterWhenSettled = () => {}
+}
+
+/**
+ * Reapplies a captured pan/zoom transform to a freshly-constructed
+ * instance — `render()` calls this after every recreation (not just
+ * Smart zoom's own threshold-crossing ones) so switching Style, toggling
+ * Full labels, or Smart zoom itself changing style never yanks the view
+ * back to the default framing. Goes through a genuine d3 selection
+ * (`select()`) and `zoomBehavior.transform()` — the real, documented
+ * d3-zoom idiom for setting a transform programmatically (as opposed to
+ * via a user gesture) — rather than trying to poke at `zoomGroup`'s own
+ * SVG `transform` attribute directly, which would desync d3-zoom's own
+ * internal transform state from what's on screen.
+ *
+ * Must target Pivotick's own canvas element specifically
+ * (`svg.pvt-canvas-element`) rather than a plain `querySelector('svg')` —
+ * the container also holds dozens of unrelated `<svg>`s (toolbar buttons,
+ * node badges, ...), and a bare `'svg'` selector matches whichever of
+ * those happens to come first in the DOM. Setting the transform there
+ * still *looked* right (the `'zoom'` handler is a closure over the
+ * renderer's real zoom-layer, not bound to which node fired it, so it
+ * dutifully repainted at the intended scale) but left the real canvas
+ * node's own internal zoom state at whatever it was before — so the next
+ * drag gesture on the actual canvas computed its delta from that stale
+ * baseline instead of the one just restored, snapping the view back to
+ * it mid-pan.
+ */
+function restoreZoomTransform(instance: Pivotick, transform: ZoomTransformLike | undefined): void {
+  if (!transform) return
+  const zoomBehavior = (instance as unknown as PivotickZoomAccess).renderer?.getZoomBehavior?.()
+  const svgEl = container.querySelector('svg.pvt-canvas-element')
+  if (zoomBehavior && svgEl) zoomBehavior.transform(select(svgEl), transform)
+}
+
+/**
+ * Wires up Smart zoom on a freshly-constructed Pivotick instance — no-op
+ * if the checkbox is off. Debounced ~500ms after the last zoom/pan tick
+ * (Pivotick's `canvasZoom` event fires on every tick, not just when a
+ * gesture ends) so one zoom gesture crossing a threshold doesn't
+ * re-render mid-motion.
+ *
+ * Re-rendering here means the same full destroy+recreate `render()`
+ * already does for every other control — there is no supported Pivotick
+ * API to swap a converter's `renderNode` callback on an
+ * already-constructed graph (verified against the vendored bundle: the
+ * `style` value is captured once in a closure when
+ * `MispIconRenderingConverter.getRenderNode()` is called, not re-read per
+ * node). `render()`'s own capture/restore of the zoom transform (see
+ * above) is what keeps this recreation invisible — you stay at the same
+ * pan/zoom index you were at, only the node style underneath changes.
+ */
+function attachSmartZoom(instance: Pivotick): void {
+  if (!smartZoomCheckbox.checked) return
+  const graphInteraction = (instance as unknown as PivotickZoomAccess).renderer?.getGraphInteraction?.()
+  if (!graphInteraction) return
+
+  // See `smartZoomGeneration`'s doc: this listener is only allowed to act
+  // while it's still the one attached by the *current* render() call.
+  const generationAtAttach = smartZoomGeneration
+
+  graphInteraction.on('canvasZoom', (event) => {
+    if (generationAtAttach !== smartZoomGeneration) return
+    if (smartZoomDebounceTimer !== undefined) clearTimeout(smartZoomDebounceTimer)
+    smartZoomDebounceTimer = setTimeout(() => {
+      if (generationAtAttach !== smartZoomGeneration) return
+      const nextStyle = styleForZoomScale(event.transform.k)
+      if (nextStyle !== smartZoomCurrentStyle) {
+        smartZoomCurrentStyle = nextStyle
+        render()
+      }
+    }, 500)
+  })
+}
 
 function populateFormats(): void {
   formatSelect.innerHTML = ''
@@ -127,6 +307,10 @@ async function handleFiles(files: FileList): Promise<void> {
 }
 
 function render(): void {
+  // Invalidates any Smart zoom listener still attached from a previous
+  // instance — see `smartZoomGeneration`'s doc.
+  smartZoomGeneration++
+
   const fixture = getFixtureData(fixtureSelect.value)
   if (!fixture.found) {
     statusEl.textContent = 'Add a fixture under demo/fixtures/<format>/, or drop one into the dropzone.'
@@ -136,23 +320,32 @@ function render(): void {
   const format = formatSelect.value
   const variantId = variantSelect.value
 
+  // Smart zoom (when on) drives the Style dropdown automatically — see
+  // attachSmartZoom()'s doc — and keeps the dropdown itself disabled and
+  // in sync so its displayed value never lies about what's actually
+  // rendering.
+  styleSelect.disabled = smartZoomCheckbox.checked
+  if (smartZoomCheckbox.checked) styleSelect.value = smartZoomCurrentStyle
+  const style = smartZoomCheckbox.checked ? smartZoomCurrentStyle : styleSelect.value
+
   let data: ConversionResult
   try {
     const converter = ConverterRegistry.get(format, variantId)
     // `fullLabels`/`style` are only meaningful to converters that define
     // them (currently just pivotick-transformer-misp's "never truncate a
-    // badge" toggle and its card/flat rendering choice) — passed through
-    // unconditionally since ConverterOptions is free-form and a
-    // converter that doesn't look at a given key just ignores it.
+    // badge" toggle and its card/flat/label/icon rendering choice) —
+    // passed through unconditionally since ConverterOptions is free-form
+    // and a converter that doesn't look at a given key just ignores it.
     const toPivotick = converter.toPivotickOptions(fixture.data, {
       fullLabels: fullLabelsCheckbox.checked,
-      style: styleSelect.value,
+      style,
     })
     data = toPivotick.data
 
     renderJsonViewer(jsonOutput, data)
     outputSummaryMeta.textContent = `${data.nodes.length} node(s), ${data.edges.length} edge(s)`
 
+    const previousZoomTransform = captureZoomTransform(pivotickInstance)
     pivotickInstance?.destroy()
     container.innerHTML = ''
     const theme = document.documentElement.dataset.theme
@@ -166,13 +359,22 @@ function render(): void {
       // own via inherited --pvt-* custom properties.
       UI: { mode: 'full', ...(theme ? { theme } : {}) },
     })
+    // Only when there's an actual previous view to preserve — see
+    // `disableAutoFitOnLoad()`'s doc. On the very first render (no prior
+    // instance, `previousZoomTransform` is undefined) there's nothing to
+    // protect from being overwritten, so Pivotick's own auto-fit stays on
+    // and nicely frames the graph as it always did. Must happen before
+    // anything below yields to the event loop, since it's racing
+    // Pivotick's own fire-and-forget post-construction pass.
+    if (previousZoomTransform) disableAutoFitOnLoad(pivotickInstance)
     // Wider default spacing (Pivotick's own 'loose' physics preset —
     // more link distance/repulsion, less crowding) — mainly requested to
-    // give the custom-rendered cards more breathing room, since a tighter
-    // layout makes their approximate circular edge-anchor radius (see
-    // pivotick-transformer-misp's scheduleMinRadiusCorrection()) more
-    // likely to visibly overlap a neighbour.
+    // give the custom-rendered cards more breathing room, since a
+    // tighter layout makes their approximate circular edge-anchor radius
+    // more likely to visibly overlap a neighbour.
     pivotickInstance.simulation?.applyPhysicsPreset('loose')
+    restoreZoomTransform(pivotickInstance, previousZoomTransform)
+    attachSmartZoom(pivotickInstance)
 
     statusEl.textContent = `Rendered ${data.nodes.length} node(s), ${data.edges.length} edge(s) with ${format}/${variantId}.`
   } catch (error) {
@@ -222,6 +424,7 @@ pasteLoadBtn.addEventListener('click', () => {
 
 formatSelect.addEventListener('change', populateVariants)
 styleSelect.addEventListener('change', render)
+smartZoomCheckbox.addEventListener('change', render)
 fullLabelsCheckbox.addEventListener('change', render)
 form.addEventListener('submit', (event) => {
   event.preventDefault()

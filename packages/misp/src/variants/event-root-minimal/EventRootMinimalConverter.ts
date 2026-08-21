@@ -1,7 +1,7 @@
-import type { ConversionResult, ConverterVariantMeta, NodeId, RawEdge, RawNode } from 'pivotick-transformer-core'
+import type { ConversionResult, ConverterOptions, ConverterVariantMeta, NodeId, RawEdge, RawNode } from 'pivotick-transformer-core'
 
 import { detectMispEvent } from '../../shared/detectMispEvent.js'
-import { edgeStyleFor } from '../../shared/edgeStyleFor.js'
+import { edgeStyleFor, shouldLabelEdges } from '../../shared/edgeStyleFor.js'
 import { MispIconRenderingConverter } from '../../shared/MispIconRenderingConverter.js'
 import { normalizeMispInput } from '../../shared/normalizeMispInput.js'
 import type { MispGalaxy, MispInput, MispTag } from '../../shared/types.js'
@@ -70,12 +70,13 @@ export class MispEventRootMinimalConverter extends MispIconRenderingConverter {
     return detectMispEvent(input)
   }
 
-  convert(input: MispInput): ConversionResult {
+  convert(input: MispInput, options?: ConverterOptions): ConversionResult {
     const { events, objects: standaloneObjects } = normalizeMispInput(input)
     if (events.length === 0 && standaloneObjects.length === 0) {
       throw new Error('Not MISP data: expected an Event, a standalone Object, or a list of either.')
     }
 
+    const showEdgeLabels = shouldLabelEdges(options)
     const nodes: RawNode[] = []
     const edges: RawEdge[] = []
     const eventContexts: EventContext[] = []
@@ -153,7 +154,12 @@ export class MispEventRootMinimalConverter extends MispIconRenderingConverter {
       if (eventA.extendsUuid) {
         const extendedNodeId = eventNodeIdByUuid.get(eventA.extendsUuid)
         if (extendedNodeId) {
-          edges.push({ from: eventA.nodeId, to: extendedNodeId, data: { label: 'extends', kind: 'eventExtends' }, style: edgeStyleFor('eventExtends') })
+          edges.push({
+            from: eventA.nodeId,
+            to: extendedNodeId,
+            data: { ...(showEdgeLabels ? { label: 'extends' } : {}), kind: 'eventExtends' },
+            style: edgeStyleFor('eventExtends'),
+          })
         }
       }
 
@@ -162,13 +168,23 @@ export class MispEventRootMinimalConverter extends MispIconRenderingConverter {
 
         for (const tagName of eventA.tagNames) {
           if (eventB.tagNames.has(tagName)) {
-            edges.push({ from: eventA.nodeId, to: eventB.nodeId, data: { label: tagName, kind: 'sharedTag' }, style: edgeStyleFor('sharedTag') })
+            edges.push({
+              from: eventA.nodeId,
+              to: eventB.nodeId,
+              data: { ...(showEdgeLabels ? { label: tagName } : {}), kind: 'sharedTag' },
+              style: edgeStyleFor('sharedTag'),
+            })
           }
         }
 
         for (const [clusterId, clusterLabel] of eventA.clusterLabelById) {
           if (eventB.clusterLabelById.has(clusterId)) {
-            edges.push({ from: eventA.nodeId, to: eventB.nodeId, data: { label: clusterLabel, kind: 'sharedGalaxyCluster' }, style: edgeStyleFor('sharedGalaxyCluster') })
+            edges.push({
+              from: eventA.nodeId,
+              to: eventB.nodeId,
+              data: { ...(showEdgeLabels ? { label: clusterLabel } : {}), kind: 'sharedGalaxyCluster' },
+              style: edgeStyleFor('sharedGalaxyCluster'),
+            })
           }
         }
       }

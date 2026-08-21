@@ -1,3 +1,5 @@
+import type { ConverterOptions } from 'pivotick-transformer-core'
+
 import stylesConfig from './styles.json' with { type: 'json' }
 
 /**
@@ -38,4 +40,20 @@ import stylesConfig from './styles.json' with { type: 'json' }
 export function edgeStyleFor(kind: keyof typeof stylesConfig.edges): Record<string, unknown> {
   const { structural, ...base } = stylesConfig.edges[kind] as Record<string, unknown>
   return { edge: structural ? { ...base, markerEnd: 'none' } : base }
+}
+
+/**
+ * Whether edges should carry their real relation label ("network",
+ * "dropped-by", "extends", a shared Tag's own name, ...) at all — only
+ * `'icon'` style turns this off. Pivotick reads a label straight off
+ * `edge.data.label` (see `mispCrossReferenceEdges.ts`'s doc on
+ * `EdgeDrawer.ts`'s edgeLabelGetter) — there's no separate render-time
+ * toggle for edge labels the way `getRenderNode()` is for node badges, so
+ * the only way to suppress one is to simply not set the field.
+ * `'icon'` style is meant to be the cheapest, most minimal representation
+ * for huge graphs — text labels floating over every edge undermine that
+ * as much as a full node badge would.
+ */
+export function shouldLabelEdges(options?: ConverterOptions): boolean {
+  return options?.style !== 'icon'
 }
