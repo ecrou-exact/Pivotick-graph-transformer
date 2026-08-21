@@ -35,6 +35,42 @@ export type NodeTypeAccessor = (node: RawNode) => string
 /** Style overrides keyed by node type, mirrors Pivotick's `nodeStyleMap`. */
 export type NodeStyleMap = Record<string, Record<string, unknown>>
 
+/**
+ * Fully custom per-node rendering, matching Pivotick's `RendererOptions.renderNode`
+ * — takes over that node's rendering entirely (a real `HTMLElement`, not just
+ * shape/icon/text), e.g. for a readable "card" showing a label directly, not
+ * just an icon. Not typed against Pivotick's real `Node` class (this project
+ * doesn't depend on `pivotick`) — just the `getData()`/`getStyle()` shape
+ * it's known to expose (verified against Pivotick's actual `NodeRenderer`/
+ * `Node` source: `getStyle()` returns whatever per-node `RawNode.style`
+ * override this converter set in `convert()`, if any — not the fully
+ * resolved `nodeStyleMap`-merged style, which only the renderer's own
+ * internal `NodeDrawer` computes).
+ *
+ * Important: once `renderNode` is set at all, Pivotick routes *every* node
+ * through it — there's no per-node opt-out back to normal shape/icon
+ * rendering. Returning `undefined` for a given node leaves it blank (an
+ * empty, never-resized box), not a shape/icon fallback — a converter that
+ * wants most nodes to still look icon/shape-like needs to build that look
+ * itself for every node this function is called with.
+ *
+ * `getCircleRadius`/`setCircleRadius` are also real, public methods on
+ * Pivotick's `Node` class (verified against its source) — after this
+ * function returns, Pivotick measures the element via
+ * `getBoundingClientRect()` and calls `setCircleRadius(max(width,height)/2)`
+ * itself, treating the node as a circle of that radius for edge-anchor
+ * math no matter its real (e.g. rectangular) shape. Exposed here for a
+ * converter that wants to override Pivotick's own measurement, but no
+ * converter in this repo currently does — Pivotick's default is used
+ * as-is.
+ */
+export type RenderNodeFn = (node: {
+  getData?: () => Record<string, unknown> | undefined
+  getStyle?: () => Record<string, unknown> | undefined
+  getCircleRadius?: () => number | undefined
+  setCircleRadius?: (radius: number) => void
+}) => HTMLElement | string | undefined
+
 export interface ConversionResult {
   nodes: RawNode[]
   edges: RawEdge[]
@@ -71,6 +107,10 @@ export interface PivotickRenderOptions {
   defaultEdgeStyle?: Record<string, unknown>
   /** Matches Pivotick's `RendererOptions.markerStyleMap` — e.g. overriding the built-in `'arrow'` marker's size. */
   markerStyleMap?: Record<string, unknown>
+  /** Matches Pivotick's `RendererOptions.renderNode` — fully custom per-node rendering (e.g. an HTML "card"), taking over from shape/icon/text for every node it doesn't return `undefined` for. */
+  renderNode?: RenderNodeFn
+  /** Matches Pivotick's `RendererOptions.defaultNodeStyle` — the fallback for any node whose type isn't a `nodeStyleMap` key (e.g. a genuinely unknown/unrecognized type). */
+  defaultNodeStyle?: Record<string, unknown>
 }
 
 /** Return type of `GraphConverter.toPivotickOptions()` — ready to spread into `new Pivotick({ ..., data, options: { render } })`. */

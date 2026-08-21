@@ -11,4 +11,5 @@ export type {
   PivotickRenderOptions,
   RawEdge,
   RawNode,
+  RenderNodeFn,
 } from './types.js'

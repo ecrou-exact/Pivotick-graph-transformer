@@ -14,4 +14,11 @@ export declare class Pivotick {
     options?: { render?: unknown; UI?: { mode?: 'viewer' | 'full' | 'light' | 'static'; theme?: string } },
   )
   destroy(): void
+  // Real, public property on the Graph class Pivotick's constructor
+  // returns (verified in the vendored bundle: `this.graph.simulation`
+  // usage throughout, `applyPhysicsPreset(t)` reading a `{tight, loose,
+  // default}` preset map keyed by `t`). `default` and `loose` currently
+  // carry identical values in that map, but calling this explicitly
+  // still documents intent and survives if that ever changes upstream.
+  simulation?: { applyPhysicsPreset(preset: 'tight' | 'loose' | 'default'): void }
 }

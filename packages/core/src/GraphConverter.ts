@@ -5,6 +5,7 @@ import type {
   NodeStyleMap,
   NodeTypeAccessor,
   PivotickReadyOptions,
+  RenderNodeFn,
 } from './types.js'
 
 /**
@@ -45,33 +46,56 @@ export abstract class GraphConverter<TInput = unknown> {
   /**
    * Optional: a function mapping a node to its "type" key, matching Pivotick's
    * `RendererOptions.nodeTypeAccessor`. Implement this when the source format
-   * has a natural entity-type concept (it almost always does).
+   * has a natural entity-type concept (it almost always does). Receives the
+   * same `options` as `convert()`.
    */
-  getNodeTypeAccessor?(): NodeTypeAccessor
+  getNodeTypeAccessor?(options?: ConverterOptions): NodeTypeAccessor
 
   /**
    * Optional: a default per-type style map, matching Pivotick's
    * `RendererOptions.nodeStyleMap`, so consumers get a readable graph
-   * without configuring styles themselves. Consumers who want something
-   * different can override individual entries after the fact: `{
-   * ...render, nodeStyleMap: { ...render.nodeStyleMap, myType: { color:
-   * 'red' } } }`.
+   * without configuring styles themselves. Receives the same `options` as
+   * `convert()` — e.g. a display-mode switch that picks between a few
+   * built-in presets. Consumers who want something narrower can still
+   * override individual entries after the fact: `{ ...render, nodeStyleMap:
+   * { ...render.nodeStyleMap, myType: { color: 'red' } } }`.
    */
-  getDefaultStyleMap?(): NodeStyleMap
+  getDefaultStyleMap?(options?: ConverterOptions): NodeStyleMap
+
+  /**
+   * Optional: the fallback style for any node whose type isn't a
+   * `getDefaultStyleMap()` key, matching Pivotick's
+   * `RendererOptions.defaultNodeStyle` — e.g. a genuinely unrecognized
+   * type in a coarse/"simple" display mode that only enumerates the types
+   * it already knows about. Receives the same `options` as `convert()`.
+   */
+  getDefaultNodeStyle?(options?: ConverterOptions): Record<string, unknown>
 
   /**
    * Optional: a default edge style, matching Pivotick's
    * `RendererOptions.defaultEdgeStyle` — typically a `styleCb(edge)` that
    * varies color/dash/etc. by whatever the converter recorded on
    * `edge.data` (e.g. a `kind` field) to tell relation types apart.
+   * Receives the same `options` as `convert()`.
    */
-  getDefaultEdgeStyle?(): Record<string, unknown>
+  getDefaultEdgeStyle?(options?: ConverterOptions): Record<string, unknown>
 
   /**
    * Optional: overrides for Pivotick's built-in edge markers, matching
-   * `RendererOptions.markerStyleMap` — e.g. a smaller `'arrow'`.
+   * `RendererOptions.markerStyleMap` — e.g. a smaller `'arrow'`. Receives
+   * the same `options` as `convert()`.
    */
-  getMarkerStyleMap?(): Record<string, unknown>
+  getMarkerStyleMap?(options?: ConverterOptions): Record<string, unknown>
+
+  /**
+   * Optional: fully custom per-node rendering, matching Pivotick's
+   * `RendererOptions.renderNode` — for a display mode where nodes are, say,
+   * readable HTML cards rather than icon-only shapes. Receives the same
+   * `options` as `convert()`, so it can return `undefined` (no custom
+   * rendering, fall back to `nodeStyleMap`) unless a specific mode asked
+   * for it.
+   */
+  getRenderNode?(options?: ConverterOptions): RenderNodeFn | undefined
 
   /**
    * Convenience entry point for consumers: converts `input` and bundles it
@@ -80,18 +104,22 @@ export abstract class GraphConverter<TInput = unknown> {
    */
   toPivotickOptions(input: TInput, options?: ConverterOptions): PivotickReadyOptions {
     const data = this.convert(input, options)
-    const nodeTypeAccessor = this.getNodeTypeAccessor?.()
-    const nodeStyleMap = this.getDefaultStyleMap?.()
-    const defaultEdgeStyle = this.getDefaultEdgeStyle?.()
-    const markerStyleMap = this.getMarkerStyleMap?.()
+    const nodeTypeAccessor = this.getNodeTypeAccessor?.(options)
+    const nodeStyleMap = this.getDefaultStyleMap?.(options)
+    const defaultNodeStyle = this.getDefaultNodeStyle?.(options)
+    const defaultEdgeStyle = this.getDefaultEdgeStyle?.(options)
+    const markerStyleMap = this.getMarkerStyleMap?.(options)
+    const renderNode = this.getRenderNode?.(options)
 
     return {
       data,
       render: {
         ...(nodeTypeAccessor ? { nodeTypeAccessor } : {}),
         ...(nodeStyleMap ? { nodeStyleMap } : {}),
+        ...(defaultNodeStyle ? { defaultNodeStyle } : {}),
         ...(defaultEdgeStyle ? { defaultEdgeStyle } : {}),
         ...(markerStyleMap ? { markerStyleMap } : {}),
+        ...(renderNode ? { renderNode } : {}),
       },
     }
   }

@@ -205,6 +205,12 @@ main {
   color: var(--vp-c-text-2);
 }
 
+#controls label.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 #controls select {
   min-width: 11rem;
   padding: 0.4rem 0.6rem;
@@ -407,6 +413,238 @@ main {
   #output-panel {
     flex-basis: auto;
     height: 40vh;
+  }
+}
+
+/* ── Docs page ───────────────────────────────────────────────────────── */
+
+.docs-main {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 1.5rem 4rem;
+  overflow-y: auto;
+}
+
+.docs-article {
+  width: 100%;
+  max-width: 860px;
+}
+
+.docs-eyebrow {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vp-c-brand-2);
+}
+
+.docs-article h1 {
+  margin: 0 0 0.9rem;
+  font-size: 1.9rem;
+  line-height: 1.25;
+}
+
+.docs-lede {
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+  margin: 0 0 2.5rem;
+}
+
+.docs-lede a {
+  color: var(--vp-c-brand-1);
+}
+
+.docs-section {
+  margin-bottom: 2.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.docs-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.docs-section h2 {
+  font-size: 1.35rem;
+  margin: 0 0 0.9rem;
+}
+
+.docs-section h3 {
+  font-size: 1.05rem;
+  margin: 1.8rem 0 0.6rem;
+}
+
+.docs-section p {
+  line-height: 1.65;
+  color: var(--vp-c-text-1);
+}
+
+.docs-section code {
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.docs-bullets {
+  margin: 0;
+  padding-left: 1.3rem;
+  line-height: 1.65;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+/* ── Registered formats ─────────────────────────────────────────────── */
+
+.docs-format-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.docs-format-card {
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  background: var(--vp-c-bg-soft);
+}
+
+.docs-format-name {
+  margin: 0 0 0.7rem;
+  font-size: 1rem;
+  font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+  color: var(--vp-c-brand-2);
+}
+
+.docs-variant-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.docs-variant-item {
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.docs-variant-item:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.docs-variant-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.docs-variant-id {
+  font-size: 0.78rem;
+  color: var(--vp-c-text-3);
+}
+
+.docs-variant-desc {
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
+  color: var(--vp-c-text-2);
+}
+
+.docs-badge {
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--vp-c-brand-2) 18%, transparent);
+  color: var(--vp-c-brand-2);
+}
+
+/* ── Legend tables ──────────────────────────────────────────────────── */
+
+.docs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  margin: 0 0 0.5rem;
+}
+
+.docs-table th,
+.docs-table td {
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  border-bottom: 1px solid var(--vp-c-divider);
+  vertical-align: middle;
+}
+
+.docs-table th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3);
+}
+
+.docs-table td:first-child {
+  width: 2.5rem;
+}
+
+.docs-mono {
+  font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+  color: var(--vp-c-text-2);
+}
+
+.docs-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.docs-swatch--circle {
+  border-radius: 50%;
+}
+
+.docs-swatch--square {
+  border-radius: 3px;
+}
+
+.docs-swatch--hexagon {
+  border-radius: 0;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+
+.docs-edge-sample {
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .docs-main {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .docs-article h1 {
+    font-size: 1.5rem;
+  }
+
+  .docs-table {
+    display: block;
+    overflow-x: auto;
   }
 }
 

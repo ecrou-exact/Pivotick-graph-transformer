@@ -1,0 +1,118 @@
+{
+  "icons": {
+    "nodes": {
+      "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28 },
+      "tag": { "shape": "circle", "color": "#94a3b8", "size": 10 },
+      "attribute": { "shape": "circle", "color": "#0ea5e9", "size": 14 },
+      "object": { "shape": "hexagon", "color": "#7c3aed", "size": 18 },
+      "galaxyCluster": { "shape": "square", "color": "#a855f7", "size": 16 },
+      "generic": { "shape": "circle", "color": "#64748b", "size": 12 }
+    }
+  },
+
+  "kinds": {
+    "event": { "shape": "hexagon", "color": "#1f6feb", "size": 28, "mark": "EV", "label": "Event" },
+    "tag": { "shape": "circle", "color": "#94a3b8", "size": 10, "mark": "TAG", "label": "Tag" },
+    "object": { "shape": "hexagon", "color": "#7c3aed", "size": 18, "mark": "OBJ", "label": "Object" },
+    "attribute": { "shape": "circle", "color": "#0ea5e9", "size": 14, "mark": "ATT", "label": "Attribute" },
+    "actor": { "shape": "square", "color": "#a855f7", "size": 16, "mark": "TA", "label": "Threat Actor" },
+    "malware": { "shape": "square", "color": "#dc2626", "size": 16, "mark": "MAL", "label": "Malware" },
+    "tool": { "shape": "square", "color": "#ea580c", "size": 16, "mark": "TL", "label": "Tool" },
+    "technique": { "shape": "square", "color": "#0891b2", "size": 16, "mark": "TTP", "label": "Technique" },
+    "vulnerability": { "shape": "square", "color": "#16a34a", "size": 16, "mark": "VULN", "label": "Vulnerability" },
+    "campaign": { "shape": "square", "color": "#ca8a04", "size": 16, "mark": "CAMP", "label": "Campaign" },
+    "sector": { "shape": "square", "color": "#db2777", "size": 16, "mark": "SEC", "label": "Sector" },
+    "country": { "shape": "square", "color": "#0d9488", "size": 16, "mark": "GEO", "label": "Country/Region" },
+    "other": { "shape": "circle", "color": "#64748b", "size": 12, "mark": "?", "label": "Other" }
+  },
+
+  "edges": {
+    "default": { "strokeColor": "#94a3b8", "strokeWidth": 1 },
+    "hasObject": { "strokeColor": "#64748b", "strokeWidth": 1, "structural": true },
+    "hasAttribute": { "strokeColor": "#0ea5e9", "strokeWidth": 1, "structural": true },
+    "hasTag": { "strokeColor": "#64748b", "strokeWidth": 1, "dashed": true, "structural": true },
+    "hasGalaxy": { "strokeColor": "#8b5cf6", "strokeWidth": 1, "dashed": true, "structural": true },
+    "reference": { "strokeColor": "#7c3aed", "strokeWidth": 2.5 },
+    "clusterRelation": { "strokeColor": "#c026d3", "strokeWidth": 2.5 },
+    "eventExtends": { "strokeColor": "#1f6feb", "strokeWidth": 2.5 },
+    "sharedTag": { "strokeColor": "#64748b", "strokeWidth": 1.5, "dashed": true, "structural": true },
+    "sharedGalaxyCluster": { "strokeColor": "#8b5cf6", "strokeWidth": 1.5, "dashed": true, "structural": true }
+  },
+
+  "badge": {
+    "fontFamily": "system-ui, -apple-system, sans-serif",
+    "shapeStyle": {
+      "circle": { "borderRadius": "50%" },
+      "square": { "borderRadius": "4px" },
+      "hexagon": { "clipPath": "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)" }
+    },
+    "contrast": { "threshold": 0.6, "light": "#ffffff", "dark": "#0f172a" },
+    "sizes": {
+      "normal": {
+        "width": 112, "minHeight": 42, "iconDiameter": 18,
+        "padding": "4px 7px", "borderRadius": 6, "borderWidth": 1.5,
+        "boxShadow": "0 1px 2px rgba(15,23,42,.15)",
+        "titleFontSize": 11, "titleFontWeight": 600, "titleLineClamp": 2,
+        "kindChipFontSize": 8, "secondaryFontSize": 8.5
+      },
+      "wide": {
+        "width": 148, "minHeight": 56, "iconDiameter": 18,
+        "padding": "4px 7px", "borderRadius": 6, "borderWidth": 1.5,
+        "boxShadow": "0 1px 2px rgba(15,23,42,.15)",
+        "titleFontSize": 11, "titleFontWeight": 600, "titleLineClamp": 2,
+        "kindChipFontSize": 8, "secondaryFontSize": 8.5
+      },
+      "emphasized": {
+        "width": 150, "minHeight": 58, "iconDiameter": 28,
+        "padding": "6px 10px", "borderRadius": 8, "borderWidth": 3,
+        "boxShadow": "0 2px 6px rgba(15,23,42,.22)",
+        "titleFontSize": 15, "titleFontWeight": 700, "titleLineClamp": 3,
+        "kindChipFontSize": 9, "secondaryFontSize": 10
+      }
+    },
+    "tag": {
+      "fontSize": 10.5, "fontWeight": 600, "borderRadius": 4,
+      "border": "1px solid rgba(0,0,0,.45)", "boxShadow": "0 1px 2px rgba(15,23,42,.2)",
+      "padding": "4px 8px", "iconSize": 14, "lineClamp": 2,
+      "sizes": {
+        "normal": { "width": 92, "minHeight": 26 },
+        "wide": { "width": 140, "minHeight": 40 }
+      }
+    }
+  },
+
+  "cards": {
+    "event": [
+      { "key": "org", "label": "Org" },
+      { "key": "date", "label": "Date" },
+      { "key": "analysis", "label": "Analysis", "format": "analysisLevel" },
+      { "key": "threatLevel", "label": "Threat level", "format": "threatLevel" },
+      { "key": "published", "label": "Published", "format": "boolean" },
+      { "key": "attributeCount", "label": "Attributes", "hideIfZero": true },
+      { "key": "objectCount", "label": "Objects", "hideIfZero": true },
+      { "key": "tagCount", "label": "Tags", "hideIfZero": true }
+    ],
+    "object": [
+      { "key": "metaCategory", "label": "Category" },
+      { "key": "description", "label": "Description", "truncate": true },
+      { "key": "attributeCount", "label": "Attributes", "hideIfZero": true },
+      { "key": "tagCount", "label": "Tags", "hideIfZero": true }
+    ],
+    "attribute": [
+      { "key": "category", "label": "Category" },
+      { "key": "objectRelation", "label": "Relation" },
+      { "key": "toIds", "label": "IDS", "format": "boolean" },
+      { "key": "sightingCount", "label": "Sightings", "hideIfZero": true },
+      { "key": "comment", "label": "Comment", "truncate": true }
+    ],
+    "galaxyCluster": [
+      { "key": "description", "label": "Description", "truncate": true },
+      { "key": "source", "label": "Source" }
+    ],
+    "tag": [
+      { "key": "colour", "label": "Colour" }
+    ]
+  },
+
+  "arrow": { "markerWidth": 10, "markerHeight": 10 }
+}

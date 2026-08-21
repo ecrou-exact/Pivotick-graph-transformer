@@ -44,7 +44,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const pkgDir = path.join(__dirname, '..')
 const submoduleDir = path.join(pkgDir, 'vendor', 'misp-iconify')
 const svgDir = path.join(submoduleDir, 'src', 'svg')
-const srcDir = path.join(pkgDir, 'src')
+const srcDir = path.join(pkgDir, 'src', 'shared')
 
 const submoduleCommit = execFileSync('git', ['-C', submoduleDir, 'rev-parse', 'HEAD']).toString().trim()
 
@@ -112,7 +112,7 @@ export const MISP_GENERIC_ICONS: Readonly<Record<string, string>> = ${toEntries(
 `,
 )
 console.log(
-  `  vendored src/icons.generated.ts (${Object.keys(attributeIcons).length} attribute, ${Object.keys(objectIcons).length} object, ${Object.keys(galaxyIcons).length} galaxy, ${Object.keys(genericIcons).length} generic icons)`,
+  `  vendored src/shared/icons.generated.ts (${Object.keys(attributeIcons).length} attribute, ${Object.keys(objectIcons).length} object, ${Object.keys(galaxyIcons).length} galaxy, ${Object.keys(genericIcons).length} generic icons)`,
 )
 
 console.log('Done.')
