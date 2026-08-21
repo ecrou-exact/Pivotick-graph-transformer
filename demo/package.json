@@ -22,6 +22,7 @@
     "lodash.merge": "^4.6.2",
     "pivotick-transformer-core": "*",
     "pivotick-transformer-dot": "*",
+    "pivotick-transformer-graphml": "*",
     "pivotick-transformer-misp": "*"
   },
   "devDependencies": {

@@ -1,9 +1,12 @@
 import { ConverterRegistry } from 'pivotick-transformer-core'
 import type { ConversionResult, PivotickRenderOptions, RawEdge, RawNode } from 'pivotick-transformer-core'
 import { toDot } from 'pivotick-transformer-dot'
+import { toGraphML } from 'pivotick-transformer-graphml'
+import type { GraphMLEdgeStyle, GraphMLNodeStyle } from 'pivotick-transformer-graphml'
 import 'pivotick-transformer-misp'
 
 import type { ImageSize, Viz } from '@viz-js/viz'
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from 'd3-force'
 import { select } from 'd3-selection'
 
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
@@ -480,6 +483,351 @@ async function renderDotView(data: ConversionResult, render: PivotickRenderOptio
   }
 }
 
+// ── GraphML view ──────────────────────────────────────────────────────
+//
+// GraphML (unlike DOT/Graphviz) carries no layout engine of its own —
+// see pivotick-transformer-graphml's own README on its `nodePosition`
+// option — so this view runs its own quick, throwaway force simulation
+// (d3-force, the same library Pivotick's own canvas uses internally)
+// purely to give each node a real position before handing it to
+// toGraphML(). The generated GraphML text (shown in the "Converted
+// output" panel, same as every other view) is the actual deliverable,
+// carrying colour/shape/icon as plain data any GraphML-aware tool can
+// read — but the on-screen *preview* deliberately doesn't render from
+// that text the way the `.dot` view renders from real Graphviz output:
+// GraphML has no visual-rendering engine of its own to lean on, and a
+// hand-rolled shapes-and-icons approximation (which an earlier version
+// of this view did) reads as a plainer, `.dot`-flavoured redraw rather
+// than something that actually looks like Pivotick. So instead, the
+// preview calls the exact same `render.renderNode` callback the
+// Pivotick view itself calls for the current Style choice (card/flat/
+// label/icon) — the *real* MISP badge DOM, colours/icons/kind chips and
+// all — and places that HTML inside the SVG via `<foreignObject>`, at
+// the position the same layout pass already gave each node.
+
+const SVG_NS = 'http://www.w3.org/2000/svg'
+
+interface FlatLayoutEntry {
+  id: string
+  parentId?: string
+  node: RawNode
+}
+
+function flattenForLayout(nodes: RawNode[]): FlatLayoutEntry[] {
+  const flat: FlatLayoutEntry[] = []
+  const seenIds = new Set<string>()
+  const visit = (node: RawNode, parentId?: string): void => {
+    const id = String(node.id)
+    if (!seenIds.has(id)) {
+      seenIds.add(id)
+      flat.push({ id, parentId, node })
+    }
+    for (const child of node.children ?? []) visit(child, id)
+  }
+  for (const node of nodes) visit(node)
+  return flat
+}
+
+interface SimNode {
+  id: string
+  x?: number
+  y?: number
+}
+
+/**
+ * Runs a short, fixed-iteration force simulation purely to give each
+ * node a real `{x, y}` — see this section's own doc for why. Not meant
+ * to be interactive or to match Pivotick's own physics tuning, just
+ * spread out enough for a legible static preview; `RawNode.children`
+ * (flattened the same way `toGraphML()` itself flattens them) get a
+ * synthetic link to their parent too, so a nested node doesn't just sit
+ * unconnected wherever the simulation happens to drop it.
+ *
+ * `radiusById` — each node's own real rendered half-size, from
+ * `measureAllNodes()` — drives a collision force so cards don't just
+ * land on top of each other: `charge` alone repels every pair by the
+ * same fixed strength regardless of size, which reliably still overlaps
+ * a big card against a small one.
+ */
+function computeForceLayout(data: ConversionResult, radiusById: Map<string, number>): Map<string, { x: number; y: number }> {
+  const flatNodes = flattenForLayout(data.nodes)
+  const simNodes: SimNode[] = flatNodes.map((n) => ({ id: n.id }))
+  const simLinks = [
+    ...data.edges.map((edge) => ({ source: String(edge.from), target: String(edge.to) })),
+    ...flatNodes.filter((n): n is FlatLayoutEntry & { parentId: string } => n.parentId !== undefined).map((n) => ({ source: n.parentId, target: n.id })),
+  ]
+
+  const simulation = forceSimulation(simNodes)
+    .force('link', forceLink<SimNode, { source: string; target: string }>(simLinks).id((n) => n.id).distance(110))
+    .force('charge', forceManyBody().strength(-220))
+    .force('collide', forceCollide<SimNode>().radius((n) => radiusById.get(n.id) ?? 40))
+    .force('center', forceCenter(0, 0))
+    .stop()
+  for (let i = 0; i < 300; i++) simulation.tick()
+
+  const positions = new Map<string, { x: number; y: number }>()
+  for (const n of simNodes) positions.set(n.id, { x: n.x ?? 0, y: n.y ?? 0 })
+  return positions
+}
+
+const GRAPHML_NODE_SHAPE: Record<string, string> = {
+  circle: 'ellipse',
+  square: 'rectangle',
+}
+
+/**
+ * Rough estimate of a label's on-screen width at roughly the font size
+ * a plain GraphML-reading tool (yEd, say — anything that isn't this
+ * view's own Pivotick-card preview, which measures its own real DOM
+ * instead) would show it at. GraphML has no auto-sizing layout pass to
+ * lean on the way Graphviz did for the `.dot` view, so the *exported*
+ * `y:Geometry` still needs a real width/height committed to upfront,
+ * even though this view's own on-screen preview no longer depends on it
+ * (see `renderGraphMLPreview()`, which measures the actual rendered
+ * card instead).
+ */
+function estimateLabelWidth(label: string): number {
+  return label.length * 6.5
+}
+
+/**
+ * Same translation `dotNodeAttributes()` does for the `.dot` view —
+ * style resolved the same two-layer way (category default, then a
+ * node's own per-node override) — just aimed at GraphML's
+ * `GraphMLNodeStyle` shape instead of DOT attributes. `width`/`height`
+ * only matter for the *exported* `y:Geometry` now (see
+ * `estimateLabelWidth()`'s doc) — the on-screen preview measures its own
+ * real card DOM instead, so a plain GraphML reader is the only thing
+ * that still depends on this being a reasonable size.
+ */
+function graphmlNodeStyle(node: RawNode, render: PivotickRenderOptions): GraphMLNodeStyle {
+  const type = render.nodeTypeAccessor?.(node)
+  const categoryStyle = (type !== undefined ? render.nodeStyleMap?.[type] : undefined) ?? render.defaultNodeStyle
+  const style = { ...categoryStyle, ...node.style }
+
+  const label = typeof node.data?.label === 'string' ? node.data.label : String(node.id)
+  const hasIcon = typeof style.svgIcon === 'string'
+
+  return {
+    shape: typeof style.shape === 'string' ? (GRAPHML_NODE_SHAPE[style.shape] ?? style.shape) : undefined,
+    fillColor: typeof style.color === 'string' ? style.color : undefined,
+    borderColor: typeof style.strokeColor === 'string' ? style.strokeColor : undefined,
+    borderWidth: typeof style.strokeWidth === 'number' ? style.strokeWidth : undefined,
+    width: Math.max(64, estimateLabelWidth(label) + 16),
+    height: hasIcon ? ICON_TARGET_HEIGHT_POINTS + 34 : 40,
+  }
+}
+
+/** Same idea as `dotEdgeAttributes()`, aimed at GraphML's `GraphMLEdgeStyle` shape. */
+function graphmlEdgeStyle(edge: RawEdge, render: PivotickRenderOptions): GraphMLEdgeStyle {
+  const edgeStyle = (edge.style as { edge?: Record<string, unknown> } | undefined)?.edge ?? render.defaultEdgeStyle ?? {}
+  return {
+    color: typeof edgeStyle.strokeColor === 'string' ? edgeStyle.strokeColor : undefined,
+    width: typeof edgeStyle.strokeWidth === 'number' ? edgeStyle.strokeWidth : undefined,
+    dashed: edgeStyle.dashed === true,
+    arrow: edgeStyle.markerEnd === 'none' ? 'none' : 'standard',
+  }
+}
+
+/** GraphML has no yFiles-standard icon element (see `pivotick-transformer-graphml`'s README) — carried instead in the *exported* file as this view's own `icon` generic `<data>` field, for a plain GraphML reader; the on-screen preview gets its icon for free, already part of the real card DOM `renderGraphMLPreview()` places. */
+function graphmlNodeData(node: RawNode, render: PivotickRenderOptions): Record<string, string> | undefined {
+  const type = render.nodeTypeAccessor?.(node)
+  const categoryStyle = (type !== undefined ? render.nodeStyleMap?.[type] : undefined) ?? render.defaultNodeStyle
+  const style = { ...categoryStyle, ...node.style }
+  return typeof style.svgIcon === 'string' ? { icon: style.svgIcon } : undefined
+}
+
+function createSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string>): SVGElementTagNameMap[K] {
+  const el = document.createElementNS(SVG_NS, tag)
+  for (const [name, value] of Object.entries(attrs)) el.setAttribute(name, value)
+  return el
+}
+
+/**
+ * The minimal `{ getData, getStyle }` shape `render.renderNode` (a
+ * `RenderNodeFn`) actually calls, per its own implementation in
+ * `MispIconRenderingConverter.getRenderNode()` — it never calls
+ * `getCircleRadius`/`setCircleRadius` despite the type allowing them, so
+ * this doesn't need a real Pivotick `Node` instance to stand in for,
+ * just this pair of methods reading straight off the `RawNode` itself.
+ */
+function fakePivotickNode(node: RawNode): { getData: () => Record<string, unknown> | undefined; getStyle: () => Record<string, unknown> | undefined } {
+  return { getData: () => node.data, getStyle: () => node.style }
+}
+
+/**
+ * Measures `element` the same way Pivotick's own renderer does after
+ * calling `renderNode()` (per `RenderNodeFn`'s own doc: "measures the
+ * element via `getBoundingClientRect()`") — appended off-screen just
+ * long enough to lay out and measure, then handed back still attached to
+ * the document (removing it here would also discard any state a card's
+ * own DOM construction set up), ready for the caller to place wherever
+ * it actually belongs.
+ */
+function measureRenderedNode(element: HTMLElement): { width: number; height: number } {
+  element.style.position = 'fixed'
+  element.style.left = '-9999px'
+  element.style.top = '-9999px'
+  element.style.visibility = 'hidden'
+  document.body.append(element)
+  const rect = element.getBoundingClientRect()
+  element.remove()
+  element.style.position = ''
+  element.style.left = ''
+  element.style.top = ''
+  element.style.visibility = ''
+  return { width: rect.width || 60, height: rect.height || 40 }
+}
+
+/** Plain fallback for a node whose converter has no `renderNode` (or one that, per `RenderNodeFn`'s contract, chose to return nothing for this particular node) — every converter this repo ships always has one, so in practice this only ever matters for a hypothetical future converter that doesn't. */
+function fallbackNodeElement(node: RawNode): HTMLElement {
+  const div = document.createElement('div')
+  div.textContent = typeof node.data?.label === 'string' ? node.data.label : String(node.id)
+  div.style.cssText = 'display:inline-block;padding:4px 8px;background:#94a3b8;color:#fff;border-radius:6px;font:600 11px ui-monospace,Menlo,Monaco,Consolas,monospace;white-space:nowrap;'
+  return div
+}
+
+interface MeasuredNode {
+  id: string
+  element: HTMLElement
+  width: number
+  height: number
+}
+
+/**
+ * Renders (via `render.renderNode`, same as the Pivotick view) and
+ * measures every node once, up front. Both `computeForceLayout()`'s
+ * collision radius and `renderGraphMLPreview()`'s placement need a real
+ * size — computing it once here and threading it through means the same
+ * card DOM only ever gets built and measured a single time.
+ */
+function measureAllNodes(data: ConversionResult, render: PivotickRenderOptions): MeasuredNode[] {
+  return flattenForLayout(data.nodes).map(({ id, node }) => {
+    const rendered = render.renderNode?.(fakePivotickNode(node))
+    const element = rendered instanceof HTMLElement ? rendered : fallbackNodeElement(node)
+    const { width, height } = measureRenderedNode(element)
+    return { id, element, width, height }
+  })
+}
+
+interface PreviewNodeBox {
+  cx: number
+  cy: number
+}
+
+/**
+ * Builds the GraphML view's on-screen preview — see this section's own
+ * doc for why it's real Pivotick badge DOM in `<foreignObject>`s rather
+ * than a redraw from the GraphML text. Edges are deliberately plain
+ * straight lines with no routing: this is about showing what the *nodes*
+ * look like, not competing with Pivotick's own edge rendering.
+ */
+function renderGraphMLPreview(measuredNodes: MeasuredNode[], edges: RawEdge[], render: PivotickRenderOptions, positions: Map<string, { x: number; y: number }>): SVGSVGElement {
+  const svg = createSvgElement('svg', {})
+  const edgeGroup = createSvgElement('g', {})
+  const nodeGroup = createSvgElement('g', {})
+  svg.append(edgeGroup, nodeGroup)
+
+  const boxes = new Map<string, PreviewNodeBox>()
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+
+  for (const { id, element, width, height } of measuredNodes) {
+    const pos = positions.get(id) ?? { x: 0, y: 0 }
+    const x = pos.x - width / 2
+    const y = pos.y - height / 2
+    const foreignObject = createSvgElement('foreignObject', { x: String(x), y: String(y), width: String(width), height: String(height) })
+    foreignObject.append(element)
+    nodeGroup.append(foreignObject)
+
+    boxes.set(id, { cx: pos.x, cy: pos.y })
+    minX = Math.min(minX, x)
+    minY = Math.min(minY, y)
+    maxX = Math.max(maxX, x + width)
+    maxY = Math.max(maxY, y + height)
+  }
+
+  for (const edge of edges) {
+    const sourceBox = boxes.get(String(edge.from))
+    const targetBox = boxes.get(String(edge.to))
+    if (!sourceBox || !targetBox) continue
+
+    const style = graphmlEdgeStyle(edge, render)
+    edgeGroup.append(createSvgElement('line', {
+      x1: String(sourceBox.cx),
+      y1: String(sourceBox.cy),
+      x2: String(targetBox.cx),
+      y2: String(targetBox.cy),
+      stroke: style.color ?? '#94a3b8',
+      'stroke-width': String(style.width ?? 1),
+      ...(style.dashed ? { 'stroke-dasharray': '5,4' } : {}),
+    }))
+
+    const label = typeof edge.data?.label === 'string' ? edge.data.label : undefined
+    if (label !== undefined) {
+      const text = createSvgElement('text', {
+        x: String((sourceBox.cx + targetBox.cx) / 2),
+        y: String((sourceBox.cy + targetBox.cy) / 2 - 4),
+        'text-anchor': 'middle',
+        'font-size': '9',
+        'font-family': 'ui-monospace, Menlo, Monaco, Consolas, monospace',
+        fill: style.color ?? '#64748b',
+      })
+      text.textContent = label
+      edgeGroup.append(text)
+    }
+  }
+
+  const padding = 40
+  if (minX === Infinity) {
+    minX = 0
+    minY = 0
+    maxX = 100
+    maxY = 100
+  }
+  svg.setAttribute('viewBox', `${minX - padding} ${minY - padding} ${maxX - minX + padding * 2} ${maxY - minY + padding * 2}`)
+  return svg
+}
+
+/**
+ * The GraphML View option's counterpart to constructing a `Pivotick`
+ * instance. Unlike `renderDotView()`, nothing here is asynchronous — no
+ * WASM build to load — so this runs straight through: compute a layout,
+ * generate the GraphML text, show it, and (independently — see
+ * `renderGraphMLPreview()`'s doc on why it isn't driven by this same
+ * text) draw the preview.
+ *
+ * Still parses the generated text back with `DOMParser` and surfaces a
+ * failure in `statusEl` if it doesn't — the preview no longer depends on
+ * this succeeding, but a `toGraphML()` bug producing invalid XML is
+ * exactly the kind of thing worth catching and saying so plainly, not
+ * silently ignoring just because the preview happens to not need it.
+ */
+function renderGraphMLView(data: ConversionResult, render: PivotickRenderOptions, format: string, variantId: string): void {
+  const measuredNodes = measureAllNodes(data, render)
+  const radiusById = new Map(measuredNodes.map((n) => [n.id, Math.max(n.width, n.height) / 2]))
+  const positions = computeForceLayout(data, radiusById)
+
+  const graphmlSource = toGraphML(data, {
+    nodeStyle: (node) => graphmlNodeStyle(node, render),
+    nodePosition: (node) => positions.get(String(node.id)),
+    nodeData: (node) => graphmlNodeData(node, render),
+    edgeStyle: (edge) => graphmlEdgeStyle(edge, render),
+  })
+  renderPlainTextOutput(jsonOutput, graphmlSource)
+
+  const parserError = new DOMParser().parseFromString(graphmlSource, 'application/xml').getElementsByTagName('parsererror')[0]
+  if (parserError) {
+    statusEl.textContent = `Generated GraphML failed to parse: ${parserError.textContent ?? 'unknown error'}`
+    return
+  }
+
+  container.replaceChildren(renderGraphMLPreview(measuredNodes, data.edges, render, positions))
+  statusEl.textContent = `Rendered ${data.nodes.length} node(s), ${data.edges.length} edge(s) with ${format}/${variantId} as GraphML.`
+}
+
 function populateFormats(): void {
   formatSelect.innerHTML = ''
   for (const format of ConverterRegistry.listFormats()) {
@@ -586,14 +934,15 @@ function render(): void {
 
   const format = formatSelect.value
   const variantId = variantSelect.value
-  const isDotView = viewSelect.value === 'dot'
+  const view = viewSelect.value
+  const isPivotickView = view === 'pivotick'
 
-  // Smart zoom only makes sense for the Pivotick canvas — the `.dot` view
-  // is a static Graphviz layout with no zoom-index of its own to drive it
-  // from, so it's greyed out (but left checked, so switching back to
-  // Pivotick resumes it) and never consulted for `style` below.
-  smartZoomCheckbox.disabled = isDotView
-  const smartZoomActive = !isDotView && smartZoomCheckbox.checked
+  // Smart zoom only makes sense for the Pivotick canvas — the `.dot` and
+  // GraphML views are static layouts with no zoom-index of their own to
+  // drive it from, so it's greyed out (but left checked, so switching
+  // back to Pivotick resumes it) and never consulted for `style` below.
+  smartZoomCheckbox.disabled = !isPivotickView
+  const smartZoomActive = isPivotickView && smartZoomCheckbox.checked
   // Smart zoom (when active) drives the Style dropdown automatically —
   // see attachSmartZoom()'s doc — and keeps the dropdown itself disabled
   // and in sync so its displayed value never lies about what's actually
@@ -617,12 +966,20 @@ function render(): void {
     data = toPivotick.data
     outputSummaryMeta.textContent = `${data.nodes.length} node(s), ${data.edges.length} edge(s)`
 
-    if (isDotView) {
+    if (view === 'dot') {
       pivotickInstance?.destroy()
       pivotickInstance = undefined
       container.innerHTML = ''
       statusEl.textContent = 'Loading Graphviz…'
       void renderDotView(data, toPivotick.render, format, variantId, generation)
+      return
+    }
+
+    if (view === 'graphml') {
+      pivotickInstance?.destroy()
+      pivotickInstance = undefined
+      container.innerHTML = ''
+      renderGraphMLView(data, toPivotick.render, format, variantId)
       return
     }
 
