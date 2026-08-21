@@ -276,48 +276,65 @@ function readableTextColor(hexColor: string): string {
 }
 
 /**
- * Best-effort translation of a node's resolved Pivotick style — via
- * whichever `GraphConverter` produced it, through the same
- * `nodeTypeAccessor`/`nodeStyleMap`/`defaultNodeStyle` mechanism Pivotick
- * itself uses (`toPivickOptions().render`, passed in as `render`) — into
- * DOT attributes. Deliberately narrow: `color` and `shape` are the only
- * two concepts common enough to map with any confidence (every shape
- * name this repo's converters use — hexagon/square/circle — is already a
- * real Graphviz shape keyword); a style's icon SVGs, pixel sizes, etc.
- * have no sane DOT equivalent and are left alone. This lives here rather
- * than in `pivotick-transformer-dot` itself because it's inherently
- * tied to *this* rendering convention — a future converter for a
- * different format is free to shape its own style objects differently.
+ * Best-effort translation of a node's resolved Pivotick style into DOT
+ * attributes. Two layers, matching how Pivotick's own renderer resolves a
+ * node's style (verified against its real `NodeDrawer`): a category
+ * default from `nodeTypeAccessor`/`nodeStyleMap`/`defaultNodeStyle`
+ * (`toPivickOptions().render`, passed in as `render`) — e.g. every MISP
+ * Tag is grey — overridden field-by-field by the node's own `RawNode
+ * .style`, if it set one — e.g. a specific Tag like `tlp:red` carries its
+ * taxonomy's *real* colour there (see `mispTagsAndGalaxies.ts`'s
+ * `addMispTags()`), which must win over the generic "tag" grey.
+ *
+ * Deliberately narrow on which fields get mapped: `shape`/`color` (every
+ * shape name this repo's converters use — hexagon/square/circle — is
+ * already a real Graphviz shape keyword) and `strokeColor`/`strokeWidth`
+ * for the border — mirroring why MISP sets a `strokeColor` on light Tags
+ * at all: fill alone can wash out the node against a similarly light
+ * background (see the `tlp:white`-legible-even-though-white case in
+ * that same doc), so it stays worth carrying over here too. Icon SVGs,
+ * pixel sizes, etc. have no sane DOT equivalent and are left alone. This
+ * lives here rather than in `pivotick-transformer-dot` itself because
+ * it's inherently tied to *this* rendering convention — a future
+ * converter for a different format is free to shape its own style
+ * objects differently.
  */
 function dotNodeAttributes(node: RawNode, render: PivotickRenderOptions): Record<string, string> {
   const type = render.nodeTypeAccessor?.(node)
-  const style = (type !== undefined ? render.nodeStyleMap?.[type] : undefined) ?? render.defaultNodeStyle
-  if (!style) return {}
+  const categoryStyle = (type !== undefined ? render.nodeStyleMap?.[type] : undefined) ?? render.defaultNodeStyle
+  const style = { ...categoryStyle, ...node.style }
 
   const attrs: Record<string, string> = {}
   if (typeof style.shape === 'string') attrs.shape = style.shape
   if (typeof style.color === 'string') {
     attrs.style = 'filled'
-    attrs.color = style.color
     attrs.fillcolor = style.color
     attrs.fontcolor = readableTextColor(style.color)
   }
+  // `color` (the border) is only set from an explicit `strokeColor` —
+  // never defaulted to the fill colour. Left unset, Graphviz's own
+  // default border (a thin black outline) already reads fine on every
+  // fill colour here, which a same-as-fill border wouldn't.
+  if (typeof style.strokeColor === 'string') attrs.color = style.strokeColor
+  if (typeof style.strokeWidth === 'number') attrs.penwidth = String(style.strokeWidth)
   return attrs
 }
 
 /**
- * Same idea as `dotNodeAttributes()`, but edge style needs no render-side
- * lookup — every converter that wants its edges actually styled in
- * Pivotick has to attach `{ edge: { strokeColor, strokeWidth, dashed,
- * markerEnd } }` directly to `RawEdge.style` in the first place (verified
- * against Pivotick's real `Edge.getEdgeStyle()`, which reads `this.style
- * ?.edge` — see `packages/misp/src/shared/edgeStyleFor.ts`'s doc), so
- * it's already sitting right there on the edge this function is called
- * with.
+ * Same idea as `dotNodeAttributes()`, for edges — but only one layer:
+ * every converter that wants its edges actually styled in Pivotick has to
+ * attach `{ edge: { strokeColor, strokeWidth, dashed, markerEnd } }`
+ * directly to `RawEdge.style` in the first place (verified against
+ * Pivotick's real `Edge.getEdgeStyle()`, which reads `this.style?.edge`
+ * — see `edgeStyleFor.ts`'s doc), so there's no separate per-node-style
+ * override to merge in on top — it's already sitting right there on the
+ * edge this function is called with. Falls back to `render
+ * .defaultEdgeStyle` (flat, no `edge` wrapper — the one shape Pivotick's
+ * renderer *does* read a bare fallback from) for the rare edge with no
+ * per-edge style of its own.
  */
-function dotEdgeAttributes(edge: RawEdge): Record<string, string> {
-  const edgeStyle = (edge.style as { edge?: Record<string, unknown> } | undefined)?.edge
-  if (!edgeStyle) return {}
+function dotEdgeAttributes(edge: RawEdge, render: PivotickRenderOptions): Record<string, string> {
+  const edgeStyle = (edge.style as { edge?: Record<string, unknown> } | undefined)?.edge ?? render.defaultEdgeStyle ?? {}
 
   const attrs: Record<string, string> = {}
   if (typeof edgeStyle.strokeColor === 'string') attrs.color = edgeStyle.strokeColor
@@ -343,7 +360,7 @@ function dotEdgeAttributes(edge: RawEdge): Record<string, string> {
 async function renderDotView(data: ConversionResult, render: PivotickRenderOptions, format: string, variantId: string, generation: number): Promise<void> {
   const dotSource = toDot(data, {
     nodeAttributes: (node) => dotNodeAttributes(node, render),
-    edgeAttributes: dotEdgeAttributes,
+    edgeAttributes: (edge) => dotEdgeAttributes(edge, render),
   })
   renderPlainTextOutput(jsonOutput, dotSource)
 
