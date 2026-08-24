@@ -1,0 +1,17 @@
+{
+  "name": "pivotick-graph-transformer-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0"
+  },
+  "dependencies": {
+    "lodash.merge": "^4.6.2"
+  }
+}

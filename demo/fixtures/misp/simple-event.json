@@ -1,0 +1,51 @@
+{
+  "Event": {
+    "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000001",
+    "info": "Phishing campaign against acme-corp",
+    "date": "2026-08-20",
+    "Attribute": [
+      {
+        "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000002",
+        "type": "domain",
+        "category": "Network activity",
+        "value": "evil-phish.example"
+      },
+      {
+        "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000003",
+        "type": "email-src",
+        "category": "Payload delivery",
+        "value": "attacker@evil-phish.example"
+      }
+    ],
+    "Object": [
+      {
+        "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000004",
+        "name": "file",
+        "meta_category": "file",
+        "Attribute": [
+          {
+            "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000005",
+            "type": "filename",
+            "category": "Payload delivery",
+            "value": "invoice.pdf.exe",
+            "object_relation": "filename"
+          },
+          {
+            "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000006",
+            "type": "sha256",
+            "category": "Payload delivery",
+            "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85",
+            "object_relation": "sha256"
+          }
+        ],
+        "ObjectReference": [
+          {
+            "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000007",
+            "referenced_uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000002",
+            "relationship_type": "downloaded-from"
+          }
+        ]
+      }
+    ]
+  }
+}
