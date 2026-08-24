@@ -61,6 +61,20 @@ export interface ConverterVariantMeta {
   default?: boolean
 }
 
+// A single "if this node/edge looks like X, apply Y" rule — matched against
+// the free-form `data` bag any importer builds. `when` fields are ANDed
+// together; a node matches only if every one of them equals. Rules apply in
+// array order, later ones winning on conflict, so a broad "by type" rule can
+// sit before a narrower "by type + category" one. This is what every format
+// importer should read to let callers tune shape/color/icon/extra-data
+// per element, purely through the options bag — never by touching Pivotick.
+export interface StyleRule {
+  when: Record<string, unknown>
+  style?: Partial<NodeStyle>
+  data?: Record<string, unknown>
+}
+
 export interface ConverterOptions {
+  styleRules?: StyleRule[]
   [key: string]: unknown
 }

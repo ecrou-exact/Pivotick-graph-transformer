@@ -1,3 +1,8 @@
+// Render tuning for this importer is just `ConverterOptions.styleRules`
+// (packages/core/src/types.ts) — rules matched against each node's `data`
+// (which always has at least `type`, and `category` for attributes).
+// No MISP-specific options type needed on top of it.
+
 // Minimal shape of a MISP Event export (JSON), covering the fields this
 // importer actually reads. Not the full MISP schema.
 
