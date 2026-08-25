@@ -1,0 +1,151 @@
+{
+  "response": [
+    {
+      "Event": {
+        "id": "431679",
+        "orgc_id": "2",
+        "org_id": "2",
+        "date": "2026-07-03",
+        "threat_level_id": "2",
+        "info": "Device code phishing campaign targeting Luxembourg organizations",
+        "published": true,
+        "uuid": "54652cc1-4a6f-4a7c-b033-407cc924d9a3",
+        "attribute_count": "8",
+        "analysis": "2",
+        "timestamp": "1783068431",
+        "distribution": "3",
+        "proposal_email_lock": false,
+        "locked": false,
+        "publish_timestamp": "1783068531",
+        "first_publication": "1783068531",
+        "sharing_group_id": "0",
+        "disable_correlation": false,
+        "extends_uuid": "",
+        "protected": null,
+        "event_creator_email": "michael.hamm@circl.lu",
+        "Org": {
+          "id": "2",
+          "name": "CIRCL",
+          "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+          "local": true
+        },
+        "Orgc": {
+          "id": "2",
+          "name": "CIRCL",
+          "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+          "local": true
+        }
+      }
+    },
+    {
+      "Event": {
+        "id": "431680",
+        "orgc_id": "2",
+        "org_id": "2",
+        "date": "2026-07-05",
+        "threat_level_id": "1",
+        "info": "Malicious npm package used for supply-chain compromise",
+        "published": true,
+        "uuid": "6b1f0a3e-1d5b-4a2f-9c7e-1a2b3c4d5e6f",
+        "attribute_count": "14",
+        "analysis": "2",
+        "timestamp": "1783241231",
+        "distribution": "4",
+        "proposal_email_lock": false,
+        "locked": false,
+        "publish_timestamp": "1783241331",
+        "first_publication": "1783241331",
+        "sharing_group_id": "12",
+        "disable_correlation": false,
+        "extends_uuid": "",
+        "protected": null,
+        "event_creator_email": "michael.hamm@circl.lu",
+        "Org": {
+          "id": "2",
+          "name": "CIRCL",
+          "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+          "local": true
+        },
+        "Orgc": {
+          "id": "2",
+          "name": "CIRCL",
+          "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+          "local": true
+        }
+      }
+    },
+    {
+      "Event": {
+        "id": "431681",
+        "orgc_id": "5",
+        "org_id": "2",
+        "date": "2026-07-10",
+        "threat_level_id": "1",
+        "info": "Ransomware IOC sharing - LockBit variant",
+        "published": false,
+        "uuid": "9d2e4f6a-8b0c-4d1e-a3f5-6c7d8e9f0a1b",
+        "attribute_count": "5",
+        "analysis": "1",
+        "timestamp": "1783414031",
+        "distribution": "0",
+        "proposal_email_lock": false,
+        "locked": false,
+        "publish_timestamp": "0",
+        "sharing_group_id": "0",
+        "disable_correlation": false,
+        "extends_uuid": "",
+        "protected": null,
+        "event_creator_email": "michael.hamm@circl.lu",
+        "Org": {
+          "id": "2",
+          "name": "CIRCL",
+          "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+          "local": true
+        },
+        "Orgc": {
+          "id": "5",
+          "name": "ACME-CERT",
+          "uuid": "1a2b3c4d-5e6f-4a1b-8c2d-3e4f5a6b7c8d",
+          "local": false
+        }
+      }
+    },
+    {
+      "Event": {
+        "id": "431682",
+        "orgc_id": "2",
+        "org_id": "2",
+        "date": "2026-07-15",
+        "threat_level_id": "3",
+        "info": "Business email compromise targeting financial sector",
+        "published": true,
+        "uuid": "c3d4e5f6-7a8b-4c9d-9e0f-1a2b3c4d5e6f",
+        "attribute_count": "10",
+        "analysis": "2",
+        "timestamp": "1783846831",
+        "distribution": "2",
+        "proposal_email_lock": false,
+        "locked": false,
+        "publish_timestamp": "1783846931",
+        "first_publication": "1783846931",
+        "sharing_group_id": "0",
+        "disable_correlation": false,
+        "extends_uuid": "",
+        "protected": null,
+        "event_creator_email": "michael.hamm@circl.lu",
+        "Org": {
+          "id": "2",
+          "name": "CIRCL",
+          "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+          "local": true
+        },
+        "Orgc": {
+          "id": "2",
+          "name": "CIRCL",
+          "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+          "local": true
+        }
+      }
+    }
+  ]
+}

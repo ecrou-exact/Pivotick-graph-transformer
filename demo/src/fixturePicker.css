@@ -1,0 +1,56 @@
+/* Floating panel drawn on top of Pivotick's own container via position:
+   fixed + z-index — appended to <body> as a sibling of #app, so Pivotick
+   itself is never touched, only re-instantiated when the selection changes. */
+
+#fixture-picker {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 1000;
+  min-width: 240px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  background: #1c1f24;
+  color: #e6e6e6;
+  border: 1px solid #3a3f47;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+#fixture-picker-toggle {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+
+#fixture-picker-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#fixture-picker-body {
+  padding: 0 12px 12px;
+}
+
+#fixture-picker.collapsed #fixture-picker-body {
+  display: none;
+}
+
+#fixture-picker-select {
+  width: 100%;
+  padding: 6px 8px;
+  background: #12141a;
+  color: inherit;
+  border: 1px solid #3a3f47;
+  border-radius: 6px;
+  font: inherit;
+}
