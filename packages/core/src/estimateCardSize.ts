@@ -38,7 +38,12 @@ export function estimateCardSize(label: string, options?: EstimateCardSizeOption
   const secondaryCharWidth = options?.secondaryCharWidth ?? 4.5
   const iconWidth = hasIcon ? iconSize + 6 : 0
 
-  const labelWidth = padding + iconWidth + label.length * charWidth
+  // +1 charWidth of safety margin: a plain per-character average
+  // underestimates wide glyphs (all-caps text like "TCP" runs wider per
+  // character than the mixed-case text this ratio was measured against),
+  // and being short by even a couple pixels means the last character
+  // wraps onto its own line under overflow-wrap: anywhere.
+  const labelWidth = padding + iconWidth + label.length * charWidth + charWidth
   const secondaryWidth = options?.secondaryText
     ? padding + iconWidth + options.secondaryText.length * secondaryCharWidth
     : 0

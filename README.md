@@ -16,6 +16,8 @@ cd demo && npm run dev
 
 Opens a real Pivotick instance rendering whatever converter output this repo currently produces. A floating panel (bottom-right, draggable, collapsible) lets you pick any fixture under `demo/fixtures/misp/**` and toggle dark/light theme — both re-render immediately.
 
+`demo/src/main.ts`'s `simulation` block pushes `d3LinkDistance`/`d3ManyBodyStrength`/`d3CollideRadiusMultiplier` well past Pivotick's own UI-slider ceiling — its defaults assume small native shapes, and our custom html cards (Event/Object/Attribute/Tag/Galaxy) run much bigger with many more children per node than that, so the defaults clump everything into an unreadable pile without this. **Revisit/remove this tuning if Pivotick itself ever gets a fix that sizes its own physics off a node's actual rendered footprint** (e.g. a custom `html` node) instead of a generic default — at that point this workaround would just be fighting a problem Pivotick no longer has.
+
 ## MISP concepts to implement
 
 The MISP importer converts one MISP concept at a time into nodes/edges + curated properties-panel fields. Each concept gets its own folder under `packages/misp/src/` (`event/`, `attribute/`, `object/`, ...) with a `fields.ts` (which raw fields to show, in what order) and a `formatters.ts` (how to make them readable — reusing `shared/formatters.ts` for anything more than one concept needs, e.g. epoch timestamps or distribution codes). Status of each concept in MISP's own data model:

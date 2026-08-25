@@ -97,7 +97,19 @@ function renderPivotick(): void {
     simulation: {
       enabled: true,
       useWorker: true,
-      fitViewOnExpandCollapse: true
+      fitViewOnExpandCollapse: true,
+      // Pivotick's own d3-force defaults (d3LinkDistance: 40,
+      // d3ManyBodyStrength: -150) assume small native shapes — our custom
+      // html cards (buildIconLabelCard/buildTagChip) run much bigger, and
+      // a MISP Event can have dozens of Attribute/Tag/Galaxy children, so
+      // the defaults clump everything into an unreadable pile. These are
+      // still Pivotick's own documented simulation knobs, just tuned well
+      // past Pivotick's own UI-slider ceiling (linkDistance maxes at 260,
+      // repulsion at -400, collideRadiusMultiplier at 2.4) for our
+      // unusually large node sizes.
+      d3LinkDistance: 260,
+      d3ManyBodyStrength: -700,
+      d3CollideRadiusMultiplier: 2
     },
     layout: {
       type: 'force'
