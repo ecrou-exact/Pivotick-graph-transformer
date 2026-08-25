@@ -58,7 +58,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
 
     const { data: eventData, style: eventStyle } = resolveNodeAppearance(
       { ...displayFields, label: event.info, type: 'misp-event' },
-      this.defaultStyle('misp-event', event.info),
+      this.defaultStyle('misp-event', event.info, options?.theme),
       options?.styleRules
     )
     nodes.push({ id: event.uuid, data: eventData, style: eventStyle, expanded: false })
@@ -135,13 +135,19 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
   // Reads MISP_NODE_DEFAULTS for `type` and turns its `icon` key (if any)
   // into an icon+label html card; falls back to Pivotick's plain `text`
   // field for types with no icon defined yet.
-  private defaultStyle(type: string, label: string): Partial<NodeStyle> {
+  //
+  // The card is a DOM snippet baked once at conversion time (Pivotick's
+  // `style.html`), not CSS — it can't pick up Pivotick's own `data-theme`
+  // toggle on its own, so the caller's `theme` (see ConverterOptions in
+  // core/types.ts) picks its background explicitly instead.
+  private defaultStyle(type: string, label: string, theme?: 'dark' | 'light'): Partial<NodeStyle> {
     const { icon, accentColor, ...style } = MISP_NODE_DEFAULTS[type] ?? {}
     if (icon && MISP_ICONS[icon]) {
+      const background = theme === 'light' ? '#FFFFFF' : '#1C1F24'
       return {
         ...style,
         size: estimateCardSize(label, { hasIcon: true }),
-        html: () => buildIconLabelCard(MISP_ICONS[icon], label, { textColor: accentColor, borderColor: accentColor })
+        html: () => buildIconLabelCard(MISP_ICONS[icon], label, { textColor: accentColor, borderColor: accentColor, background })
       }
     }
     return { ...style, text: label }

@@ -50,26 +50,36 @@ function nodePropertiesMap(node: any) {
 // MISP search/index response (`{ response: [{ Event }, ...] }`) — the
 // latter is converted event-by-event and merged into one graph, each Event
 // its own root.
-function toGraphData(json: unknown): GraphData {
+function toGraphData(json: unknown, theme: 'dark' | 'light'): GraphData {
   const importer = GraphRegistry.getImporter('misp')
   const listResponse = (json as { response?: { Event: MispEventInput['Event'] }[] }).response
   if (Array.isArray(listResponse)) {
     return listResponse.reduce<GraphData>((graph, entry) => {
-      const converted = importer.convert({ Event: entry.Event })
+      const converted = importer.convert({ Event: entry.Event }, { theme })
       return { nodes: [...graph.nodes, ...converted.nodes], edges: [...graph.edges, ...converted.edges] }
     }, { nodes: [], edges: [] })
   }
-  return importer.convert(json as MispEventInput)
+  return importer.convert(json as MispEventInput, { theme })
 }
+
+// Current selection lives here, not as render() parameters, so either the
+// fixture picker or the theme toggle can trigger a re-render on its own
+// without needing to know about the other.
+let currentFixtureJson: unknown = fixtures[0].json
+let currentTheme: 'dark' | 'light' = 'dark'
 
 // Every user-facing toggle explicitly on, so the demo shows the full UI —
 // see GraphOptions/GraphUI/RendererOptions in the vendored Pivotick v1.5.0.
-function renderPivotick(json: unknown): void {
+// `theme` is Pivotick's own public option (it sets `data-theme` on its
+// container internally) — the demo never touches Pivotick's vendored files,
+// only the data/options it's given.
+function renderPivotick(): void {
   // No documented dispose/destroy on the vendored Pivotick — clearing the
   // container before re-instantiating is the safe way to swap fixtures.
   container.innerHTML = ''
-  new Pivotick(container, toGraphData(json), {
+  new Pivotick(container, toGraphData(currentFixtureJson, currentTheme), {
     isDirected: true,
+    theme: currentTheme,
     render: {
       type: 'svg',
       enableFocusMode: true,
@@ -103,7 +113,7 @@ function renderPivotick(json: unknown): void {
   })
 }
 
-renderPivotick(fixtures[0].json)
+renderPivotick()
 
 // Floating fixture picker, appended to <body> (a sibling of #app, not a
 // child) and positioned via fixturePicker.css so it sits over Pivotick
@@ -111,9 +121,18 @@ renderPivotick(fixtures[0].json)
 const picker = document.createElement('div')
 picker.id = 'fixture-picker'
 picker.innerHTML = `
-  <button id="fixture-picker-toggle" type="button" aria-expanded="true">Fixtures ▾</button>
+  <button id="fixture-picker-toggle" type="button" aria-expanded="true">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6zm7 1.5L18.5 8H13V3.5zM8 13h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>
+    <span id="fixture-picker-toggle-label">Fixtures ▾</span>
+  </button>
   <div id="fixture-picker-body">
     <select id="fixture-picker-select"></select>
+    <div class="fixture-picker-row">
+      <span id="fixture-picker-theme-label">Dark theme</span>
+      <button id="fixture-picker-theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle dark/light theme">
+        <span class="fixture-picker-theme-toggle-thumb"></span>
+      </button>
+    </div>
   </div>
 `
 document.body.appendChild(picker)
@@ -136,10 +155,22 @@ for (const fixture of fixtures) {
 
 select.addEventListener('change', () => {
   const fixture = fixtures.find(f => f.path === select.value)
-  if (fixture) renderPivotick(fixture.json)
+  if (!fixture) return
+  currentFixtureJson = fixture.json
+  renderPivotick()
+})
+
+const themeToggle = picker.querySelector('#fixture-picker-theme-toggle') as HTMLButtonElement
+const themeLabel = picker.querySelector('#fixture-picker-theme-label') as HTMLSpanElement
+themeToggle.addEventListener('click', () => {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark'
+  themeToggle.setAttribute('aria-checked', String(currentTheme === 'light'))
+  themeLabel.textContent = currentTheme === 'dark' ? 'Dark theme' : 'Light theme'
+  renderPivotick()
 })
 
 const toggle = picker.querySelector('#fixture-picker-toggle') as HTMLButtonElement
+const toggleLabel = picker.querySelector('#fixture-picker-toggle-label') as HTMLSpanElement
 
 // Dragging the toggle bar moves the whole panel — switching from its
 // bottom/right default anchor to an explicit left/top position on first
@@ -179,5 +210,5 @@ toggle.addEventListener('click', () => {
   }
   const collapsed = picker.classList.toggle('collapsed')
   toggle.setAttribute('aria-expanded', String(!collapsed))
-  toggle.textContent = collapsed ? 'Fixtures ▸' : 'Fixtures ▾'
+  toggleLabel.textContent = collapsed ? 'Fixtures ▸' : 'Fixtures ▾'
 })

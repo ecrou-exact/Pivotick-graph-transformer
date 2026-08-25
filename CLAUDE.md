@@ -12,4 +12,8 @@ This repo is meant to be added as a **git submodule** directly inside Pivotick (
 
 The only place npm/build tooling is allowed to exist is a small local demo/test site, kept separate from the library source, used to sanity-check converters in a browser during development.
 
+## Hard rule: never modify Pivotick itself
+
+The vendored Pivotick bundle (`demo/vendor/pivotick/`) is read-only, including from the demo. Every feature — theming, card backgrounds, what shows in the properties panel, which nodes exist at all — must be achieved by shaping the `nodes`/`edges` JSON and the options bag this repo hands to `new Pivotick(container, data, options)`, using whatever knobs Pivotick's own public options already expose (e.g. its `theme` option, `styleRules`-driven `data`/`style` on a node, `nodePropertiesMap`). If something seems to need a Pivotick source/CSS change, the fix belongs in how we generate the JSON/options, not in the vendored files.
+
 Currently restarting from zero — no packages exist yet.

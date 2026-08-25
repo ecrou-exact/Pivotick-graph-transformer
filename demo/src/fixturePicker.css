@@ -19,7 +19,9 @@
 }
 
 #fixture-picker-toggle {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   padding: 10px 12px;
   background: none;
@@ -33,8 +35,22 @@
   user-select: none;
 }
 
+#fixture-picker-toggle svg {
+  flex-shrink: 0;
+}
+
 #fixture-picker-toggle:hover {
   background: rgba(255, 255, 255, 0.06);
+}
+
+/* Same red highlight Pivotick's own mode-rail/tool buttons use for their
+   "active" state (--pvt-theme-primary, defined in pivotick.css's :root —
+   reused here as-is rather than touching that stylesheet) — applied while
+   the panel is open (a pressed/active toggle) and on an actual click. */
+#fixture-picker:not(.collapsed) #fixture-picker-toggle,
+#fixture-picker-toggle:active {
+  color: var(--pvt-theme-primary, #eb2e53);
+  background-color: color-mix(in srgb, var(--pvt-theme-primary, #eb2e53) 16%, transparent);
 }
 
 #fixture-picker-body {
@@ -53,4 +69,48 @@
   border: 1px solid #3a3f47;
   border-radius: 6px;
   font: inherit;
+}
+
+.fixture-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #3a3f47;
+}
+
+#fixture-picker-theme-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #3a3f47;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+/* Same red as Pivotick's own active-button highlight (--pvt-theme-primary,
+   from pivotick.css's :root) — reused as-is, not redefined here. */
+#fixture-picker-theme-toggle[aria-checked="true"] {
+  background: var(--pvt-theme-primary, #eb2e53);
+}
+
+.fixture-picker-theme-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+#fixture-picker-theme-toggle[aria-checked="true"] .fixture-picker-theme-toggle-thumb {
+  transform: translateX(16px);
 }

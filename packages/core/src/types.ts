@@ -96,5 +96,10 @@ export interface StyleRule {
 
 export interface ConverterOptions {
   styleRules?: StyleRule[]
+  // Hint for importers whose default styling (e.g. an html card background)
+  // isn't just CSS and so can't follow Pivotick's own `theme` option/
+  // `data-theme` attribute on its own — passed through by the caller so the
+  // node stays legible in both themes instead of being baked in once.
+  theme?: 'dark' | 'light'
   [key: string]: unknown
 }
