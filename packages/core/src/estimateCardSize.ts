@@ -12,6 +12,10 @@ export interface EstimateCardSizeOptions {
   // Object names are shorter than their meta-category.
   secondaryText?: string
   secondaryCharWidth?: number
+  // Multiplies the final result — for a node type that should read as
+  // visually more prominent than its label alone would size it (e.g. a
+  // graph's root node), independent of how long that label happens to be.
+  scale?: number
 }
 
 // Pivotick's node footprint is always a size*2 x size*2 square (see
@@ -40,6 +44,7 @@ export function estimateCardSize(label: string, options?: EstimateCardSizeOption
   // already forces.
   const lines = Math.max(1, Math.ceil(labelWidth / maxWidth))
   const height = padding + (lines + extraLines) * lineHeight
+  const scale = options?.scale ?? 1
 
-  return Math.ceil(Math.max(width, height) / 2)
+  return Math.ceil(Math.max(width, height) / 2 * scale)
 }

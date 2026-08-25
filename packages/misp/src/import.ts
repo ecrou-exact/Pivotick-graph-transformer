@@ -74,7 +74,9 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
 
     const { data: eventData, style: eventStyle } = resolveNodeAppearance(
       { ...displayFields, label: event.info, type: 'misp-event' },
-      this.defaultStyle('misp-event', event.info, options?.theme),
+      // Bigger than its label alone would size it — the Event is the
+      // graph's root, so it should read as the starting point at a glance.
+      this.defaultStyle('misp-event', event.info, { theme: options?.theme, sizeScale: 1.4 }),
       options?.styleRules
     )
     nodes.push({ id: event.uuid, data: eventData, style: eventStyle, expanded: false })
@@ -108,10 +110,20 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     attribute: MispAttribute,
     options?: ConverterOptions
   ): void {
-    const label = `${attribute.type}: ${attribute.value}`
+    // The value is the card's title; its `type` ("text", "ip-dst", ...)
+    // shows as the small badge underneath instead of being prefixed onto
+    // the title — same treatment as an Object's meta-category badge.
+    const label = attribute.value
+
+    // misp-iconify has a dedicated icon for ~51 known Attribute types
+    // ("ip-dst", "sha256", "email-src", ...) — use it when this Attribute's
+    // `type` matches one, otherwise NODE_DEFAULTS' generic `attribute` icon
+    // applies.
+    const iconOverride = MISP_ICONS[`attributes/${attribute.type}`] ? `attributes/${attribute.type}` : undefined
+
     const { data, style } = resolveNodeAppearance(
       { label, type: 'misp-attribute', category: attribute.category },
-      this.defaultStyle('misp-attribute', label),
+      this.defaultStyle('misp-attribute', label, { theme: options?.theme, iconOverride, badge: attribute.type }),
       options?.styleRules
     )
     nodes.push({ id: attribute.uuid, data, style, expanded: false })
@@ -146,7 +158,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
 
     const { data, style } = resolveNodeAppearance(
       { ...displayFields, label: object.name, type: 'misp-object' },
-      this.defaultStyle('misp-object', object.name, options?.theme, iconOverride, object['meta-category'] as string | undefined),
+      this.defaultStyle('misp-object', object.name, { theme: options?.theme, iconOverride, badge: object['meta-category'] as string | undefined }),
       options?.styleRules
     )
     nodes.push({ id: object.uuid, data, style, expanded: false })
@@ -172,14 +184,23 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
   // `style.html`), not CSS — it can't pick up Pivotick's own `data-theme`
   // toggle on its own, so the caller's `theme` (see ConverterOptions in
   // core/types.ts) picks its background explicitly instead.
-  private defaultStyle(type: string, label: string, theme?: 'dark' | 'light', iconOverride?: string, badge?: string): Partial<NodeStyle> {
+  private defaultStyle(type: string, label: string, options?: {
+    theme?: 'dark' | 'light'
+    iconOverride?: string
+    badge?: string
+    sizeScale?: number
+  }): Partial<NodeStyle> {
     const { icon: defaultIcon, accentColor, ...style } = NODE_DEFAULTS[type] ?? {}
-    const icon = iconOverride ?? defaultIcon
+    const icon = options?.iconOverride ?? defaultIcon
     if (icon && MISP_ICONS[icon]) {
-      const background = theme === 'light' ? '#FFFFFF' : '#1C1F24'
+      // Not near-black — a muted accent color (like Object's #524948)
+      // barely reads against a background that dark; a lighter charcoal
+      // keeps the card readable while still looking like a dark theme.
+      const background = options?.theme === 'light' ? '#FFFFFF' : '#33373C'
+      const badge = options?.badge
       return {
         ...style,
-        size: estimateCardSize(label, { hasIcon: true, extraLines: badge ? 1 : 0, secondaryText: badge }),
+        size: estimateCardSize(label, { hasIcon: true, extraLines: badge ? 1 : 0, secondaryText: badge, scale: options?.sizeScale }),
         html: () => buildIconLabelCard(MISP_ICONS[icon], label, { textColor: accentColor, borderColor: accentColor, background, badge })
       }
     }
