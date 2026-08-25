@@ -1,51 +1,37 @@
 {
   "Event": {
-    "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000001",
-    "info": "Phishing campaign against acme-corp",
-    "date": "2026-08-20",
-    "Attribute": [
-      {
-        "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000002",
-        "type": "domain",
-        "category": "Network activity",
-        "value": "evil-phish.example"
-      },
-      {
-        "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000003",
-        "type": "email-src",
-        "category": "Payload delivery",
-        "value": "attacker@evil-phish.example"
-      }
-    ],
-    "Object": [
-      {
-        "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000004",
-        "name": "file",
-        "meta_category": "file",
-        "Attribute": [
-          {
-            "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000005",
-            "type": "filename",
-            "category": "Payload delivery",
-            "value": "invoice.pdf.exe",
-            "object_relation": "filename"
-          },
-          {
-            "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000006",
-            "type": "sha256",
-            "category": "Payload delivery",
-            "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85",
-            "object_relation": "sha256"
-          }
-        ],
-        "ObjectReference": [
-          {
-            "uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000007",
-            "referenced_uuid": "5f9c1b1e-6e8a-4b0a-9b1a-000000000002",
-            "relationship_type": "downloaded-from"
-          }
-        ]
-      }
-    ]
+    "id": "461679",
+    "orgc_id": "2",
+    "org_id": "2",
+    "date": "2026-07-03",
+    "threat_level_id": "2",
+    "info": "Device code phishing campaign targeting Luxembourg organizations",
+    "published": true,
+    "uuid": "54652cc1-4a6f-4a7c-b033-407cc924d9a3",
+    "attribute_count": "8",
+    "analysis": "2",
+    "timestamp": "1783068431",
+    "distribution": "3",
+    "proposal_email_lock": false,
+    "locked": false,
+    "publish_timestamp": "1783068531",
+    "first_publication": "1783068531",
+    "sharing_group_id": "0",
+    "disable_correlation": false,
+    "extends_uuid": "",
+    "protected": null,
+    "event_creator_email": "test.test@test.lu",
+    "Org": {
+      "id": "2",
+      "name": "CIRCL",
+      "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+      "local": true
+    },
+    "Orgc": {
+      "id": "2",
+      "name": "CIRCL",
+      "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+      "local": true
+    }
   }
 }

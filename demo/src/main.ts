@@ -13,6 +13,17 @@ if (!container) throw new Error('Missing #app container')
 const importer = GraphRegistry.getImporter('misp')
 const data = importer.convert(mispFixture)
 
+// Verified against the vendored bundle's Ct()/Ds() fallback: without a
+// nodePropertiesMap, Pivotick lists every key in node.data — this makes
+// that explicit rather than relying on the default not changing later.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function nodePropertiesMap(node: any) {
+  const nodeData = typeof node.getData === 'function' ? node.getData() : node.data ?? {}
+  return Object.entries(nodeData)
+    .filter(([key, value]) => key && value !== undefined && value !== null && value !== '')
+    .map(([name, value]) => ({ name, value: String(value) }))
+}
+
 // Every user-facing toggle explicitly on, so the demo shows the full UI —
 // see GraphOptions/GraphUI/RendererOptions in the vendored Pivotick v1.5.0.
 new Pivotick(container, data, {
@@ -38,7 +49,8 @@ new Pivotick(container, data, {
   UI: {
     mode: 'full',
     sidebar: { collapsed: false },
-    tooltip: { enabled: true, allowPinning: true },
+    tooltip: { enabled: true, allowPinning: true, nodePropertiesMap },
+    propertiesPanel: { nodePropertiesMap },
     contextMenu: { enabled: true },
     navigation: { enabled: true },
     editors: { nodeEditor: { enabled: true } },

@@ -34,11 +34,31 @@ export interface GraphData {
   edges: RawEdge[]
 }
 
+// Verified field-by-field against Pivotick v1.5.0's mergeNodeStylingOptions()
+// and defaultNodeStyle (index-Bzoqf7dC.js in the vendored bundle) — this is
+// the exact set of fields it reads, not a guessed generic shape.
 export interface NodeStyle {
+  // Any other string silently falls back to a circle (see genericNodeRender
+  // in the vendored bundle) — the `string & {}` keeps literal autocomplete
+  // while still allowing that fallback deliberately.
+  shape?: 'circle' | 'square' | 'triangle' | 'hexagon' | (string & {})
+  size?: number
   color?: string
-  icon?: string
-  shape?: string
-  weight?: number
+  strokeColor?: string
+  strokeWidth?: number | string
+  fontFamily?: string
+  textColor?: string
+  textAnchorPosition?: string
+  textHorizontalShift?: number
+  textVerticalShift?: number
+  textRotateDegree?: number
+  iconUnicode?: string
+  iconClass?: string
+  svgIcon?: string
+  imagePath?: string
+  imageFit?: 'icon' | 'cover' | 'frame'
+  text?: string
+  html?: (node: unknown) => string | HTMLElement
   [key: string]: unknown
 }
 

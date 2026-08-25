@@ -1,6 +1,7 @@
 import { GraphRegistry } from '../../core/src/index'
 import { MispEventImporter } from './import'
 
+export * from './eventFields'
 export * from './import'
 export * from './types'
 

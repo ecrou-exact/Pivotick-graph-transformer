@@ -3,10 +3,17 @@ import {
   ConverterVariantMeta,
   GraphData,
   GraphImporter,
+  NodeStyle,
   RawEdge,
   RawNode,
+  buildIconLabelCard,
+  estimateCardSize,
   resolveNodeAppearance
 } from '../../core/src/index'
+import { MISP_NODE_DEFAULTS } from './defaults'
+import { MISP_EVENT_FIELDS } from './eventFields'
+import { formatMispEventField } from './formatters'
+import { MISP_ICONS } from './icons'
 import { MispAttribute, MispEventInput, MispObject } from './types'
 
 // MISP Event -> Pivotick. The Event is the root node; Attributes and Objects
@@ -15,7 +22,8 @@ import { MispAttribute, MispEventInput, MispObject } from './types'
 //
 // Visual tuning (shape/color/icon/extra data, per node type or category) is
 // entirely driven by `options.styleRules` (see resolveNodeAppearance in
-// core) — this file only ever sets sensible built-in defaults.
+// core) on top of MISP_NODE_DEFAULTS (see defaults.ts) — this file only
+// wires the two together.
 export class MispEventImporter extends GraphImporter<MispEventInput> {
   readonly format = 'misp'
   readonly variant: ConverterVariantMeta = {
@@ -37,9 +45,20 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     const nodes: RawNode[] = []
     const edges: RawEdge[] = []
 
+    // Only the fields listed in MISP_EVENT_FIELDS reach the node's `data`
+    // (and therefore the properties panel/tooltip) — see eventFields.ts to
+    // add/remove/reorder what's shown, and formatters.ts for how raw values
+    // (epoch timestamps, distribution codes, Org/Orgc objects, ...) become
+    // readable ones.
+    const displayFields: Record<string, unknown> = {}
+    for (const field of MISP_EVENT_FIELDS) {
+      const rawValue = event[field.source ?? field.key]
+      displayFields[field.key] = formatMispEventField(field.format, rawValue, event)
+    }
+
     const { data: eventData, style: eventStyle } = resolveNodeAppearance(
-      { label: event.info, type: 'misp-event' },
-      { shape: 'square', color: '#3B5BA5' },
+      { ...displayFields, label: event.info, type: 'misp-event' },
+      this.defaultStyle('misp-event', event.info),
       options?.styleRules
     )
     nodes.push({ id: event.uuid, data: eventData, style: eventStyle, expanded: false })
@@ -73,13 +92,10 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     attribute: MispAttribute,
     options?: ConverterOptions
   ): void {
+    const label = `${attribute.type}: ${attribute.value}`
     const { data, style } = resolveNodeAppearance(
-      {
-        label: `${attribute.type}: ${attribute.value}`,
-        type: 'misp-attribute',
-        category: attribute.category
-      },
-      { shape: 'circle', color: '#B4884D' },
+      { label, type: 'misp-attribute', category: attribute.category },
+      this.defaultStyle('misp-attribute', label),
       options?.styleRules
     )
     nodes.push({ id: attribute.uuid, data, style, expanded: false })
@@ -99,12 +115,8 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     options?: ConverterOptions
   ): void {
     const { data, style } = resolveNodeAppearance(
-      {
-        label: object.name,
-        type: 'misp-object',
-        metaCategory: object.meta_category
-      },
-      { shape: 'diamond', color: '#5A9367' },
+      { label: object.name, type: 'misp-object', metaCategory: object.meta_category },
+      this.defaultStyle('misp-object', object.name),
       options?.styleRules
     )
     nodes.push({ id: object.uuid, data, style, expanded: false })
@@ -118,5 +130,20 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     for (const attribute of object.Attribute ?? []) {
       this.addAttribute(nodes, edges, object.uuid, attribute, options)
     }
+  }
+
+  // Reads MISP_NODE_DEFAULTS for `type` and turns its `icon` key (if any)
+  // into an icon+label html card; falls back to Pivotick's plain `text`
+  // field for types with no icon defined yet.
+  private defaultStyle(type: string, label: string): Partial<NodeStyle> {
+    const { icon, accentColor, ...style } = MISP_NODE_DEFAULTS[type] ?? {}
+    if (icon && MISP_ICONS[icon]) {
+      return {
+        ...style,
+        size: estimateCardSize(label, { hasIcon: true }),
+        html: () => buildIconLabelCard(MISP_ICONS[icon], label, { textColor: accentColor, borderColor: accentColor })
+      }
+    }
+    return { ...style, text: label }
   }
 }
