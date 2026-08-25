@@ -1,3 +1,10 @@
+// Imported (not a raw './static/...' string) so Vite's build actually
+// copies/hashes the file and rewrites this to a real dist/ URL — a literal
+// path only works here in dev, where Vite's server happens to serve the
+// whole project root; production HTML img/link attributes get this
+// treatment automatically, but a path inside a JS template string like the
+// header markup below does not.
+import logoUrl from '../static/images/logo.jpeg'
 import { getTheme, onThemeChange, setTheme } from './theme'
 
 // Same top-nav shape Pivotick's own site (https://pivotick.github.io/Pivotick/)
@@ -10,7 +17,7 @@ export function renderSiteHeader(activePage: 'home' | 'demo' | 'docs'): void {
   header.id = 'site-header'
   header.innerHTML = `
     <a class="site-header-brand" href="./index.html">
-      <img src="./static/images/logo.jpeg" alt="" class="site-header-logo" />
+      <img src="${logoUrl}" alt="" class="site-header-logo" />
       <span class="site-header-brand-name">Pivotick</span>
       <span class="site-header-brand-suffix">Graph Transformer</span>
     </a>
