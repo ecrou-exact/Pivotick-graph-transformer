@@ -1,6 +1,15 @@
 export interface TagChipOptions {
   background?: string
   fontSize?: number
+  // Explicit text/border colors, for a caller with its own palette (e.g. a
+  // MISP galaxy's hue-derived colours) — omit either to fall back to this
+  // chip's own black/white contrast pick (textColor) or its default subtle
+  // grey (borderColor).
+  textColor?: string
+  borderColor?: string
+  // An extra `background-image` layered on top of `background` — MISP's
+  // galaxy badges add a metallic sheen gradient this way.
+  backgroundImage?: string
 }
 
 // Picks black or white for legible contrast against an arbitrary hex
@@ -25,7 +34,7 @@ function readableTextColor(hexColor: string): string {
 export function buildTagChip(label: string, options?: TagChipOptions): HTMLElement {
   const background = options?.background ?? '#888888'
   const fontSize = options?.fontSize ?? 11
-  const textColor = readableTextColor(background)
+  const textColor = options?.textColor ?? readableTextColor(background)
 
   const outer = document.createElement('div')
   outer.style.width = '100%'
@@ -53,7 +62,8 @@ export function buildTagChip(label: string, options?: TagChipOptions): HTMLEleme
   chip.style.wordBreak = 'break-word'
   // A near-white or near-black tag colour would otherwise vanish against
   // a similarly-toned card/page background.
-  chip.style.border = '1px solid rgba(128, 128, 128, 0.35)'
+  chip.style.border = `1px solid ${options?.borderColor ?? 'rgba(128, 128, 128, 0.35)'}`
+  if (options?.backgroundImage) chip.style.backgroundImage = options.backgroundImage
   chip.textContent = label
 
   outer.append(chip)

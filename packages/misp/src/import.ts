@@ -19,6 +19,10 @@ import { MISP_EVENT_NODE_DEFAULT } from './event/defaults'
 import { MISP_EVENT_FIELDS } from './event/fields'
 import { formatMispEventField } from './event/formatters'
 import { MispEventInput } from './event/types'
+import { GALAXY_METALLIC_SHEEN, galaxyPalette } from './galaxy/colour'
+import { MISP_GALAXY_CLUSTERS_NODE_DEFAULT, MISP_GALAXY_NODE_DEFAULT } from './galaxy/defaults'
+import { MISP_GALAXY_CLUSTER_FIELDS, MISP_GALAXY_FIELDS } from './galaxy/fields'
+import { MispGalaxy, MispGalaxyCluster } from './galaxy/types'
 import { MISP_ICONS } from './icons'
 import { MISP_OBJECT_NODE_DEFAULT } from './object/defaults'
 import { MISP_OBJECT_FIELDS } from './object/fields'
@@ -34,7 +38,30 @@ import { MispTag } from './tag/types'
 const NODE_DEFAULTS: Record<string, Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number }> = {
   'misp-event': MISP_EVENT_NODE_DEFAULT,
   'misp-attribute': MISP_ATTRIBUTE_NODE_DEFAULT,
-  'misp-object': MISP_OBJECT_NODE_DEFAULT
+  'misp-object': MISP_OBJECT_NODE_DEFAULT,
+  'misp-galaxy-clusters': MISP_GALAXY_CLUSTERS_NODE_DEFAULT,
+  'misp-galaxy': MISP_GALAXY_NODE_DEFAULT
+}
+
+// Node/edge ids that must stay unique across the *whole* converted graph,
+// not just within one Event/Attribute/Object's own subtree — threaded
+// through every add*() call instead of being module-level state, so two
+// convert() calls (e.g. one per Event in a `{ response: [...] }` list)
+// never bleed into each other.
+interface Dedup {
+  // The same Tag (by id) or galaxy type/cluster is often attached to the
+  // Event and to many of its Attributes/Objects — one shared node, with an
+  // edge from every entity that carries it, instead of one node per
+  // attachment.
+  tagIds: Set<string>
+  galaxyTypeIds: Set<string>
+  galaxyClusterIds: Set<string>
+  // Only the galaxy-type -> cluster edge needs its own dedup set: both
+  // ends are globally shared nodes, so the same pair can otherwise get
+  // re-added once per entity that happens to carry that cluster. The
+  // entity -> "Galaxy clusters" and "Galaxy clusters" -> galaxy-type edges
+  // don't need this — their first endpoint is unique per call already.
+  galaxyClusterEdgeIds: Set<string>
 }
 
 // MISP Event -> Pivotick. The Event is the root node; Attributes and Objects
@@ -65,11 +92,12 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     const { Event: event } = input
     const nodes: RawNode[] = []
     const edges: RawEdge[] = []
-    // The same Tag (same MISP tag id) is often attached to the Event and
-    // to many of its Attributes — one shared node per tag id, with an
-    // edge from every entity that carries it, instead of one node per
-    // attachment.
-    const seenTagIds = new Set<string>()
+    const dedup: Dedup = {
+      tagIds: new Set(),
+      galaxyTypeIds: new Set(),
+      galaxyClusterIds: new Set(),
+      galaxyClusterEdgeIds: new Set()
+    }
 
     // Only the fields listed in MISP_EVENT_FIELDS reach the node's `data`
     // (and therefore the properties panel/tooltip) — see event/fields.ts to
@@ -93,16 +121,14 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     )
     nodes.push({ id: event.uuid, data: eventData, style: eventStyle, expanded: false })
 
-    for (const tag of event.Tag ?? []) {
-      this.addTag(nodes, edges, event.uuid, tag, seenTagIds, options)
-    }
+    this.addTagsAndGalaxies(nodes, edges, event.uuid, event.Tag ?? [], event.Galaxy ?? [], dedup, options)
 
     for (const attribute of event.Attribute ?? []) {
-      this.addAttribute(nodes, edges, event.uuid, attribute, seenTagIds, options)
+      this.addAttribute(nodes, edges, event.uuid, attribute, dedup, options)
     }
 
     for (const object of event.Object ?? []) {
-      this.addObject(nodes, edges, event.uuid, object, seenTagIds, options)
+      this.addObject(nodes, edges, event.uuid, object, dedup, options)
     }
 
     for (const object of event.Object ?? []) {
@@ -124,7 +150,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     edges: RawEdge[],
     parentId: string,
     attribute: MispAttribute,
-    seenTagIds: Set<string>,
+    dedup: Dedup,
     options?: ConverterOptions
   ): void {
     // The value is the card's title; its `type` ("text", "ip-dst", ...)
@@ -161,9 +187,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       data: { type: 'has-attribute' }
     })
 
-    for (const tag of attribute.Tag ?? []) {
-      this.addTag(nodes, edges, attribute.uuid, tag, seenTagIds, options)
-    }
+    this.addTagsAndGalaxies(nodes, edges, attribute.uuid, attribute.Tag ?? [], attribute.Galaxy ?? [], dedup, options)
   }
 
   private addObject(
@@ -171,7 +195,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     edges: RawEdge[],
     eventId: string,
     object: MispObject,
-    seenTagIds: Set<string>,
+    dedup: Dedup,
     options?: ConverterOptions
   ): void {
     // Only the fields listed in MISP_OBJECT_FIELDS reach the node's `data`
@@ -202,12 +226,10 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       data: { type: 'has-object' }
     })
 
-    for (const tag of object.Tag ?? []) {
-      this.addTag(nodes, edges, object.uuid, tag, seenTagIds, options)
-    }
+    this.addTagsAndGalaxies(nodes, edges, object.uuid, object.Tag ?? [], object.Galaxy ?? [], dedup, options)
 
     for (const attribute of object.Attribute ?? []) {
-      this.addAttribute(nodes, edges, object.uuid, attribute, seenTagIds, options)
+      this.addAttribute(nodes, edges, object.uuid, attribute, dedup, options)
     }
   }
 
@@ -216,13 +238,13 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     edges: RawEdge[],
     parentId: string,
     tag: MispTag,
-    seenTagIds: Set<string>,
+    tagIds: Set<string>,
     options?: ConverterOptions
   ): void {
     const tagNodeId = `tag-${tag.id}`
 
-    if (!seenTagIds.has(tag.id)) {
-      seenTagIds.add(tag.id)
+    if (!tagIds.has(tag.id)) {
+      tagIds.add(tag.id)
 
       // Only the fields listed in MISP_TAG_FIELDS reach the node's `data`
       // (and therefore the properties panel/tooltip) — see tag/fields.ts
@@ -259,11 +281,149 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     })
   }
 
+  // Tags and Galaxies are two independent, parallel representations, not
+  // one a variant of the other — every Tag (`is_galaxy` or not) always
+  // renders as a plain Tag chip via addTag(), unconditionally; separately,
+  // this entity's own structured `Galaxy` array (present only when the
+  // exporting MISP instance still has that cluster locally — its absence
+  // is expected, not an error) independently drives a "Galaxy clusters"
+  // grouping node -> one node per galaxy type (e.g. "Attack Pattern") ->
+  // one node per cluster detail (e.g. "Valid Accounts - T1078"). A galaxy
+  // tag with no matching structured entry here simply won't have a Galaxy-
+  // clusters counterpart — it still shows up as a Tag, just not there too.
+  private addTagsAndGalaxies(
+    nodes: RawNode[],
+    edges: RawEdge[],
+    parentId: string,
+    tags: MispTag[],
+    galaxies: MispGalaxy[],
+    dedup: Dedup,
+    options?: ConverterOptions
+  ): void {
+    for (const tag of tags) {
+      this.addTag(nodes, edges, parentId, tag, dedup.tagIds, options)
+    }
+
+    if (galaxies.length === 0) return
+
+    const groupNodeId = `galaxy-clusters-${parentId}`
+    const groupLabel = 'Galaxy clusters'
+    const { data: groupData, style: groupStyle } = resolveNodeAppearance(
+      { label: groupLabel, type: 'misp-galaxy-clusters' },
+      this.defaultStyle('misp-galaxy-clusters', groupLabel, { theme: options?.theme }),
+      options?.styleRules
+    )
+    nodes.push({ id: groupNodeId, data: groupData, style: groupStyle, expanded: false })
+    edges.push({
+      id: `${parentId}-${groupNodeId}`,
+      from: parentId,
+      to: groupNodeId,
+      data: { type: 'has-galaxy-clusters' }
+    })
+
+    for (const galaxy of galaxies) {
+      this.addGalaxyType(nodes, edges, groupNodeId, galaxy, dedup, options)
+      for (const cluster of galaxy.GalaxyCluster ?? []) {
+        this.addGalaxyCluster(nodes, edges, `galaxy-type-${galaxy.type}`, galaxy.name, cluster, dedup, options)
+      }
+    }
+  }
+
+  private addGalaxyType(
+    nodes: RawNode[],
+    edges: RawEdge[],
+    groupNodeId: string,
+    galaxy: MispGalaxy,
+    dedup: Dedup,
+    options?: ConverterOptions
+  ): void {
+    const nodeId = `galaxy-type-${galaxy.type}`
+    // groupNodeId is unique per attaching entity already, so this edge
+    // never needs its own dedup — only the galaxy-type -> cluster edge
+    // below does (see the Dedup interface's comment).
+    edges.push({ id: `${groupNodeId}-${nodeId}`, from: groupNodeId, to: nodeId, data: { type: 'has-galaxy' } })
+
+    if (dedup.galaxyTypeIds.has(galaxy.type)) return
+    dedup.galaxyTypeIds.add(galaxy.type)
+
+    // A galaxy's colour is derived purely from its display *name* (not its
+    // `type` key — MISP's own Overmind theme hashes "Attack Pattern", not
+    // "mitre-attack-pattern"; hashing the type key instead lands on a
+    // different, wrong hue) — see galaxy/colour.ts.
+    const palette = galaxyPalette(galaxy.name)
+    // misp-iconify has a dedicated icon for ~131 known galaxy types
+    // ("mitre-attack-pattern", "threat-actor", "ransomware", ...); falls
+    // back to NODE_DEFAULTS' generic `galaxy` icon otherwise.
+    const iconOverride = MISP_ICONS[`galaxies/${galaxy.type}`] ? `galaxies/${galaxy.type}` : undefined
+
+    const displayFields: Record<string, unknown> = {}
+    for (const field of MISP_GALAXY_FIELDS) {
+      displayFields[field.key] = galaxy[field.key as keyof MispGalaxy]
+    }
+
+    const { data, style } = resolveNodeAppearance(
+      { ...displayFields, label: galaxy.name, type: 'misp-galaxy' },
+      this.defaultStyle('misp-galaxy', galaxy.name, { theme: options?.theme, iconOverride, accentColorOverride: palette.headerText }),
+      options?.styleRules
+    )
+    nodes.push({ id: nodeId, data, style, expanded: false })
+  }
+
+  private addGalaxyCluster(
+    nodes: RawNode[],
+    edges: RawEdge[],
+    galaxyTypeNodeId: string,
+    galaxyName: string,
+    cluster: MispGalaxyCluster,
+    dedup: Dedup,
+    options?: ConverterOptions
+  ): void {
+    const nodeId = `galaxy-cluster-${cluster.id}`
+    const edgeId = `${galaxyTypeNodeId}-${nodeId}`
+
+    if (!dedup.galaxyClusterEdgeIds.has(edgeId)) {
+      dedup.galaxyClusterEdgeIds.add(edgeId)
+      edges.push({ id: edgeId, from: galaxyTypeNodeId, to: nodeId, data: { type: 'has-cluster' } })
+    }
+
+    if (dedup.galaxyClusterIds.has(nodeId)) return
+    dedup.galaxyClusterIds.add(nodeId)
+
+    // Same palette as the parent galaxy-type node — hashed from its
+    // display *name*, not its `type` key (see addGalaxyType's comment).
+    const palette = galaxyPalette(galaxyName)
+    const displayFields: Record<string, unknown> = {}
+    for (const field of MISP_GALAXY_CLUSTER_FIELDS) {
+      displayFields[field.key] = field.key === 'external_id'
+        ? cluster.meta?.external_id?.join(', ')
+        : (cluster[field.key as keyof MispGalaxyCluster] as unknown)
+    }
+
+    const { data, style } = resolveNodeAppearance(
+      { ...displayFields, label: cluster.value, type: 'misp-galaxy-cluster' },
+      {
+        shape: 'square',
+        color: 'transparent',
+        strokeColor: 'transparent',
+        size: estimateCardSize(cluster.value, { hasIcon: false, fontSize: 11, padding: 14 }),
+        html: () => buildTagChip(cluster.value, {
+          background: palette.badgeBg,
+          textColor: palette.badgeText,
+          borderColor: palette.badgeBorder,
+          backgroundImage: GALAXY_METALLIC_SHEEN
+        })
+      },
+      options?.styleRules
+    )
+    nodes.push({ id: nodeId, data, style, expanded: false })
+  }
+
   // Reads NODE_DEFAULTS for `type` and turns its icon (if any) into an
   // icon+label html card; falls back to Pivotick's plain `text` field for
-  // types with no icon defined yet. `iconOverride` wins over NODE_DEFAULTS'
-  // icon — used where the icon varies per node instance rather than being
-  // fixed per type (a MISP Object's icon depends on its `name`).
+  // types with no icon defined yet. `iconOverride`/`accentColorOverride`
+  // win over NODE_DEFAULTS' own icon/accentColor — used where either
+  // varies per node instance rather than being fixed per type (a MISP
+  // Object's icon depends on its `name`; a galaxy's colour on its type).
   //
   // The card is a DOM snippet baked once at conversion time (Pivotick's
   // `style.html`), not CSS — it can't pick up Pivotick's own `data-theme`
@@ -272,10 +432,12 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
   private defaultStyle(type: string, label: string, options?: {
     theme?: 'dark' | 'light'
     iconOverride?: string
+    accentColorOverride?: string
     badge?: string
   }): Partial<NodeStyle> {
-    const { icon: defaultIcon, accentColor, fontSize, iconSize, ...style } = NODE_DEFAULTS[type] ?? {}
+    const { icon: defaultIcon, accentColor: defaultAccentColor, fontSize, iconSize, ...style } = NODE_DEFAULTS[type] ?? {}
     const icon = options?.iconOverride ?? defaultIcon
+    const accentColor = options?.accentColorOverride ?? defaultAccentColor
     if (icon && MISP_ICONS[icon]) {
       // Not near-black — a muted accent color (like Object's #524948)
       // barely reads against a background that dark; a lighter charcoal

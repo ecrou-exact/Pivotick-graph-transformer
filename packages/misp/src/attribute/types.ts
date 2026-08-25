@@ -1,3 +1,4 @@
+import { MispGalaxy } from '../galaxy/types'
 import { MispTag } from '../tag/types'
 
 // Minimal shape of a MISP Attribute, covering the fields this importer
@@ -20,6 +21,7 @@ export interface MispAttribute {
   // that Object's template (e.g. "filename", "sha256").
   object_relation?: string | null
   Tag?: MispTag[]
+  Galaxy?: MispGalaxy[]
   // Real MISP Attribute exports carry more fields (event_id, object_id,
   // deleted, disable_correlation, Galaxy, ShadowAttribute, ...) that vary
   // by instance/version. Only the fields above are surfaced in the

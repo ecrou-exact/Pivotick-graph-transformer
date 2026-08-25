@@ -1,4 +1,5 @@
 import { MispAttribute } from '../attribute/types'
+import { MispGalaxy } from '../galaxy/types'
 import { MispObject } from '../object/types'
 import { MispTag } from '../tag/types'
 
@@ -28,6 +29,7 @@ export interface MispEvent {
   Attribute?: MispAttribute[]
   Object?: MispObject[]
   Tag?: MispTag[]
+  Galaxy?: MispGalaxy[]
   // Real MISP Event exports carry many more fields (org_id, orgc_id,
   // threat_level_id, analysis, locked, ...) that vary by instance/version.
   // Only the fields above are surfaced in the properties panel (see

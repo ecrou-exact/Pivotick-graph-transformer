@@ -33,12 +33,13 @@ const outFile = path.join(mispDir, 'src', 'icons.ts')
 const CONCEPT_ICONS = {
   event: 'simple/event.svg',
   object: 'simple/object.svg',
-  attribute: 'simple/attribute.svg'
+  attribute: 'simple/attribute.svg',
+  galaxy: 'simple/galaxy.svg'
 }
 
 // misp-iconify folders where every file is one instance icon, auto-
 // discovered rather than hand-listed.
-const ICON_DIRS = ['objects', 'attributes']
+const ICON_DIRS = ['objects', 'attributes', 'galaxies']
 
 function readSvg(relativePath) {
   return readFileSync(path.join(svgDir, relativePath), 'utf8').trim()
