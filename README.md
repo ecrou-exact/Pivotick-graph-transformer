@@ -1,5 +1,7 @@
 # Pivotick Graph Transformer
 
+<img src="demo/static/images/logo.jpeg" alt="Pivotick Graph Transformer logo" width="120" />
+
 Format converters that turn third-party graph/data formats (MISP, STIX, VirusTotal Graph, AIL-framework, ...) into the `nodes` / `edges` shape the [Pivotick](https://github.com/pivotick/pivotick) graph visualization library expects.
 
 This repo has no npm package and no build step for the library itself — it's meant to be added as a **git submodule** directly inside a Pivotick-based app, which then imports the TypeScript source by relative path. npm is only used locally, for the small demo/docs site under `demo/` — never for the library.
