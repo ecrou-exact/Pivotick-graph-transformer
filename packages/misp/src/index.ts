@@ -1,8 +1,10 @@
 import { GraphRegistry } from '../../core/src/index'
 import { MispEventImporter } from './import'
 
-export * from './eventFields'
+export * from './attribute/types'
+export * from './event/fields'
+export * from './event/types'
 export * from './import'
-export * from './types'
+export * from './object/types'
 
 GraphRegistry.registerImporter(new MispEventImporter())

@@ -1,33 +1,8 @@
-// Render tuning for this importer is just `ConverterOptions.styleRules`
-// (packages/core/src/types.ts) — rules matched against each node's `data`
-// (which always has at least `type`, and `category` for attributes).
-// No MISP-specific options type needed on top of it.
+import { MispAttribute } from '../attribute/types'
+import { MispObject } from '../object/types'
 
 // Minimal shape of a MISP Event export (JSON), covering the fields this
 // importer actually reads. Not the full MISP schema.
-
-export interface MispAttribute {
-  uuid: string
-  type: string
-  category: string
-  value: string
-  object_relation?: string
-  comment?: string
-}
-
-export interface MispObjectReference {
-  uuid: string
-  referenced_uuid: string
-  relationship_type: string
-}
-
-export interface MispObject {
-  uuid: string
-  name: string
-  meta_category?: string
-  Attribute?: MispAttribute[]
-  ObjectReference?: MispObjectReference[]
-}
 
 export interface MispOrg {
   id: string
@@ -54,8 +29,8 @@ export interface MispEvent {
   // Real MISP Event exports carry many more fields (org_id, orgc_id,
   // threat_level_id, analysis, locked, ...) that vary by instance/version.
   // Only the fields above are surfaced in the properties panel (see
-  // eventFields.ts) — this stays open so the importer can still read
-  // whatever else a given export happens to carry.
+  // fields.ts) — this stays open so the importer can still read whatever
+  // else a given export happens to carry.
   [key: string]: unknown
 }
 

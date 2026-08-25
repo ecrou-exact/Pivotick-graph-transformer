@@ -8,6 +8,24 @@ This repo is meant to be consumed as a **git submodule** directly inside Pivotic
 
 npm is only used locally for a small demo/test site — not for the library.
 
+## MISP concepts to implement
+
+The MISP importer converts one MISP concept at a time into nodes/edges + curated properties-panel fields (see `packages/misp/src/eventFields.ts` and `formatters.ts` for the pattern Event follows). Status of each concept in MISP's own data model:
+
+- [x] **Event** — root node; Org/Orgc resolved to their name, timestamps made readable, distribution/sharing_group_id made readable (see `packages/misp/src/eventFields.ts`)
+- [ ] **Attribute** — currently just a bare child node (`type: value` as its label); no curated field list yet (category, comment, to_ids, first_seen/last_seen, ...)
+- [ ] **Object** (e.g. `file`, `domain-ip`, ...) — currently just a bare child node (name + meta_category); its own `Attribute` children aren't curated either
+- [ ] **Tag** — freeform and taxonomy tags on an Event/Attribute (colour, taxonomy namespace)
+- [ ] **Galaxy / Galaxy Cluster** — MITRE ATT&CK, threat actors, malware families, tools, ...
+- [ ] **Sighting** — sighting/false-positive counts and timestamps on an Attribute
+- [ ] **Organisation** (`Org`/`Orgc`) — currently only surfaced as a resolved `org`/`orgc` name on the Event; not a node of its own yet
+- [ ] **Sharing Group** — currently only a readable label on the Event; not a node of its own (no name/org members resolved)
+- [ ] **EventReport** — freeform narrative report(s) attached to an Event
+- [ ] **Correlation** — attributes shared across different Events (the actual cross-event edges)
+- [ ] **Analyst Data** (Note / Opinion / Relationship) — MISP's newer annotation layer on top of any of the above
+- [ ] **Feed** — the external source an Event/Attribute was pulled from
+- [ ] **Warninglist match** — a flag on an Attribute noting it matched a known false-positive list
+
 ## Boundary: we never modify Pivotick
 
 Pivotick itself (vendored in `demo/vendor/pivotick/`) is treated as read-only. This project only ever produces the `nodes`/`edges` data and the options passed into `new Pivotick(container, data, options)` — theming, node appearance, what shows in the properties panel, and so on are all driven through Pivotick's own public options (its `theme` option, per-node `data`/`style`, `nodePropertiesMap`, ...), never by patching Pivotick's source or CSS.

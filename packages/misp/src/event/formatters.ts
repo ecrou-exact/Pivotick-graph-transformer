@@ -1,4 +1,4 @@
-import { MispEventFieldFormat } from './eventFields'
+import { MispEventFieldFormat } from './fields'
 import { MispEvent, MispOrg } from './types'
 
 // MISP's fixed distribution levels (Event.distribution) — see
