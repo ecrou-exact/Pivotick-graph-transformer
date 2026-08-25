@@ -11,6 +11,8 @@ export * from './galaxy/types'
 export * from './import'
 export * from './object/fields'
 export * from './object/types'
+export * from './sighting/summarize'
+export * from './sighting/types'
 export * from './tag/fields'
 export * from './tag/types'
 

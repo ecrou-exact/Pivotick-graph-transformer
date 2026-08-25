@@ -28,6 +28,10 @@ import { MISP_OBJECT_NODE_DEFAULT } from './object/defaults'
 import { MISP_OBJECT_FIELDS } from './object/fields'
 import { formatMispObjectField } from './object/formatters'
 import { MispObject } from './object/types'
+import { MISP_SIGHTING_NODE_DEFAULT, MISP_SIGHTING_TYPE_NODE_DEFAULT } from './sighting/defaults'
+import { SIGHTING_THUMB_DOWN_ICON, SIGHTING_THUMB_UP_ICON } from './sighting/icons'
+import { SightingGroupSummary, summarizeSightings } from './sighting/summarize'
+import { MispSighting } from './sighting/types'
 import { MISP_TAG_FIELDS } from './tag/fields'
 import { MispTag } from './tag/types'
 
@@ -39,8 +43,10 @@ const NODE_DEFAULTS: Record<string, Partial<NodeStyle> & { icon?: keyof typeof M
   'misp-event': MISP_EVENT_NODE_DEFAULT,
   'misp-attribute': MISP_ATTRIBUTE_NODE_DEFAULT,
   'misp-object': MISP_OBJECT_NODE_DEFAULT,
-  'misp-galaxy-clusters': MISP_GALAXY_CLUSTERS_NODE_DEFAULT,
-  'misp-galaxy': MISP_GALAXY_NODE_DEFAULT
+  'misp-galaxy-group': MISP_GALAXY_CLUSTERS_NODE_DEFAULT,
+  'misp-galaxy': MISP_GALAXY_NODE_DEFAULT,
+  'misp-sighting-summary': MISP_SIGHTING_NODE_DEFAULT,
+  'misp-sighting-type': MISP_SIGHTING_TYPE_NODE_DEFAULT
 }
 
 // Node/edge ids that must stay unique across the *whole* converted graph,
@@ -188,6 +194,10 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     })
 
     this.addTagsAndGalaxies(nodes, edges, attribute.uuid, attribute.Tag ?? [], attribute.Galaxy ?? [], dedup, options)
+
+    if (attribute.Sighting?.length) {
+      this.addSightingSummary(nodes, edges, attribute.uuid, attribute.Sighting, options)
+    }
   }
 
   private addObject(
@@ -309,8 +319,8 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     const groupNodeId = `galaxy-clusters-${parentId}`
     const groupLabel = 'Galaxy clusters'
     const { data: groupData, style: groupStyle } = resolveNodeAppearance(
-      { label: groupLabel, type: 'misp-galaxy-clusters' },
-      this.defaultStyle('misp-galaxy-clusters', groupLabel, { theme: options?.theme }),
+      { label: groupLabel, type: 'misp-galaxy-group' },
+      this.defaultStyle('misp-galaxy-group', groupLabel, { theme: options?.theme }),
       options?.styleRules
     )
     nodes.push({ id: groupNodeId, data: groupData, style: groupStyle, expanded: false })
@@ -327,6 +337,79 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
         this.addGalaxyCluster(nodes, edges, `galaxy-type-${galaxy.type}`, galaxy.name, cluster, dedup, options)
       }
     }
+  }
+
+  // One "Sightings" summary node per Attribute, then one child per
+  // sighting *type* that actually occurred ("Positive"/"False positive"/
+  // "Expired") — the same two-level breakdown MISP's own Sightings widget
+  // shows (a total, then one count per type), not one node per raw
+  // Sighting (a widely-seen indicator can have dozens of those). See
+  // sighting/summarize.ts for the counting.
+  private addSightingSummary(
+    nodes: RawNode[],
+    edges: RawEdge[],
+    parentId: string,
+    sightings: MispSighting[],
+    options?: ConverterOptions
+  ): void {
+    const nodeId = `sighting-summary-${parentId}`
+    const label = 'Sightings'
+    const breakdown = summarizeSightings(sightings)
+    const badge = `${breakdown.total} sighting${breakdown.total === 1 ? '' : 's'}`
+
+    const { data, style } = resolveNodeAppearance(
+      { label, type: 'misp-sighting-summary', count: breakdown.total },
+      this.defaultStyle('misp-sighting-summary', label, { theme: options?.theme, badge }),
+      options?.styleRules
+    )
+    nodes.push({ id: nodeId, data, style, expanded: false })
+    edges.push({
+      id: `${parentId}-${nodeId}`,
+      from: parentId,
+      to: nodeId,
+      data: { type: 'has-sightings' }
+    })
+
+    // Same colours MISP itself uses for these three states.
+    this.addSightingType(nodes, edges, nodeId, 'Positive', '#16A34A', SIGHTING_THUMB_UP_ICON, breakdown.positive, options)
+    this.addSightingType(nodes, edges, nodeId, 'False positive', '#DC2626', SIGHTING_THUMB_DOWN_ICON, breakdown.falsePositive, options)
+    // No dedicated "expired" pictogram (misp-iconify has none either) —
+    // the generic `sighting` icon NODE_DEFAULTS already falls back to.
+    this.addSightingType(nodes, edges, nodeId, 'Expired', '#F59E0B', undefined, breakdown.expired, options)
+  }
+
+  private addSightingType(
+    nodes: RawNode[],
+    edges: RawEdge[],
+    summaryNodeId: string,
+    label: string,
+    accentColorOverride: string,
+    iconSvgOverride: string | undefined,
+    group: SightingGroupSummary,
+    options?: ConverterOptions
+  ): void {
+    if (group.count === 0) return
+
+    const nodeId = `${summaryNodeId}-${label.toLowerCase().replace(/\s+/g, '-')}`
+    const { data, style } = resolveNodeAppearance(
+      {
+        label,
+        type: 'misp-sighting-type',
+        count: group.count,
+        first_seen: group.firstSeen,
+        last_seen: group.lastSeen,
+        organisations: group.organisations || undefined
+      },
+      this.defaultStyle('misp-sighting-type', label, { theme: options?.theme, accentColorOverride, iconSvgOverride, badge: String(group.count) }),
+      options?.styleRules
+    )
+    nodes.push({ id: nodeId, data, style, expanded: false })
+    edges.push({
+      id: `${summaryNodeId}-${nodeId}`,
+      from: summaryNodeId,
+      to: nodeId,
+      data: { type: 'has-sighting-type' }
+    })
   }
 
   private addGalaxyType(
@@ -432,13 +515,18 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
   private defaultStyle(type: string, label: string, options?: {
     theme?: 'dark' | 'light'
     iconOverride?: string
+    // A ready-made SVG string (e.g. a hand-drawn icon misp-iconify has no
+    // equivalent for) — wins over both iconOverride and NODE_DEFAULTS' own
+    // icon, since neither is a lookup key in that case.
+    iconSvgOverride?: string
     accentColorOverride?: string
     badge?: string
   }): Partial<NodeStyle> {
     const { icon: defaultIcon, accentColor: defaultAccentColor, fontSize, iconSize, ...style } = NODE_DEFAULTS[type] ?? {}
-    const icon = options?.iconOverride ?? defaultIcon
+    const iconKey = options?.iconOverride ?? defaultIcon
+    const iconSvg = options?.iconSvgOverride ?? (iconKey ? MISP_ICONS[iconKey] : undefined)
     const accentColor = options?.accentColorOverride ?? defaultAccentColor
-    if (icon && MISP_ICONS[icon]) {
+    if (iconSvg) {
       // Not near-black — a muted accent color (like Object's #524948)
       // barely reads against a background that dark; a lighter charcoal
       // keeps the card readable while still looking like a dark theme.
@@ -447,7 +535,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       return {
         ...style,
         size: estimateCardSize(label, { hasIcon: true, fontSize, iconSize, extraLines: badge ? 1 : 0, secondaryText: badge }),
-        html: () => buildIconLabelCard(MISP_ICONS[icon], label, { textColor: accentColor, borderColor: accentColor, background, badge, fontSize, iconSize })
+        html: () => buildIconLabelCard(iconSvg, label, { textColor: accentColor, borderColor: accentColor, background, badge, fontSize, iconSize })
       }
     }
     return { ...style, text: label }
