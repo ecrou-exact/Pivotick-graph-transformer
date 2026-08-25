@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pivotick Graph Transformer — Demo</title>
+    <!-- Blocking (not type="module", so it runs before first paint instead
+         of after the deferred module script) — without this, the page
+         always paints light for an instant before theme.ts flips it to the
+         stored dark preference. Key/logic must stay in sync with theme.ts. -->
+    <script>
+      (function () {
+        try {
+          document.documentElement.dataset.theme =
+            localStorage.getItem('pivotick-demo-theme') === 'dark' ? 'dark' : 'light'
+        } catch (e) {}
+      })()
+    </script>
+    <link rel="icon" href="./static/images/logo.jpeg" />
+    <!-- Linked directly (not imported from main.ts) so they load before the
+         module script runs — avoids a flash of unstyled content on nav. -->
+    <link rel="stylesheet" href="./vendor/pivotick/pivotick.css" />
+    <link rel="stylesheet" href="./src/siteHeader.css" />
+    <link rel="stylesheet" href="./src/fixturePicker.css" />
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+      /* #site-header (injected by ./src/siteHeader.ts) is `position: fixed`
+         (see siteHeader.css) — out of the normal flow, so #app has to carve
+         out that same height for itself instead of stacking below it. */
+      #app { position: fixed; top: var(--site-header-height); left: 0; right: 0; bottom: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

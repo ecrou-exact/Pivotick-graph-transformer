@@ -1,6 +1,7 @@
-/* Page chrome for home.html — reuses the --site-* tokens defined in
-   siteHeader.css (every page loads that stylesheet) so the header and the
-   rest of the page always agree on light/dark colors. */
+/* Page chrome for index.html (the landing/home page — rendered by
+   ./home.ts) — reuses the --site-* tokens defined in siteHeader.css (every
+   page loads that stylesheet) so the header and the rest of the page
+   always agree on light/dark colors. */
 
 html, body {
   margin: 0;

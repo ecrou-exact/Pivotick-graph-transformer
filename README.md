@@ -45,12 +45,13 @@ new Pivotick(document.getElementById('app'), data, {
 cd demo && npm run dev
 ```
 
-Two pages, both built against whatever converter output this repo currently produces:
+Three pages, all built against whatever converter output this repo currently produces:
 
-- **Demo** (`/index.html`) — a real, full-UI Pivotick instance. A floating panel (bottom-right, draggable, collapsible) lets you pick any fixture under `demo/fixtures/misp/**` and toggle dark/light theme.
+- **Home** (`/index.html`) — the landing page, explaining the project and linking into the other two. Kept at `index.html` deliberately, so it's what GitHub Pages' project root serves.
+- **Demo** (`/demo.html`) — a real, full-UI Pivotick instance. A floating panel (bottom-right, draggable, collapsible) lets you pick any fixture under `demo/fixtures/misp/**` and toggle dark/light theme.
 - **Docs** (`/docs.html`) — one section per MISP concept (Event, Object, Attribute, Tag, Galaxy, Sighting), each pairing a small hand-written fixture (`demo/fixtures-docs/`) with a live "basic" Pivotick preview and a plain-language breakdown of that concept's color/icon/shape rules.
 
-Dark/light is shared across both pages (persisted in `localStorage`, see `demo/src/theme.ts`).
+Dark/light is shared across all three pages (persisted in `localStorage`, see `demo/src/theme.ts`).
 
 `demo/src/pivotick.ts`'s `TUNED_SIMULATION` pushes `d3LinkDistance`/`d3ManyBodyStrength`/`d3CollideRadiusMultiplier` well past Pivotick's own UI-slider ceiling on the Demo page — its defaults assume small native shapes, and our custom html cards (Event/Object/Attribute/Tag/Galaxy) run much bigger with many more children per node than that, so the defaults clump everything into an unreadable pile without this. **Revisit/remove this tuning if Pivotick itself ever gets a fix that sizes its own physics off a node's actual rendered footprint** (e.g. a custom `html` node) instead of a generic default — at that point this workaround would just be fighting a problem Pivotick no longer has. The Docs page's small previews use Pivotick's own "loose" preset instead (`LOOSE_SIMULATION`), since 2-5 nodes never hits that crowding in the first place.
 

@@ -1,10 +1,10 @@
-// Single shared theme state — both demo pages (and every control that can
+// Single shared theme state — all three pages (and every control that can
 // flip it: the Demo page's fixture-picker switch, the shared site header's
 // toggle) read/write here instead of keeping their own copy, so two toggles
 // on the same page can never disagree about what theme is active. Persisted
-// in localStorage so it survives a full page navigation too (index.html and
-// docs.html are separate page loads, not client-side routes, so an in-memory
-// variable alone would reset to the default on every nav).
+// in localStorage so it survives a full page navigation too (index.html,
+// demo.html and docs.html are separate page loads, not client-side routes,
+// so an in-memory variable alone would reset to the default on every nav).
 
 export type Theme = 'dark' | 'light'
 

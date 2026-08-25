@@ -13,7 +13,7 @@
   --site-accent: #007acc;
   --site-accent-2: #eb2e53;
   --site-header-bg: #ffffff;
-  /* Both consuming pages (index.html, docsStyle.css) offset their own
+  /* Every consuming page (index.html, demo.html, docs.html) offsets its own
      content by this same value, since #site-header below is `fixed` (out
      of the normal document flow) rather than `sticky` — sticky can stop
      tracking the viewport if any ancestor sets an `overflow`/transform

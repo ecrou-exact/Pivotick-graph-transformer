@@ -4,8 +4,9 @@ import { MispEventInput } from '../../packages/misp/src/index'
 // A loaded fixture is either a single MISP Event export (`{ Event }`) or a
 // MISP search/index response (`{ response: [{ Event }, ...] }`) — the
 // latter is converted event-by-event and merged into one graph, each Event
-// its own root. Shared by both demo pages (index.html's interactive Demo
-// and docs.html's per-concept previews) so they never drift apart.
+// its own root. Shared by demo.html's interactive Demo, docs.html's
+// per-concept previews, and index.html's own small Tag preview, so they
+// never drift apart.
 export function toGraphData(json: unknown, theme: 'dark' | 'light'): GraphData {
   const importer = GraphRegistry.getImporter('misp')
   const listResponse = (json as { response?: { Event: MispEventInput['Event'] }[] }).response
