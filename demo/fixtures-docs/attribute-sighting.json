@@ -1,0 +1,28 @@
+{
+  "Event": {
+    "id": "1009",
+    "uuid": "22222223-3333-4444-8555-666666666666",
+    "info": "Attribute with sightings",
+    "date": "2026-01-23",
+    "published": true,
+    "timestamp": "1768480800",
+    "distribution": "1",
+    "Attribute": [
+      {
+        "id": "9005",
+        "uuid": "33333334-4444-4555-8666-777777777777",
+        "type": "domain",
+        "category": "Network activity",
+        "value": "malicious-example.test",
+        "to_ids": true,
+        "timestamp": "1768480800",
+        "distribution": "5",
+        "Sighting": [
+          { "id": "1", "uuid": "s1111111-1111-4111-8111-111111111111", "type": "0", "date_sighting": "1768480900", "Organisation": { "id": "1", "uuid": "aaaaaaaa-1111-4111-8111-111111111111", "name": "ACME-CERT" } },
+          { "id": "2", "uuid": "s2222222-2222-4222-8222-222222222222", "type": "0", "date_sighting": "1768481000", "Organisation": { "id": "2", "uuid": "bbbbbbbb-2222-4222-8222-222222222222", "name": "OTHER-CERT" } },
+          { "id": "3", "uuid": "s3333333-3333-4333-8333-333333333333", "type": "1", "date_sighting": "1768481100", "Organisation": { "id": "1", "uuid": "aaaaaaaa-1111-4111-8111-111111111111", "name": "ACME-CERT" } }
+        ]
+      }
+    ]
+  }
+}

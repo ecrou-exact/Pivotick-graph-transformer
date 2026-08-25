@@ -1,0 +1,32 @@
+{
+  "Event": {
+    "id": "1007",
+    "uuid": "ccccccc1-cccc-4ccc-8ccc-ccccccccccc1",
+    "info": "Attribute with several tags",
+    "date": "2026-01-21",
+    "published": true,
+    "timestamp": "1768480600",
+    "distribution": "1",
+    "Tag": [
+      { "id": "10", "name": "source:community", "colour": "#2e67f8", "exportable": true, "is_galaxy": false, "local_only": false, "local": false }
+    ],
+    "Attribute": [
+      {
+        "id": "9003",
+        "uuid": "ddddddd1-dddd-4ddd-8ddd-ddddddddddd1",
+        "type": "ip-dst",
+        "category": "Network activity",
+        "value": "203.0.113.42",
+        "to_ids": true,
+        "timestamp": "1768480600",
+        "distribution": "5",
+        "Tag": [
+          { "id": "10", "name": "source:community", "colour": "#2e67f8", "exportable": true, "is_galaxy": false, "local_only": false, "local": false },
+          { "id": "11", "name": "tlp:red", "colour": "#ff0000", "exportable": true, "is_galaxy": false, "local_only": false, "local": false },
+          { "id": "12", "name": "tlp:white", "colour": "#ffffff", "exportable": true, "is_galaxy": false, "local_only": false, "local": false },
+          { "id": "13", "name": "confidence:high", "colour": "#22b91a", "exportable": true, "is_galaxy": false, "local_only": false, "local": false }
+        ]
+      }
+    ]
+  }
+}

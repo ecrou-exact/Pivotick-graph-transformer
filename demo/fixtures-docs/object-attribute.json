@@ -1,0 +1,35 @@
+{
+  "Event": {
+    "id": "1006",
+    "uuid": "99999999-9999-4999-8999-999999999999",
+    "info": "File object with a hash attribute",
+    "date": "2026-01-20",
+    "published": true,
+    "timestamp": "1768480500",
+    "distribution": "1",
+    "Object": [
+      {
+        "id": "5002",
+        "uuid": "aaaaaaa1-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
+        "name": "file",
+        "meta-category": "file",
+        "description": "File object describing a file with meta-information",
+        "timestamp": "1768480500",
+        "distribution": "5",
+        "Attribute": [
+          {
+            "id": "9002",
+            "uuid": "bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1",
+            "type": "filename",
+            "category": "Payload delivery",
+            "value": "invoice.exe",
+            "object_relation": "filename",
+            "to_ids": true,
+            "timestamp": "1768480500",
+            "distribution": "5"
+          }
+        ]
+      }
+    ]
+  }
+}

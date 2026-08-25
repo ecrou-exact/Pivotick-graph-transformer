@@ -1,0 +1,194 @@
+/* Page chrome for home.html — reuses the --site-* tokens defined in
+   siteHeader.css (every page loads that stylesheet) so the header and the
+   rest of the page always agree on light/dark colors. */
+
+html, body {
+  margin: 0;
+  background: var(--site-bg);
+  color: var(--site-fg);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  /* #site-header is `position: fixed` (see siteHeader.css) — out of the
+     normal flow, so the page's own content has to leave that same height
+     free at the top instead of starting underneath it. */
+  padding-top: var(--site-header-height);
+  /* min-height + flex column pins .home-footer to the viewport bottom even
+     when .home-layout's content is shorter than the viewport, without the
+     footer losing its place right after the content on taller pages. */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-layout {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 64px 20px 80px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.home-hero {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.home-hero-logo {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px var(--site-border), 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.home-hero > div {
+  max-width: 600px;
+}
+
+.home-eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--site-accent);
+}
+
+.home-hero h1 {
+  margin: 8px 0 16px;
+  font-size: 32px;
+  line-height: 1.25;
+}
+
+.home-lede {
+  color: var(--site-fg-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.home-lede a {
+  color: var(--site-accent);
+}
+
+.home-lede code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+  background: color-mix(in srgb, var(--site-fg) 8%, transparent);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.home-tag-preview {
+  margin-top: 36px;
+}
+
+.home-preview-mount {
+  width: 100%;
+  height: 360px;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  background: var(--site-bg);
+  overflow: hidden;
+  position: relative;
+}
+
+.home-cards {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.home-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 12px;
+  border-radius: 9px;
+  color: var(--site-accent);
+  background: color-mix(in srgb, var(--site-accent) 14%, transparent);
+}
+
+.home-card {
+  display: block;
+  padding: 20px;
+  border: 1px solid var(--site-border);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  background: color-mix(in srgb, var(--site-fg) 3%, transparent);
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.home-card:hover {
+  border-color: var(--site-accent);
+  transform: translateY(-2px);
+}
+
+.home-card h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.home-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--site-fg-muted);
+}
+
+.home-footer {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 20px 32px;
+  border-top: 1px solid var(--site-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--site-fg-muted);
+}
+
+.home-footer nav {
+  display: flex;
+  gap: 16px;
+}
+
+.home-footer a {
+  color: var(--site-fg-muted);
+  text-decoration: none;
+}
+
+.home-footer a:hover {
+  color: var(--site-accent);
+}
+
+@media (max-width: 560px) {
+  .home-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .home-hero-logo {
+    width: 96px;
+    height: 96px;
+  }
+
+  .home-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .home-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

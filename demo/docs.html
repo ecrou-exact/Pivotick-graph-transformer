@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pivotick Graph Transformer — Docs</title>
+    <!-- Blocking (not type="module", so it runs before first paint instead
+         of after the deferred module script) — without this, the page
+         always paints light for an instant before theme.ts flips it to the
+         stored dark preference. Key/logic must stay in sync with theme.ts. -->
+    <script>
+      (function () {
+        try {
+          document.documentElement.dataset.theme =
+            localStorage.getItem('pivotick-demo-theme') === 'dark' ? 'dark' : 'light'
+        } catch (e) {}
+      })()
+    </script>
+    <link rel="icon" href="./static/images/logo.jpeg" />
+    <!-- Linked directly (not imported from docs.ts) so they load before the
+         module script runs — avoids a flash of unstyled content on nav. -->
+    <link rel="stylesheet" href="./vendor/pivotick/pivotick.css" />
+    <link rel="stylesheet" href="./src/siteHeader.css" />
+    <link rel="stylesheet" href="./src/docsStyle.css" />
+  </head>
+  <body>
+    <main class="docs-layout">
+      <nav class="docs-sidebar" aria-label="Documentation sections">
+        <p class="docs-sidebar-category">Getting started</p>
+        <a href="#installation">Installation</a>
+        <a href="#usage">Usage in your code</a>
+
+        <p class="docs-sidebar-category">MISP</p>
+        <a href="#event">Event</a>
+        <a href="#object">Object</a>
+        <a href="#attribute">Attribute</a>
+        <a href="#tag">Tag</a>
+        <a href="#galaxy">Galaxy</a>
+        <a href="#sighting">Sighting</a>
+      </nav>
+
+      <article class="docs-content">
+        <section id="getting-started" class="docs-section" style="margin-top: 0; padding-top: 0; border-top: none;">
+          <p class="docs-eyebrow">Getting started</p>
+          <h1>Using Pivotick Graph Transformer</h1>
+          <p class="docs-lede">
+            This repo has no npm package and no build step for the library itself — it's meant to be added as a
+            <strong>git submodule</strong> directly inside a Pivotick-based app, which then imports the TypeScript
+            source by relative path.
+          </p>
+
+          <h2 id="installation">Installation</h2>
+          <p>Add it as a submodule and pull in its own submodule (the vendored misp-iconify icon set):</p>
+          <div class="docs-snippet-wrap">
+            <button class="docs-copy-btn" type="button">Copy</button>
+            <pre class="docs-snippet"><code data-lang="bash">git submodule add https://github.com/ecrou-exact/pivotick-graph-transformer.git vendor/pivotick-graph-transformer
+git submodule update --init --recursive</code></pre>
+          </div>
+
+          <h2 id="usage">Usage in your code</h2>
+          <p>
+            Importing a format's package (e.g. <code>packages/misp/src/index</code>) registers its converter with
+            the shared <code>GraphRegistry</code>. Convert your source JSON to get the exact <code>{ nodes, edges }</code>
+            shape Pivotick's own constructor expects, and hand that straight to it:
+          </p>
+          <div class="docs-snippet-wrap">
+            <button class="docs-copy-btn" type="button">Copy</button>
+            <pre class="docs-snippet"><code data-lang="ts">import { Pivotick } from 'pivotick'
+import { GraphRegistry } from './vendor/pivotick-graph-transformer/packages/core/src/index'
+import './vendor/pivotick-graph-transformer/packages/misp/src/index' // registers the MISP importer
+
+const mispEvent = { Event: { /* ...your MISP Event export... */ } }
+
+// { nodes, edges } — ready to hand straight to Pivotick.
+const data = GraphRegistry.getImporter('misp').convert(mispEvent, { theme: 'light' })
+
+new Pivotick(document.getElementById('app'), data, {
+  isDirected: true,
+  render: { type: 'svg' },
+  layout: { type: 'force' },
+  UI: { theme: 'light' } // Pivotick reads its own theme from here, not a top-level `theme`
+})</code></pre>
+          </div>
+          <p>
+            Every section below is exactly this pipeline against a small example fixture — the same converter the
+            <a href="./index.html">Demo</a> page uses on a full real event.
+          </p>
+        </section>
+
+        <section class="docs-category-heading">
+          <p class="docs-eyebrow">MISP concept reference</p>
+          <h1>How each MISP concept becomes a graph</h1>
+        </section>
+
+        <section id="event" class="docs-section">
+          <h2>Event</h2>
+          <p>
+            The root of every MISP export. It always becomes the graph's root node.
+          </p>
+          <ul class="docs-visual-notes">
+            <li><strong>Color</strong> — a fixed teal accent (<code>#1892B1</code>), Event's own identity color; it never varies.</li>
+            <li><strong>Icon</strong> — misp-iconify's single generic <code>event</code> glyph; there's only one kind of Event.</li>
+            <li><strong>Shape</strong> — Pivotick has no native rectangle (only circle/square/triangle/hexagon, always as-wide-as-tall), so the visible card is a custom <code>html</code> render: an icon in a hexagon-clipped badge, the title beside it, inside a bordered rounded rectangle.</li>
+            <li><strong>Size</strong> — the largest text/icon of any concept, so it reads as the starting point at a glance regardless of how long its title is.</li>
+          </ul>
+          <div class="docs-example" data-fixture="event">
+            <div class="docs-preview"></div>
+          </div>
+        </section>
+
+        <section id="object" class="docs-section">
+          <h2>Object</h2>
+          <p>
+            A MISP Object (e.g. <code>file</code>, <code>domain-ip</code>) hangs off its Event as a child node.
+          </p>
+          <ul class="docs-visual-notes">
+            <li><strong>Color</strong> — a fixed muted brown-grey (<code>#524948</code>), deliberately neutral: dozens of different Object types share it, only the icon changes.</li>
+            <li><strong>Icon</strong> — looked up by the Object's own <code>name</code> against misp-iconify's ~213 known Object glyphs; falls back to a generic <code>object</code> icon when the name isn't recognized.</li>
+            <li><strong>Badge</strong> — the Object's <code>meta-category</code> (e.g. "file", "network") as a small pill under the name.</li>
+            <li><strong>Size</strong> — the middle tier, between Event (biggest) and Attribute (smallest).</li>
+          </ul>
+          <div class="docs-example" data-fixture="event-object">
+            <div class="docs-preview"></div>
+          </div>
+        </section>
+
+        <section id="attribute" class="docs-section">
+          <h2>Attribute</h2>
+          <p>
+            An Attribute can attach directly to an Event, or nest inside an Object (carrying an
+            <code>object_relation</code> — its role within that Object's template).
+          </p>
+          <ul class="docs-visual-notes">
+            <li><strong>Color</strong> — a fixed yellow-green (<code>#97CC04</code>), the quietest of the three card colors: a graph can have dozens of Attributes, and they shouldn't compete with Event/Object for attention.</li>
+            <li><strong>Icon</strong> — looked up by the Attribute's <code>type</code> against misp-iconify's ~51 known Attribute glyphs; generic <code>attribute</code> icon otherwise.</li>
+            <li><strong>Title vs. badge</strong> — the card's title is the attribute's <em>value</em> (what an analyst actually reads — an IP, a hash, ...); its <code>type</code> shows as a small badge underneath, never squeezed into one "type: value" string.</li>
+            <li><strong>Size</strong> — the smallest tier: Attributes are the graph's leaves.</li>
+          </ul>
+          <div class="docs-example-row">
+            <div class="docs-example" data-fixture="event-attribute">
+              <p class="docs-example-caption">Directly on an Event</p>
+              <div class="docs-preview"></div>
+            </div>
+            <div class="docs-example" data-fixture="object-attribute">
+              <p class="docs-example-caption">Nested in an Object</p>
+              <div class="docs-preview"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tag" class="docs-section">
+          <h2>Tag</h2>
+          <p>
+            A freeform or taxonomy label attached to an Event, Object, or Attribute.
+          </p>
+          <ul class="docs-visual-notes">
+            <li><strong>Color</strong> — no fixed accent: the tag's own <code>colour</code> field is the chip's background, whatever an analyst or taxonomy picked.</li>
+            <li><strong>Text color</strong> — automatically switched to black or white based on that background's perceived luminance, so a tag stays readable no matter how light or dark its own color is (see "tlp:white" below: a near-white background gets black text and a subtle border so it doesn't disappear against the page).</li>
+            <li><strong>Shape</strong> — a rounded pill, not a card: a tag is a short label, not an entity with its own sub-fields, so it doesn't need an icon badge or a properties panel's worth of room.</li>
+            <li><strong>Deduplication</strong> — the same tag id shared by several entities collapses into one shared node with an edge from each — see "source:community" below, attached to both the Event and its Attribute.</li>
+          </ul>
+          <div class="docs-example" data-fixture="attribute-tag">
+            <div class="docs-preview"></div>
+          </div>
+        </section>
+
+        <section id="galaxy" class="docs-section">
+          <h2>Galaxy / Galaxy Cluster</h2>
+          <p>
+            Driven by an entity's own structured <code>Galaxy</code> array — independent of any matching
+            <code>is_galaxy</code> Tag, which still renders separately as a plain Tag chip (Tags and Galaxies are two
+            parallel MISP representations, not one a variant of the other).
+          </p>
+          <ul class="docs-visual-notes">
+            <li><strong>"Galaxy clusters" (grouping node)</strong> — a fixed purple (<code>#8B5CF6</code>) with the generic <code>galaxy</code> icon; it signals "this entity's galaxies are grouped here", it isn't a galaxy itself.</li>
+            <li><strong>Galaxy type</strong> (e.g. "Attack Pattern") — color is <em>not</em> fixed: a deterministic hash of the galaxy's display name (ported directly from MISP's own "Overmind" theme) picks a hue, so the same galaxy type renders in the same color family everywhere. Icon comes from misp-iconify's ~131 known galaxy-type glyphs by the galaxy's <code>type</code> slug, generic <code>galaxy</code> icon otherwise.</li>
+            <li><strong>Cluster detail</strong> (e.g. "Valid Accounts - T1078") — a pill in the same hue family as its parent type, with a translucent tinted background (rather than solid) plus a subtle metallic-sheen gradient, matching MISP's own badge look.</li>
+          </ul>
+          <div class="docs-example" data-fixture="attribute-galaxy">
+            <div class="docs-preview"></div>
+          </div>
+        </section>
+
+        <section id="sighting" class="docs-section">
+          <h2>Sighting</h2>
+          <p>
+            Sightings on an Attribute summarize into one "Sightings" node rather than one node per raw Sighting —
+            a widely-seen indicator can have dozens.
+          </p>
+          <ul class="docs-visual-notes">
+            <li><strong>"Sightings" (grouping node)</strong> — a fixed magenta (<code>#890096</code>, deliberately a different purple from Galaxy's, so the two grouping concepts stay visually distinct) with the generic <code>sighting</code> icon; its badge is the total count.</li>
+            <li><strong>Positive</strong> — green (<code>#16A34A</code>), a hand-drawn thumb-up pictogram (misp-iconify has no like/dislike icon, so this one connected shape — a "fist" block with a notch sticking out the top — is drawn here instead).</li>
+            <li><strong>False positive</strong> — red (<code>#DC2626</code>), the same pictogram mirrored so the notch points down.</li>
+            <li><strong>Expired</strong> — amber (<code>#F59E0B</code>), falling back to the generic <code>sighting</code> icon since no dedicated pictogram exists.</li>
+            <li>Each of the three only appears if its count is above zero.</li>
+          </ul>
+          <div class="docs-example" data-fixture="attribute-sighting">
+            <div class="docs-preview"></div>
+          </div>
+        </section>
+      </article>
+    </main>
+
+    <script type="module" src="./src/docs.ts"></script>
+  </body>
+</html>

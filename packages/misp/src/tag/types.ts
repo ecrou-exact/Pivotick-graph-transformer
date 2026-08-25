@@ -2,7 +2,9 @@
 // reads. Not the full MISP schema.
 
 export interface MispTag {
-  id: string
+  // Some MISP exports omit this (relying on `name` as the natural identity
+  // instead) — see import.ts's addTag for the dedup fallback this implies.
+  id?: string
   name: string
   colour?: string
   exportable?: boolean

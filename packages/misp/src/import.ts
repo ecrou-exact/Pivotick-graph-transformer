@@ -251,10 +251,14 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     tagIds: Set<string>,
     options?: ConverterOptions
   ): void {
-    const tagNodeId = `tag-${tag.id}`
+    // Some MISP exports omit `id` on a Tag — falling back to `name` avoids
+    // every id-less tag wrongly deduplicating onto whichever one rendered
+    // first (they'd otherwise all share the key `undefined`).
+    const dedupeKey = tag.id || tag.name
+    const tagNodeId = `tag-${dedupeKey}`
 
-    if (!tagIds.has(tag.id)) {
-      tagIds.add(tag.id)
+    if (!tagIds.has(dedupeKey)) {
+      tagIds.add(dedupeKey)
 
       // Only the fields listed in MISP_TAG_FIELDS reach the node's `data`
       // (and therefore the properties panel/tooltip) — see tag/fields.ts

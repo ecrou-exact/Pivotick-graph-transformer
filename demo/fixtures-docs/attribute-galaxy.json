@@ -1,0 +1,45 @@
+{
+  "Event": {
+    "id": "1008",
+    "uuid": "eeeeeee1-eeee-4eee-8eee-eeeeeeeeeee1",
+    "info": "Attribute linked to a threat actor",
+    "date": "2026-01-22",
+    "published": true,
+    "timestamp": "1768480700",
+    "distribution": "1",
+    "Attribute": [
+      {
+        "id": "9004",
+        "uuid": "fffffff1-ffff-4fff-8fff-fffffffffff1",
+        "type": "ip-dst",
+        "category": "Network activity",
+        "value": "198.51.100.7",
+        "to_ids": true,
+        "timestamp": "1768480700",
+        "distribution": "5",
+        "Tag": [
+          { "id": "4", "name": "misp-galaxy:threat-actor=\"Fancy Bear\"", "colour": "#8b0000", "exportable": true, "is_galaxy": true, "local_only": false, "local": false }
+        ],
+        "Galaxy": [
+          {
+            "id": "101",
+            "uuid": "11111112-2222-4333-8444-555555555555",
+            "name": "Threat Actor",
+            "type": "threat-actor",
+            "description": "Threat actors that describe a group of adversaries.",
+            "namespace": "misp",
+            "GalaxyCluster": [
+              {
+                "id": "501",
+                "type": "threat-actor",
+                "value": "Fancy Bear",
+                "tag_name": "misp-galaxy:threat-actor=\"Fancy Bear\"",
+                "description": "A Russia-attributed threat actor known for espionage operations."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

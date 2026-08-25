@@ -1,0 +1,34 @@
+{
+  "Event": {
+    "id": "1005",
+    "uuid": "77777777-7777-4777-8777-777777777777",
+    "info": "Threat actor attribution example",
+    "date": "2026-01-19",
+    "published": true,
+    "timestamp": "1768480400",
+    "distribution": "1",
+    "Tag": [
+      { "id": "2", "name": "misp-galaxy:mitre-attack-pattern=\"Valid Accounts - T1078\"", "colour": "#0088cc", "exportable": true, "is_galaxy": true, "local_only": false, "local": false }
+    ],
+    "Galaxy": [
+      {
+        "id": "100",
+        "uuid": "88888888-8888-4888-8888-888888888888",
+        "name": "Attack Pattern",
+        "type": "mitre-attack-pattern",
+        "description": "ATT&CK Tactic",
+        "namespace": "mitre-attack",
+        "GalaxyCluster": [
+          {
+            "id": "500",
+            "type": "mitre-attack-pattern",
+            "value": "Valid Accounts - T1078",
+            "tag_name": "misp-galaxy:mitre-attack-pattern=\"Valid Accounts - T1078\"",
+            "description": "Adversaries may obtain and abuse credentials of existing accounts as a means of gaining access.",
+            "meta": { "external_id": ["T1078"] }
+          }
+        ]
+      }
+    ]
+  }
+}

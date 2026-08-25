@@ -1,0 +1,22 @@
+{
+  "Event": {
+    "id": "1002",
+    "uuid": "22222222-2222-4222-8222-222222222222",
+    "info": "Suspicious network activity",
+    "date": "2026-01-16",
+    "published": true,
+    "timestamp": "1768480100",
+    "distribution": "1",
+    "Object": [
+      {
+        "id": "5001",
+        "uuid": "33333333-3333-4333-8333-333333333333",
+        "name": "domain-ip",
+        "meta-category": "network",
+        "description": "A domain and IP address seen as a tuple in a specific time frame.",
+        "timestamp": "1768480100",
+        "distribution": "5"
+      }
+    ]
+  }
+}

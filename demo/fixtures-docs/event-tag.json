@@ -1,0 +1,14 @@
+{
+  "Event": {
+    "id": "1004",
+    "uuid": "66666666-6666-4666-8666-666666666666",
+    "info": "Traffic Light Protocol example",
+    "date": "2026-01-18",
+    "published": true,
+    "timestamp": "1768480300",
+    "distribution": "1",
+    "Tag": [
+      { "id": "1", "name": "tlp:amber", "colour": "#ffc000", "exportable": true, "is_galaxy": false, "local_only": false, "local": false }
+    ]
+  }
+}

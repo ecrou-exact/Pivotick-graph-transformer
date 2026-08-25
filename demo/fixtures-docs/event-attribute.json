@@ -1,0 +1,23 @@
+{
+  "Event": {
+    "id": "1003",
+    "uuid": "44444444-4444-4444-8444-444444444444",
+    "info": "Malware sample analysis",
+    "date": "2026-01-17",
+    "published": true,
+    "timestamp": "1768480200",
+    "distribution": "1",
+    "Attribute": [
+      {
+        "id": "9001",
+        "uuid": "55555555-5555-4555-8555-555555555555",
+        "type": "sha256",
+        "category": "Payload delivery",
+        "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "to_ids": true,
+        "timestamp": "1768480200",
+        "distribution": "5"
+      }
+    ]
+  }
+}

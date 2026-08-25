@@ -1,9 +1,10 @@
-import '../vendor/pivotick/pivotick.css'
-import './fixturePicker.css'
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
 import '../../packages/misp/src/index'
-import { GraphData, GraphRegistry } from '../../packages/core/src/index'
-import { MispEventInput } from '../../packages/misp/src/index'
+import { TUNED_SIMULATION, toGraphData } from './pivotick'
+import { renderSiteHeader } from './siteHeader'
+import { getTheme, onThemeChange, setTheme } from './theme'
+
+renderSiteHeader('demo')
 
 const containerEl = document.getElementById('app')
 if (!containerEl) throw new Error('Missing #app container')
@@ -49,28 +50,12 @@ function nodePropertiesMap(node: any) {
     .map(([name, value]) => ({ name, value: String(value) }))
 }
 
-// A loaded fixture is either a single MISP Event export (`{ Event }`) or a
-// MISP search/index response (`{ response: [{ Event }, ...] }`) — the
-// latter is converted event-by-event and merged into one graph, each Event
-// its own root.
-function toGraphData(json: unknown, theme: 'dark' | 'light'): GraphData {
-  const importer = GraphRegistry.getImporter('misp')
-  const listResponse = (json as { response?: { Event: MispEventInput['Event'] }[] }).response
-  if (Array.isArray(listResponse)) {
-    return listResponse.reduce<GraphData>((graph, entry) => {
-      const converted = importer.convert({ Event: entry.Event }, { theme })
-      return { nodes: [...graph.nodes, ...converted.nodes], edges: [...graph.edges, ...converted.edges] }
-    }, { nodes: [], edges: [] })
-  }
-  return importer.convert(json as MispEventInput, { theme })
-}
-
-// Current selection lives here, not as render() parameters, so either the
-// fixture picker or the theme toggle can trigger a re-render on its own
-// without needing to know about the other.
+// Current fixture selection lives here, not as a render() parameter, so
+// the fixture picker can trigger a re-render on its own without needing to
+// know about the theme (which now lives in ./theme.ts, shared with the
+// site header's own toggle — see onThemeChange below).
 const defaultFixture = fixtures.find(f => f.label === 'reel-events') ?? fixtures[0]
 let currentFixtureJson: unknown = defaultFixture.json
-let currentTheme: 'dark' | 'light' = 'light'
 
 // Every user-facing toggle explicitly on, so the demo shows the full UI —
 // see GraphOptions/GraphUI/RendererOptions in the vendored Pivotick v1.5.0.
@@ -81,9 +66,8 @@ function renderPivotick(): void {
   // No documented dispose/destroy on the vendored Pivotick — clearing the
   // container before re-instantiating is the safe way to swap fixtures.
   container.innerHTML = ''
-  new Pivotick(container, toGraphData(currentFixtureJson, currentTheme), {
+  new Pivotick(container, toGraphData(currentFixtureJson, getTheme()), {
     isDirected: true,
-    theme: currentTheme,
     render: {
       type: 'svg',
       enableFocusMode: true,
@@ -98,23 +82,19 @@ function renderPivotick(): void {
       enabled: true,
       useWorker: true,
       fitViewOnExpandCollapse: true,
-      // Pivotick's own d3-force defaults (d3LinkDistance: 40,
-      // d3ManyBodyStrength: -150) assume small native shapes — our custom
-      // html cards (buildIconLabelCard/buildTagChip) run much bigger, and
-      // a MISP Event can have dozens of Attribute/Tag/Galaxy children, so
-      // the defaults clump everything into an unreadable pile. These are
-      // still Pivotick's own documented simulation knobs, just tuned well
-      // past Pivotick's own UI-slider ceiling (linkDistance maxes at 260,
-      // repulsion at -400, collideRadiusMultiplier at 2.4) for our
-      // unusually large node sizes.
-      d3LinkDistance: 260,
-      d3ManyBodyStrength: -700,
-      d3CollideRadiusMultiplier: 2
+      ...TUNED_SIMULATION
     },
     layout: {
       type: 'force'
     },
     UI: {
+      // Pivotick reads `theme` from *here* (options.UI.theme), not from a
+      // top-level `theme` option — verified straight from the vendored
+      // bundle: its UIManager only ever receives `options.UI` and sets
+      // `data-theme` off `options.UI.theme`. A top-level `theme` is simply
+      // never read, silently leaving Pivotick's own canvas/chrome stuck on
+      // its no-data-theme default regardless of what we pass.
+      theme: getTheme(),
       mode: 'full',
       sidebar: { collapsed: false },
       tooltip: { enabled: true, allowPinning: true, nodePropertiesMap },
@@ -180,9 +160,13 @@ select.addEventListener('change', () => {
 const themeToggle = picker.querySelector('#fixture-picker-theme-toggle') as HTMLButtonElement
 const themeLabel = picker.querySelector('#fixture-picker-theme-label') as HTMLSpanElement
 themeToggle.addEventListener('click', () => {
-  currentTheme = currentTheme === 'dark' ? 'light' : 'dark'
-  themeToggle.setAttribute('aria-checked', String(currentTheme === 'light'))
-  themeLabel.textContent = currentTheme === 'dark' ? 'Dark theme' : 'Light theme'
+  setTheme(getTheme() === 'dark' ? 'light' : 'dark')
+})
+// Shared with the site header's own theme toggle — either one flips this
+// switch's UI and re-renders the graph, so the two never disagree.
+onThemeChange(theme => {
+  themeToggle.setAttribute('aria-checked', String(theme === 'light'))
+  themeLabel.textContent = theme === 'dark' ? 'Dark theme' : 'Light theme'
   renderPivotick()
 })
 

@@ -1,0 +1,122 @@
+/* Site-wide light/dark tokens — every page-chrome stylesheet (this one,
+   docsStyle.css, homeStyle.css) reads these; only the values here need to
+   change to re-theme the whole site outside of Pivotick's own instances.
+   --site-accent/--site-accent-2 are Pivotick's own palette (pivotick.css's
+   --pvt-vibrant-blue / --pvt-theme-primary), not colors we invented, so
+   this site's own chrome stays visually "in-family" with Pivotick itself
+   and with our own logo (blue nodes, one red one). */
+:root {
+  --site-bg: #ffffff;
+  --site-fg: #1c1f24;
+  --site-fg-muted: #5a626e;
+  --site-border: #e2e5ea;
+  --site-accent: #007acc;
+  --site-accent-2: #eb2e53;
+  --site-header-bg: #ffffff;
+  /* Both consuming pages (index.html, docsStyle.css) offset their own
+     content by this same value, since #site-header below is `fixed` (out
+     of the normal document flow) rather than `sticky` — sticky can stop
+     tracking the viewport if any ancestor sets an `overflow`/transform
+     that creates a new scrolling/containing context, fixed never can. */
+  --site-header-height: 52px;
+}
+
+:root[data-theme='dark'] {
+  --site-bg: #14161a;
+  --site-fg: #e7e9ec;
+  --site-fg-muted: #9aa1ac;
+  --site-border: #2a2e35;
+  --site-accent: #4da6e0;
+  --site-accent-2: #f0636a;
+  --site-header-bg: #1a1d22;
+}
+
+#site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--site-header-height);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 20px;
+  background: var(--site-header-bg);
+  border-bottom: 1px solid var(--site-border);
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--site-fg);
+  z-index: 1000;
+}
+
+.site-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.site-header-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.site-header-brand-name {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.site-header-brand-suffix {
+  font-size: 12px;
+  color: var(--site-fg-muted);
+}
+
+.site-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 13px;
+}
+
+.site-header-nav a {
+  color: var(--site-fg-muted);
+  text-decoration: none;
+}
+
+.site-header-nav a:hover {
+  color: var(--site-fg);
+}
+
+.site-header-nav a.active {
+  color: var(--site-accent);
+  font-weight: 600;
+}
+
+.site-header-nav a.icon-link {
+  display: flex;
+  align-items: center;
+}
+
+#site-header-theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--site-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--site-fg-muted);
+  cursor: pointer;
+}
+
+#site-header-theme-toggle:hover {
+  color: var(--site-fg);
+  border-color: var(--site-fg-muted);
+}

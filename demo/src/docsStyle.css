@@ -1,0 +1,276 @@
+/* Page chrome for docs.html — reuses the --site-* tokens defined in
+   siteHeader.css (both pages load that stylesheet) so the header and the
+   rest of the page always agree on light/dark colors. */
+
+/* Token colors for the hand-rolled highlighter in ./highlight.ts. */
+:root {
+  --tok-comment: #6a737d;
+  --tok-string: #0a7d3f;
+  --tok-keyword: #a3195e;
+}
+
+:root[data-theme='dark'] {
+  --tok-comment: #8b949e;
+  --tok-string: #7ee787;
+  --tok-keyword: #ff9bc0;
+}
+
+html, body {
+  margin: 0;
+  background: var(--site-bg);
+  color: var(--site-fg);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  /* #site-header is `position: fixed` (see siteHeader.css) — out of the
+     normal flow, so the page's own content has to leave that same height
+     free at the top instead of starting underneath it. */
+  padding-top: var(--site-header-height);
+}
+
+.docs-layout {
+  display: flex;
+  align-items: flex-start;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  gap: 40px;
+}
+
+.docs-sidebar {
+  position: sticky;
+  /* Sits below the fixed #site-header instead of under it. */
+  top: calc(var(--site-header-height) + 20px);
+  flex: 0 0 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.docs-sidebar-category {
+  margin: 20px 0 2px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--site-fg-muted);
+}
+
+.docs-sidebar-category:first-child {
+  margin-top: 0;
+}
+
+.docs-sidebar a {
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: var(--site-fg-muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.docs-sidebar a:hover {
+  color: var(--site-fg);
+  background: color-mix(in srgb, var(--site-fg) 6%, transparent);
+}
+
+.docs-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.docs-eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--site-accent);
+}
+
+.docs-content h1 {
+  margin: 6px 0 12px;
+  font-size: 28px;
+}
+
+.docs-lede {
+  color: var(--site-fg-muted);
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 760px;
+}
+
+.docs-content a {
+  color: var(--site-accent);
+}
+
+.docs-section {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--site-border);
+}
+
+.docs-section h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+/* Getting Started packs "Installation" and "Usage in your code" into one
+   section (so both share its outer border/heading), so this one extra h2
+   needs its own top margin to read as a distinct subsection instead of
+   sitting right against the Installation snippet above it. */
+#usage {
+  margin-top: 32px;
+}
+
+.docs-section p {
+  color: var(--site-fg-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 720px;
+}
+
+.docs-section code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+  background: color-mix(in srgb, var(--site-fg) 8%, transparent);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.docs-example-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.docs-example-row .docs-example {
+  flex: 1 1 320px;
+}
+
+.docs-example-caption {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--site-fg-muted);
+}
+
+.docs-example {
+  margin-top: 16px;
+}
+
+.docs-preview {
+  width: 100%;
+  height: 360px;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  background: var(--site-bg);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Plain static code samples (Getting Started) — not paired with a live
+   preview, unlike the per-concept .docs-example above. */
+.docs-snippet-wrap {
+  position: relative;
+}
+
+.docs-snippet {
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--site-fg) 4%, transparent);
+  overflow-x: auto;
+}
+
+.docs-copy-btn {
+  position: absolute;
+  top: 20px;
+  right: 10px;
+  padding: 4px 10px;
+  border: 1px solid var(--site-border);
+  border-radius: 6px;
+  background: var(--site-bg);
+  color: var(--site-fg-muted);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.docs-copy-btn:hover {
+  color: var(--site-fg);
+  border-color: var(--site-fg-muted);
+}
+
+.docs-copy-btn.docs-copy-btn-done {
+  color: var(--site-accent);
+  border-color: var(--site-accent);
+}
+
+.docs-snippet code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre;
+  background: none;
+  padding: 0;
+  color: var(--site-fg);
+}
+
+.tok-comment {
+  color: var(--tok-comment);
+  font-style: italic;
+}
+
+.tok-string {
+  color: var(--tok-string);
+}
+
+.tok-keyword {
+  color: var(--tok-keyword);
+  font-weight: 600;
+}
+
+.docs-category-heading {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--site-border);
+}
+
+/* Color / icon / shape breakdown under a concept's prose. */
+.docs-visual-notes {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.docs-visual-notes li {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--site-fg-muted);
+  padding-left: 16px;
+  border-left: 2px solid var(--site-border);
+}
+
+.docs-visual-notes strong {
+  color: var(--site-fg);
+}
+
+@media (max-width: 760px) {
+  .docs-layout {
+    flex-direction: column;
+  }
+
+  .docs-sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
