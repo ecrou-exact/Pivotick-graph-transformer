@@ -12,7 +12,24 @@ export interface MispObjectReference {
 export interface MispObject {
   uuid: string
   name: string
-  meta_category?: string
+  id?: string
+  // MISP's own JSON key is hyphenated (not a valid JS identifier), so it
+  // can't be a plain `meta_category` property like the rest — object/fields.ts
+  // reads it via `source: 'meta-category'` and displays it as `category`.
+  'meta-category'?: string
+  description?: string
+  comment?: string
+  timestamp?: string
+  distribution?: string
+  sharing_group_id?: string
+  first_seen?: string | null
+  last_seen?: string | null
   Attribute?: MispAttribute[]
   ObjectReference?: MispObjectReference[]
+  // Real MISP Object exports carry more fields (template_uuid,
+  // template_version, event_id, deleted, ...) that vary by instance/
+  // version. Only the fields above are surfaced in the properties panel
+  // (see fields.ts) — this stays open so the importer can still read
+  // whatever else a given export happens to carry.
+  [key: string]: unknown
 }

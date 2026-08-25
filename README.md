@@ -10,11 +10,11 @@ npm is only used locally for a small demo/test site — not for the library.
 
 ## MISP concepts to implement
 
-The MISP importer converts one MISP concept at a time into nodes/edges + curated properties-panel fields (see `packages/misp/src/eventFields.ts` and `formatters.ts` for the pattern Event follows). Status of each concept in MISP's own data model:
+The MISP importer converts one MISP concept at a time into nodes/edges + curated properties-panel fields. Each concept gets its own folder under `packages/misp/src/` (`event/`, `attribute/`, `object/`, ...) with a `fields.ts` (which raw fields to show, in what order) and a `formatters.ts` (how to make them readable — reusing `shared/formatters.ts` for anything more than one concept needs, e.g. epoch timestamps or distribution codes). Status of each concept in MISP's own data model:
 
-- [x] **Event** — root node; Org/Orgc resolved to their name, timestamps made readable, distribution/sharing_group_id made readable (see `packages/misp/src/eventFields.ts`)
+- [x] **Event** — root node; Org/Orgc resolved to their name, timestamps made readable, distribution/sharing_group_id made readable (see `packages/misp/src/event/`)
+- [x] **Object** (e.g. `file`, `domain-ip`, ...) — curated fields (id/uuid/name/category/description/comment/timestamp/first_seen/last_seen/distribution/sharing_group_id), including MISP's `5` = "Inherit event" distribution level (see `packages/misp/src/object/`)
 - [ ] **Attribute** — currently just a bare child node (`type: value` as its label); no curated field list yet (category, comment, to_ids, first_seen/last_seen, ...)
-- [ ] **Object** (e.g. `file`, `domain-ip`, ...) — currently just a bare child node (name + meta_category); its own `Attribute` children aren't curated either
 - [ ] **Tag** — freeform and taxonomy tags on an Event/Attribute (colour, taxonomy namespace)
 - [ ] **Galaxy / Galaxy Cluster** — MITRE ATT&CK, threat actors, malware families, tools, ...
 - [ ] **Sighting** — sighting/false-positive counts and timestamps on an Attribute

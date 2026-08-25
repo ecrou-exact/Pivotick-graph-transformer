@@ -1,0 +1,75 @@
+{
+  "Event": {
+    "id": "461679",
+    "orgc_id": "2",
+    "org_id": "2",
+    "date": "2026-07-03",
+    "threat_level_id": "2",
+    "info": "Device code phishing campaign targeting Luxembourg organizations",
+    "published": true,
+    "uuid": "54652cc1-4a6f-4a7c-b033-407cc924d9a3",
+    "attribute_count": "8",
+    "analysis": "2",
+    "timestamp": "1783068431",
+    "distribution": "3",
+    "proposal_email_lock": false,
+    "locked": false,
+    "publish_timestamp": "1783068531",
+    "first_publication": "1783068531",
+    "sharing_group_id": "0",
+    "disable_correlation": false,
+    "extends_uuid": "",
+    "protected": null,
+    "event_creator_email": "test.test@test.lu",
+    "Org": {
+      "id": "2",
+      "name": "CIRCL",
+      "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+      "local": true
+    },
+    "Orgc": {
+      "id": "2",
+      "name": "CIRCL",
+      "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+      "local": true
+    },
+    "Object": [
+      {
+        "id": "11229617",
+        "name": "email",
+        "meta-category": "network",
+        "description": "Email object describing an email with meta-information",
+        "template_uuid": "a0c666e0-fc65-4be8-b48f-3423d788b552",
+        "template_version": "19",
+        "event_id": "431679",
+        "uuid": "013cae2c-94f8-4db4-9f89-00332a46ee69",
+        "timestamp": "1783067632",
+        "distribution": "5",
+        "sharing_group_id": "0",
+        "comment": "1. Phishing email posing as an invitation",
+        "deleted": false,
+        "first_seen": null,
+        "last_seen": null,
+        "ObjectReference": []
+      },
+      {
+        "id": "11229625",
+        "name": "phishing",
+        "meta-category": "network",
+        "description": "Phishing template to describe a phishing website and its analysis.",
+        "template_uuid": "2dad6f9d-d425-4217-8fda-0b0a2d815307",
+        "template_version": "7",
+        "event_id": "431679",
+        "uuid": "89733c8b-76f2-45b3-92d6-8636ade1bab6",
+        "timestamp": "1783068431",
+        "distribution": "5",
+        "sharing_group_id": "0",
+        "comment": "2. Phishing Link",
+        "deleted": false,
+        "first_seen": null,
+        "last_seen": null,
+        "ObjectReference": []
+      }
+    ]
+  }
+}

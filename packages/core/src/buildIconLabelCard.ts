@@ -10,6 +10,9 @@ export interface IconLabelCardOptions {
   // be set to 'transparent' by the caller so it doesn't show behind this.
   borderColor?: string
   background?: string
+  // Small pill shown below the icon+label row (e.g. a MISP Object's
+  // meta-category) — omitted entirely when not given.
+  badge?: string
 }
 
 // Icon (in its own small hexagon badge) + label, top-left aligned inside a
@@ -76,12 +79,37 @@ export function buildIconLabelCard(iconSvg: string | undefined, label: string, o
     header.append(badge)
   }
 
+  // Label and badge sit in their own column, next to the icon — so the
+  // badge lands under the label text only, not under the icon as well.
+  const textColumn = document.createElement('div')
+  textColumn.style.display = 'flex'
+  textColumn.style.flexDirection = 'column'
+  textColumn.style.alignItems = 'flex-start'
+  textColumn.style.gap = '4px'
+  textColumn.style.minWidth = '0'
+
   // No overflow/ellipsis/nowrap here — Pivotick owns node sizing, this just
   // wraps naturally within whatever box it's given.
   const text = document.createElement('span')
   text.textContent = label
-  header.append(text)
+  textColumn.append(text)
 
+  if (options?.badge) {
+    const badge = document.createElement('span')
+    badge.textContent = options.badge
+    badge.style.padding = '0 4px'
+    badge.style.borderRadius = '999px'
+    badge.style.fontSize = '6px'
+    badge.style.lineHeight = '1.6'
+    badge.style.fontWeight = '600'
+    badge.style.textTransform = 'uppercase'
+    badge.style.letterSpacing = '0.01em'
+    badge.style.color = textColor
+    badge.style.background = `color-mix(in srgb, ${textColor} 16%, transparent)`
+    textColumn.append(badge)
+  }
+
+  header.append(textColumn)
   wrapper.append(header)
   outer.append(wrapper)
   return outer

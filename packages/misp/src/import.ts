@@ -18,6 +18,8 @@ import { formatMispEventField } from './event/formatters'
 import { MispEventInput } from './event/types'
 import { MISP_ICONS } from './icons'
 import { MISP_OBJECT_NODE_DEFAULT } from './object/defaults'
+import { MISP_OBJECT_FIELDS } from './object/fields'
+import { formatMispObjectField } from './object/formatters'
 import { MispObject } from './object/types'
 
 // One node-style default per MISP concept, each living next to that
@@ -128,9 +130,23 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     object: MispObject,
     options?: ConverterOptions
   ): void {
+    // Only the fields listed in MISP_OBJECT_FIELDS reach the node's `data`
+    // (and therefore the properties panel/tooltip) — see object/fields.ts
+    // to add/remove/reorder what's shown.
+    const displayFields: Record<string, unknown> = {}
+    for (const field of MISP_OBJECT_FIELDS) {
+      const rawValue = object[field.source ?? field.key]
+      displayFields[field.key] = formatMispObjectField(field.format, rawValue, object)
+    }
+
+    // misp-iconify has a dedicated icon for ~213 known Object names
+    // ("domain-ip", "file", "email", ...) — use it when this Object's name
+    // matches one, otherwise NODE_DEFAULTS' generic `object` icon applies.
+    const iconOverride = MISP_ICONS[`objects/${object.name}`] ? `objects/${object.name}` : undefined
+
     const { data, style } = resolveNodeAppearance(
-      { label: object.name, type: 'misp-object', metaCategory: object.meta_category },
-      this.defaultStyle('misp-object', object.name),
+      { ...displayFields, label: object.name, type: 'misp-object' },
+      this.defaultStyle('misp-object', object.name, options?.theme, iconOverride, object['meta-category'] as string | undefined),
       options?.styleRules
     )
     nodes.push({ id: object.uuid, data, style, expanded: false })
@@ -146,22 +162,25 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     }
   }
 
-  // Reads NODE_DEFAULTS for `type` and turns its `icon` key (if any) into an
+  // Reads NODE_DEFAULTS for `type` and turns its icon (if any) into an
   // icon+label html card; falls back to Pivotick's plain `text` field for
-  // types with no icon defined yet.
+  // types with no icon defined yet. `iconOverride` wins over NODE_DEFAULTS'
+  // icon — used where the icon varies per node instance rather than being
+  // fixed per type (a MISP Object's icon depends on its `name`).
   //
   // The card is a DOM snippet baked once at conversion time (Pivotick's
   // `style.html`), not CSS — it can't pick up Pivotick's own `data-theme`
   // toggle on its own, so the caller's `theme` (see ConverterOptions in
   // core/types.ts) picks its background explicitly instead.
-  private defaultStyle(type: string, label: string, theme?: 'dark' | 'light'): Partial<NodeStyle> {
-    const { icon, accentColor, ...style } = NODE_DEFAULTS[type] ?? {}
+  private defaultStyle(type: string, label: string, theme?: 'dark' | 'light', iconOverride?: string, badge?: string): Partial<NodeStyle> {
+    const { icon: defaultIcon, accentColor, ...style } = NODE_DEFAULTS[type] ?? {}
+    const icon = iconOverride ?? defaultIcon
     if (icon && MISP_ICONS[icon]) {
       const background = theme === 'light' ? '#FFFFFF' : '#1C1F24'
       return {
         ...style,
-        size: estimateCardSize(label, { hasIcon: true }),
-        html: () => buildIconLabelCard(MISP_ICONS[icon], label, { textColor: accentColor, borderColor: accentColor, background })
+        size: estimateCardSize(label, { hasIcon: true, extraLines: badge ? 1 : 0, secondaryText: badge }),
+        html: () => buildIconLabelCard(MISP_ICONS[icon], label, { textColor: accentColor, borderColor: accentColor, background, badge })
       }
     }
     return { ...style, text: label }

@@ -66,7 +66,7 @@ function toGraphData(json: unknown, theme: 'dark' | 'light'): GraphData {
 // fixture picker or the theme toggle can trigger a re-render on its own
 // without needing to know about the other.
 let currentFixtureJson: unknown = fixtures[0].json
-let currentTheme: 'dark' | 'light' = 'dark'
+let currentTheme: 'dark' | 'light' = 'light'
 
 // Every user-facing toggle explicitly on, so the demo shows the full UI —
 // see GraphOptions/GraphUI/RendererOptions in the vendored Pivotick v1.5.0.
@@ -128,8 +128,8 @@ picker.innerHTML = `
   <div id="fixture-picker-body">
     <select id="fixture-picker-select"></select>
     <div class="fixture-picker-row">
-      <span id="fixture-picker-theme-label">Dark theme</span>
-      <button id="fixture-picker-theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle dark/light theme">
+      <span id="fixture-picker-theme-label">Light theme</span>
+      <button id="fixture-picker-theme-toggle" type="button" role="switch" aria-checked="true" aria-label="Toggle dark/light theme">
         <span class="fixture-picker-theme-toggle-thumb"></span>
       </button>
     </div>
