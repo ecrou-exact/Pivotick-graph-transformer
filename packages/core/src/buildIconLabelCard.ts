@@ -13,6 +13,12 @@ export interface IconLabelCardOptions {
   // Small pill shown below the icon+label row (e.g. a MISP Object's
   // meta-category) — omitted entirely when not given.
   badge?: string
+  // Label font size in px (default 12) — lets one node type read as more
+  // or less prominent than another (e.g. a graph's root vs. its leaves).
+  fontSize?: number
+  // Icon badge width/height in px (default 22); the icon glyph inside it
+  // scales proportionally.
+  iconSize?: number
 }
 
 // Icon (in its own small hexagon badge) + label, top-left aligned inside a
@@ -25,6 +31,8 @@ export function buildIconLabelCard(iconSvg: string | undefined, label: string, o
   const iconBackground = options?.iconBackground ?? textColor
   const borderColor = options?.borderColor ?? textColor
   const background = options?.background ?? '#FFFFFF'
+  const fontSize = options?.fontSize ?? 12
+  const iconSize = options?.iconSize ?? 22
 
   const outer = document.createElement('div')
   outer.style.width = '100%'
@@ -47,7 +55,7 @@ export function buildIconLabelCard(iconSvg: string | undefined, label: string, o
   wrapper.style.border = `2px solid ${borderColor}`
   wrapper.style.borderRadius = '6px'
   wrapper.style.fontFamily = 'system-ui, sans-serif'
-  wrapper.style.fontSize = '12px'
+  wrapper.style.fontSize = `${fontSize}px`
   wrapper.style.color = textColor
 
   const header = document.createElement('div')
@@ -62,8 +70,8 @@ export function buildIconLabelCard(iconSvg: string | undefined, label: string, o
   if (iconSvg) {
     const badge = document.createElement('span')
     badge.style.flex = '0 0 auto'
-    badge.style.width = '22px'
-    badge.style.height = '22px'
+    badge.style.width = `${iconSize}px`
+    badge.style.height = `${iconSize}px`
     badge.style.display = 'flex'
     badge.style.alignItems = 'center'
     badge.style.justifyContent = 'center'
@@ -72,8 +80,10 @@ export function buildIconLabelCard(iconSvg: string | undefined, label: string, o
     badge.style.clipPath = 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'
 
     const icon = document.createElement('span')
-    icon.style.width = '14px'
-    icon.style.height = '14px'
+    // Same ratio as the original fixed 14px-glyph-in-22px-badge sizing.
+    const glyphSize = Math.round(iconSize * (14 / 22))
+    icon.style.width = `${glyphSize}px`
+    icon.style.height = `${glyphSize}px`
     icon.innerHTML = iconSvg
     badge.append(icon)
     header.append(badge)
@@ -88,9 +98,14 @@ export function buildIconLabelCard(iconSvg: string | undefined, label: string, o
   textColumn.style.gap = '4px'
   textColumn.style.minWidth = '0'
 
-  // No overflow/ellipsis/nowrap here — Pivotick owns node sizing, this just
-  // wraps naturally within whatever box it's given.
+  // No ellipsis/nowrap here — Pivotick owns node sizing, this just wraps
+  // naturally within whatever box it's given. overflowWrap/wordBreak matter
+  // because MISP attribute values are often one long unbroken token (a
+  // URL, a hash, ...) with no space to wrap at otherwise, which would
+  // overflow the card's edge instead of wrapping onto another line.
   const text = document.createElement('span')
+  text.style.overflowWrap = 'anywhere'
+  text.style.wordBreak = 'break-word'
   text.textContent = label
   textColumn.append(text)
 

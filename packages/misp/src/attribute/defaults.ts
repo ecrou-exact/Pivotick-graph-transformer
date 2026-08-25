@@ -7,10 +7,13 @@ import { MISP_ICONS } from '../icons'
 // Like Object, the icon isn't fixed: import.ts picks `attributes/<type>.svg`
 // when misp-iconify has one for that Attribute's `type` (e.g. "ip-dst",
 // "sha256", ...), falling back to this generic `attribute` icon otherwise.
-export const MISP_ATTRIBUTE_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string } = {
+export const MISP_ATTRIBUTE_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number } = {
   shape: 'square',
   color: 'transparent',
   strokeColor: 'transparent',
   icon: 'attribute',
-  accentColor: '#97CC04'
+  accentColor: '#97CC04',
+  // Smaller than Object — Attributes are the graph's leaves.
+  fontSize: 10,
+  iconSize: 18
 }

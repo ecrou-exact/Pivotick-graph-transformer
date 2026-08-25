@@ -42,7 +42,10 @@ const fixtures: FixtureEntry[] = Object.entries(fixtureModules)
 function nodePropertiesMap(node: any) {
   const nodeData = typeof node.getData === 'function' ? node.getData() : node.data ?? {}
   return Object.entries(nodeData)
-    .filter(([key, value]) => key && value !== undefined && value !== null && value !== '')
+    // `label` is required in data for Pivotick's own tooltip title resolver
+    // (falls back to "Could not resolve title" without it) — hidden here so
+    // it doesn't also show up as a duplicate of the card's own title.
+    .filter(([key, value]) => key && key !== 'label' && value !== undefined && value !== null && value !== '')
     .map(([name, value]) => ({ name, value: String(value) }))
 }
 
@@ -65,7 +68,8 @@ function toGraphData(json: unknown, theme: 'dark' | 'light'): GraphData {
 // Current selection lives here, not as render() parameters, so either the
 // fixture picker or the theme toggle can trigger a re-render on its own
 // without needing to know about the other.
-let currentFixtureJson: unknown = fixtures[0].json
+const defaultFixture = fixtures.find(f => f.label === 'reel-events') ?? fixtures[0]
+let currentFixtureJson: unknown = defaultFixture.json
 let currentTheme: 'dark' | 'light' = 'light'
 
 // Every user-facing toggle explicitly on, so the demo shows the full UI —
@@ -152,6 +156,7 @@ for (const fixture of fixtures) {
   option.textContent = fixture.label
   optgroup.appendChild(option)
 }
+select.value = defaultFixture.path
 
 select.addEventListener('change', () => {
   const fixture = fixtures.find(f => f.path === select.value)

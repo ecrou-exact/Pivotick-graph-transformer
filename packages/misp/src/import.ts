@@ -11,6 +11,8 @@ import {
   resolveNodeAppearance
 } from '../../core/src/index'
 import { MISP_ATTRIBUTE_NODE_DEFAULT } from './attribute/defaults'
+import { MISP_ATTRIBUTE_FIELDS } from './attribute/fields'
+import { formatMispAttributeField } from './attribute/formatters'
 import { MispAttribute } from './attribute/types'
 import { MISP_EVENT_NODE_DEFAULT } from './event/defaults'
 import { MISP_EVENT_FIELDS } from './event/fields'
@@ -26,7 +28,7 @@ import { MispObject } from './object/types'
 // concept's other files (event/, attribute/, object/, ...) — merged here
 // since this importer is the only thing that needs to look one up by node
 // type. Add a new concept's default to this map as it gets implemented.
-const NODE_DEFAULTS: Record<string, Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string }> = {
+const NODE_DEFAULTS: Record<string, Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number }> = {
   'misp-event': MISP_EVENT_NODE_DEFAULT,
   'misp-attribute': MISP_ATTRIBUTE_NODE_DEFAULT,
   'misp-object': MISP_OBJECT_NODE_DEFAULT
@@ -73,10 +75,12 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     }
 
     const { data: eventData, style: eventStyle } = resolveNodeAppearance(
+      // `label` is required here — Pivotick's own tooltip title resolver
+      // reads `data.label` directly (falls back to "Could not resolve
+      // title" otherwise). The demo's nodePropertiesMap hides it from the
+      // properties list so it doesn't also duplicate the card's title.
       { ...displayFields, label: event.info, type: 'misp-event' },
-      // Bigger than its label alone would size it — the Event is the
-      // graph's root, so it should read as the starting point at a glance.
-      this.defaultStyle('misp-event', event.info, { theme: options?.theme, sizeScale: 1.4 }),
+      this.defaultStyle('misp-event', event.info, { theme: options?.theme }),
       options?.styleRules
     )
     nodes.push({ id: event.uuid, data: eventData, style: eventStyle, expanded: false })
@@ -115,6 +119,15 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     // the title — same treatment as an Object's meta-category badge.
     const label = attribute.value
 
+    // Only the fields listed in MISP_ATTRIBUTE_FIELDS reach the node's
+    // `data` (and therefore the properties panel/tooltip) — see
+    // attribute/fields.ts to add/remove/reorder what's shown.
+    const displayFields: Record<string, unknown> = {}
+    for (const field of MISP_ATTRIBUTE_FIELDS) {
+      const rawValue = attribute[field.source ?? field.key]
+      displayFields[field.key] = formatMispAttributeField(field.format, rawValue, attribute)
+    }
+
     // misp-iconify has a dedicated icon for ~51 known Attribute types
     // ("ip-dst", "sha256", "email-src", ...) — use it when this Attribute's
     // `type` matches one, otherwise NODE_DEFAULTS' generic `attribute` icon
@@ -122,7 +135,8 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     const iconOverride = MISP_ICONS[`attributes/${attribute.type}`] ? `attributes/${attribute.type}` : undefined
 
     const { data, style } = resolveNodeAppearance(
-      { label, type: 'misp-attribute', category: attribute.category },
+      // `label` is required here — see the same note in convert() for Event.
+      { ...displayFields, label, type: 'misp-attribute' },
       this.defaultStyle('misp-attribute', label, { theme: options?.theme, iconOverride, badge: attribute.type }),
       options?.styleRules
     )
@@ -157,6 +171,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     const iconOverride = MISP_ICONS[`objects/${object.name}`] ? `objects/${object.name}` : undefined
 
     const { data, style } = resolveNodeAppearance(
+      // `label` is required here — see the same note in convert() for Event.
       { ...displayFields, label: object.name, type: 'misp-object' },
       this.defaultStyle('misp-object', object.name, { theme: options?.theme, iconOverride, badge: object['meta-category'] as string | undefined }),
       options?.styleRules
@@ -188,9 +203,8 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     theme?: 'dark' | 'light'
     iconOverride?: string
     badge?: string
-    sizeScale?: number
   }): Partial<NodeStyle> {
-    const { icon: defaultIcon, accentColor, ...style } = NODE_DEFAULTS[type] ?? {}
+    const { icon: defaultIcon, accentColor, fontSize, iconSize, ...style } = NODE_DEFAULTS[type] ?? {}
     const icon = options?.iconOverride ?? defaultIcon
     if (icon && MISP_ICONS[icon]) {
       // Not near-black — a muted accent color (like Object's #524948)
@@ -200,8 +214,8 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       const badge = options?.badge
       return {
         ...style,
-        size: estimateCardSize(label, { hasIcon: true, extraLines: badge ? 1 : 0, secondaryText: badge, scale: options?.sizeScale }),
-        html: () => buildIconLabelCard(MISP_ICONS[icon], label, { textColor: accentColor, borderColor: accentColor, background, badge })
+        size: estimateCardSize(label, { hasIcon: true, fontSize, iconSize, extraLines: badge ? 1 : 0, secondaryText: badge }),
+        html: () => buildIconLabelCard(MISP_ICONS[icon], label, { textColor: accentColor, borderColor: accentColor, background, badge, fontSize, iconSize })
       }
     }
     return { ...style, text: label }
