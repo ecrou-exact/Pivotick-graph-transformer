@@ -1,5 +1,6 @@
 import { MispAttribute } from '../attribute/types'
 import { MispObject } from '../object/types'
+import { MispTag } from '../tag/types'
 
 // Minimal shape of a MISP Event export (JSON), covering the fields this
 // importer actually reads. Not the full MISP schema.
@@ -26,6 +27,7 @@ export interface MispEvent {
   Orgc?: MispOrg
   Attribute?: MispAttribute[]
   Object?: MispObject[]
+  Tag?: MispTag[]
   // Real MISP Event exports carry many more fields (org_id, orgc_id,
   // threat_level_id, analysis, locked, ...) that vary by instance/version.
   // Only the fields above are surfaced in the properties panel (see

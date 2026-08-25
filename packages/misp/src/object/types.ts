@@ -1,4 +1,5 @@
 import { MispAttribute } from '../attribute/types'
+import { MispTag } from '../tag/types'
 
 // Minimal shape of a MISP Object, covering the fields this importer
 // actually reads. Not the full MISP schema.
@@ -26,6 +27,7 @@ export interface MispObject {
   last_seen?: string | null
   Attribute?: MispAttribute[]
   ObjectReference?: MispObjectReference[]
+  Tag?: MispTag[]
   // Real MISP Object exports carry more fields (template_uuid,
   // template_version, event_id, deleted, ...) that vary by instance/
   // version. Only the fields above are surfaced in the properties panel

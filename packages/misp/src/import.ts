@@ -7,6 +7,7 @@ import {
   RawEdge,
   RawNode,
   buildIconLabelCard,
+  buildTagChip,
   estimateCardSize,
   resolveNodeAppearance
 } from '../../core/src/index'
@@ -23,6 +24,8 @@ import { MISP_OBJECT_NODE_DEFAULT } from './object/defaults'
 import { MISP_OBJECT_FIELDS } from './object/fields'
 import { formatMispObjectField } from './object/formatters'
 import { MispObject } from './object/types'
+import { MISP_TAG_FIELDS } from './tag/fields'
+import { MispTag } from './tag/types'
 
 // One node-style default per MISP concept, each living next to that
 // concept's other files (event/, attribute/, object/, ...) — merged here
@@ -62,6 +65,11 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     const { Event: event } = input
     const nodes: RawNode[] = []
     const edges: RawEdge[] = []
+    // The same Tag (same MISP tag id) is often attached to the Event and
+    // to many of its Attributes — one shared node per tag id, with an
+    // edge from every entity that carries it, instead of one node per
+    // attachment.
+    const seenTagIds = new Set<string>()
 
     // Only the fields listed in MISP_EVENT_FIELDS reach the node's `data`
     // (and therefore the properties panel/tooltip) — see event/fields.ts to
@@ -85,12 +93,16 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     )
     nodes.push({ id: event.uuid, data: eventData, style: eventStyle, expanded: false })
 
+    for (const tag of event.Tag ?? []) {
+      this.addTag(nodes, edges, event.uuid, tag, seenTagIds, options)
+    }
+
     for (const attribute of event.Attribute ?? []) {
-      this.addAttribute(nodes, edges, event.uuid, attribute, options)
+      this.addAttribute(nodes, edges, event.uuid, attribute, seenTagIds, options)
     }
 
     for (const object of event.Object ?? []) {
-      this.addObject(nodes, edges, event.uuid, object, options)
+      this.addObject(nodes, edges, event.uuid, object, seenTagIds, options)
     }
 
     for (const object of event.Object ?? []) {
@@ -112,6 +124,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     edges: RawEdge[],
     parentId: string,
     attribute: MispAttribute,
+    seenTagIds: Set<string>,
     options?: ConverterOptions
   ): void {
     // The value is the card's title; its `type` ("text", "ip-dst", ...)
@@ -147,6 +160,10 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       to: attribute.uuid,
       data: { type: 'has-attribute' }
     })
+
+    for (const tag of attribute.Tag ?? []) {
+      this.addTag(nodes, edges, attribute.uuid, tag, seenTagIds, options)
+    }
   }
 
   private addObject(
@@ -154,6 +171,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     edges: RawEdge[],
     eventId: string,
     object: MispObject,
+    seenTagIds: Set<string>,
     options?: ConverterOptions
   ): void {
     // Only the fields listed in MISP_OBJECT_FIELDS reach the node's `data`
@@ -184,9 +202,61 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       data: { type: 'has-object' }
     })
 
-    for (const attribute of object.Attribute ?? []) {
-      this.addAttribute(nodes, edges, object.uuid, attribute, options)
+    for (const tag of object.Tag ?? []) {
+      this.addTag(nodes, edges, object.uuid, tag, seenTagIds, options)
     }
+
+    for (const attribute of object.Attribute ?? []) {
+      this.addAttribute(nodes, edges, object.uuid, attribute, seenTagIds, options)
+    }
+  }
+
+  private addTag(
+    nodes: RawNode[],
+    edges: RawEdge[],
+    parentId: string,
+    tag: MispTag,
+    seenTagIds: Set<string>,
+    options?: ConverterOptions
+  ): void {
+    const tagNodeId = `tag-${tag.id}`
+
+    if (!seenTagIds.has(tag.id)) {
+      seenTagIds.add(tag.id)
+
+      // Only the fields listed in MISP_TAG_FIELDS reach the node's `data`
+      // (and therefore the properties panel/tooltip) — see tag/fields.ts
+      // to add/remove/reorder what's shown.
+      const displayFields: Record<string, unknown> = {}
+      for (const field of MISP_TAG_FIELDS) {
+        displayFields[field.key] = tag[field.source ?? field.key]
+      }
+
+      const background = tag.colour ?? '#888888'
+      const { data, style } = resolveNodeAppearance(
+        // `label` is required here — see the same note in convert() for
+        // Event. Unlike the icon-card concepts, a Tag renders as a small
+        // colour-filled chip (buildTagChip) rather than buildIconLabelCard
+        // — MISP tags don't have an icon, just a name and a colour.
+        { ...displayFields, label: tag.name, type: 'misp-tag' },
+        {
+          shape: 'square',
+          color: 'transparent',
+          strokeColor: 'transparent',
+          size: estimateCardSize(tag.name, { hasIcon: false, fontSize: 11, padding: 14 }),
+          html: () => buildTagChip(tag.name, { background })
+        },
+        options?.styleRules
+      )
+      nodes.push({ id: tagNodeId, data, style, expanded: false })
+    }
+
+    edges.push({
+      id: `${parentId}-${tagNodeId}`,
+      from: parentId,
+      to: tagNodeId,
+      data: { type: 'has-tag' }
+    })
   }
 
   // Reads NODE_DEFAULTS for `type` and turns its icon (if any) into an
