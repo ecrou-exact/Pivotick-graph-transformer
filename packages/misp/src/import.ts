@@ -39,7 +39,12 @@ import { MispTag } from './tag/types'
 // concept's other files (event/, attribute/, object/, ...) — merged here
 // since this importer is the only thing that needs to look one up by node
 // type. Add a new concept's default to this map as it gets implemented.
-const NODE_DEFAULTS: Record<string, Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number }> = {
+// Exported (not just an implementation detail) because it's the only place
+// that knows each type's `accentColor` — the consumer's node's own `style.color`
+// is always 'transparent' (see buildIconLabelCard.ts), so a Pivotick `UI.legend`
+// keyed on `type` can't sample a real colour and needs these declared as its
+// own `entries` instead.
+export const NODE_DEFAULTS: Record<string, Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number }> = {
   'misp-event': MISP_EVENT_NODE_DEFAULT,
   'misp-attribute': MISP_ATTRIBUTE_NODE_DEFAULT,
   'misp-object': MISP_OBJECT_NODE_DEFAULT,

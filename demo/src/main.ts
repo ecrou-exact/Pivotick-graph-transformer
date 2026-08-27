@@ -1,5 +1,5 @@
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
-import '../../packages/misp/src/index'
+import { NODE_DEFAULTS } from '../../packages/misp/src/index'
 import { TUNED_SIMULATION, toGraphData } from './pivotick'
 import { renderSiteHeader } from './siteHeader'
 import { getTheme, onThemeChange, setTheme } from './theme'
@@ -50,6 +50,40 @@ function nodePropertiesMap(node: any) {
     .map(([name, value]) => ({ name, value: String(value) }))
 }
 
+// Human labels for the legend rows below — NODE_DEFAULTS' keys are the raw
+// `type` values written into node.data, not meant to be read as-is.
+const NODE_TYPE_LABELS: Record<string, string> = {
+  'misp-event': 'Event',
+  'misp-attribute': 'Attribute',
+  'misp-object': 'Object',
+  'misp-galaxy-group': 'Galaxy clusters',
+  'misp-galaxy': 'Galaxy',
+  'misp-sighting-summary': 'Sightings',
+  'misp-sighting-type': 'Sighting type',
+  'misp-tag': 'Tag'
+}
+
+// UI.legend can't sample a real colour off these nodes (see NODE_DEFAULTS'
+// own comment in import.ts), so its swatches are declared here instead, from
+// the one place that already knows each type's accentColor. Tags don't have
+// one fixed accentColor (each tag carries its own `colour`), so their entry
+// falls back to buildTagChip's own default swatch (#888888) — a stand-in,
+// not the colour of any one tag.
+const nodeTypeLegendCatalog = [
+  ...Object.entries(NODE_DEFAULTS)
+    .filter(([, style]) => style.accentColor)
+    .map(([type, style]) => ({ id: type, label: NODE_TYPE_LABELS[type] ?? type, color: style.accentColor as string })),
+  { id: 'misp-tag', label: NODE_TYPE_LABELS['misp-tag'], color: '#888888' }
+]
+
+// Re-derived on every legend rebuild (fixture switch, filter, expand/collapse)
+// so it only ever lists the types actually present in the *current* graph —
+// a fixture with no galaxy or sighting shouldn't show empty rows for them.
+function nodeTypeLegendEntries(graph: { getNodes(): { getData(): Record<string, unknown> }[] }) {
+  const presentTypes = new Set(graph.getNodes().map(node => node.getData().type as string))
+  return nodeTypeLegendCatalog.filter(entry => presentTypes.has(entry.id))
+}
+
 // Current fixture selection lives here, not as a render() parameter, so
 // the fixture picker can trigger a re-render on its own without needing to
 // know about the theme (which now lives in ./theme.ts, shared with the
@@ -58,7 +92,10 @@ const defaultFixture = fixtures.find(f => f.label === 'reel-events') ?? fixtures
 let currentFixtureJson: unknown = defaultFixture.json
 
 // Every user-facing toggle explicitly on, so the demo shows the full UI —
-// see GraphOptions/GraphUI/RendererOptions in the vendored Pivotick v1.5.0.
+// see GraphOptions/GraphUI/RendererOptions in the vendored Pivotick build
+// (Pivotick/Pivotick@1870d99, branch worktree-shape-edge-anchoring — not
+// yet an official release; carries the shape-aware edge anchoring fix and
+// UI.legend).
 // `theme` is Pivotick's own public option (it sets `data-theme` on its
 // container internally) — the demo never touches Pivotick's vendored files,
 // only the data/options it's given.
@@ -104,7 +141,14 @@ function renderPivotick(): void {
       editors: { nodeEditor: { enabled: true } },
       // "coming soon" mode-rail slots — off by default, shown here since we
       // want every visible affordance on, even the disabled SOON badges.
-      modeRail: { explore: true, enrich: true }
+      modeRail: { explore: true, enrich: true },
+      // Every MISP node carries a `type` (misp-event, misp-tag, ...) — key
+      // the canvas legend on it so it also doubles as a type filter. `entries`
+      // is a function (re-run on every rebuild) so it only lists types the
+      // *current* fixture actually has, each with its real swatch colour —
+      // without declaring these, every row would sample the same
+      // 'transparent' off the node's own (invisible) native shape.
+      legend: { key: 'type', title: 'Node type', entries: nodeTypeLegendEntries }
     }
   })
 }
