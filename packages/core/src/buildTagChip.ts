@@ -1,3 +1,5 @@
+import { DEFAULT_CARD_MAX_WIDTH } from './estimateCardSize'
+
 export interface TagChipOptions {
   background?: string
   fontSize?: number
@@ -36,10 +38,18 @@ export function buildTagChip(label: string, options?: TagChipOptions): HTMLEleme
   const fontSize = options?.fontSize ?? 11
   const textColor = options?.textColor ?? readableTextColor(background)
 
+  // inline-flex + max-content, not flex+100%: Pivotick measures *this*
+  // element (its real width/height, not just their aspect ratio) to decide
+  // whether the node anchors edges on a circle or on the chip's own border.
+  // `fit-content`/auto sizing is defined as min(max-content, max(min-content,
+  // available-space)) — bound by the foreignObject's guessed footprint, so a
+  // 100%-stretched chip always measured back exactly that square footprint,
+  // never its own real (usually wider-than-tall) shape. `max-content` is a
+  // pure intrinsic size, unaffected by the ancestor's available space, so it
+  // always reflects the chip's true rendered dimensions.
   const outer = document.createElement('div')
-  outer.style.width = '100%'
-  outer.style.height = '100%'
-  outer.style.display = 'flex'
+  outer.style.display = 'inline-flex'
+  outer.style.width = 'max-content'
   outer.style.alignItems = 'center'
   outer.style.justifyContent = 'center'
 
@@ -47,8 +57,9 @@ export function buildTagChip(label: string, options?: TagChipOptions): HTMLEleme
   chip.style.display = 'flex'
   chip.style.alignItems = 'center'
   chip.style.justifyContent = 'center'
-  chip.style.width = 'fit-content'
-  chip.style.maxWidth = '100%'
+  chip.style.width = 'max-content'
+  // A px cap, not '100%': see buildIconLabelCard.ts's wrapper for why.
+  chip.style.maxWidth = `${DEFAULT_CARD_MAX_WIDTH}px`
   chip.style.padding = '4px 10px'
   chip.style.boxSizing = 'border-box'
   chip.style.borderRadius = '999px'

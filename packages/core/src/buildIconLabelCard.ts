@@ -1,3 +1,5 @@
+import { DEFAULT_CARD_MAX_WIDTH } from './estimateCardSize'
+
 export interface IconLabelCardOptions {
   textColor?: string
   // Background of the small hexagon the icon sits in; the icon itself
@@ -34,10 +36,18 @@ export function buildIconLabelCard(iconSvg: string | undefined, label: string, o
   const fontSize = options?.fontSize ?? 12
   const iconSize = options?.iconSize ?? 22
 
+  // inline-flex + max-content, not flex+100%: Pivotick measures *this*
+  // element (its real width/height, not just their aspect ratio) to decide
+  // whether the node anchors edges on a circle or on the card's own border.
+  // `fit-content`/auto sizing is defined as min(max-content, max(min-content,
+  // available-space)) — bound by the foreignObject's guessed footprint, so a
+  // 100%-stretched card always measured back exactly that square footprint,
+  // never its own real (usually wider-than-tall) shape. `max-content` is a
+  // pure intrinsic size, unaffected by the ancestor's available space, so it
+  // always reflects the card's true rendered dimensions.
   const outer = document.createElement('div')
-  outer.style.width = '100%'
-  outer.style.height = '100%'
-  outer.style.display = 'flex'
+  outer.style.display = 'inline-flex'
+  outer.style.width = 'max-content'
   outer.style.alignItems = 'center'
   outer.style.justifyContent = 'center'
 
@@ -46,8 +56,12 @@ export function buildIconLabelCard(iconSvg: string | undefined, label: string, o
   wrapper.style.flexDirection = 'column'
   wrapper.style.alignItems = 'flex-start'
   wrapper.style.justifyContent = 'flex-start'
-  wrapper.style.width = 'fit-content'
-  wrapper.style.maxWidth = '100%'
+  wrapper.style.width = 'max-content'
+  // A px cap, not '100%': that would resolve against the node's guessed
+  // footprint (estimateCardSize.ts's own heuristic, not always exact),
+  // instead of the fixed width the estimate wrapped its lines at. Matches
+  // estimateCardSize's own maxWidth default so the two stay in sync.
+  wrapper.style.maxWidth = `${DEFAULT_CARD_MAX_WIDTH}px`
   wrapper.style.height = 'auto'
   wrapper.style.padding = '8px 10px'
   wrapper.style.boxSizing = 'border-box'
