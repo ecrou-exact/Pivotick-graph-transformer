@@ -53,7 +53,7 @@ Three pages, all built against whatever converter output this repo currently pro
 
 Dark/light is shared across all three pages (persisted in `localStorage`, see `demo/src/theme.ts`).
 
-`demo/src/pivotick.ts`'s `TUNED_SIMULATION` pushes `d3LinkDistance`/`d3ManyBodyStrength`/`d3CollideRadiusMultiplier` well past Pivotick's own UI-slider ceiling on the Demo page — its defaults assume small native shapes, and our custom html cards (Event/Object/Attribute/Tag/Galaxy) run much bigger with many more children per node than that, so the defaults clump everything into an unreadable pile without this. **Revisit/remove this tuning if Pivotick itself ever gets a fix that sizes its own physics off a node's actual rendered footprint** (e.g. a custom `html` node) instead of a generic default — at that point this workaround would just be fighting a problem Pivotick no longer has. The Docs page's small previews use Pivotick's own "loose" preset instead (`LOOSE_SIMULATION`), since 2-5 nodes never hits that crowding in the first place.
+The Demo page leaves Pivotick's own physics defaults untouched. The Docs page's small previews use Pivotick's own "loose" preset instead (`demo/src/pivotick.ts`'s `LOOSE_SIMULATION`), translated to raw d3-force values.
 
 ## MISP concepts to implement
 

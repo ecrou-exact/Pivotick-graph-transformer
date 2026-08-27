@@ -1,6 +1,6 @@
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
 import { NODE_DEFAULTS } from '../../packages/misp/src/index'
-import { TUNED_SIMULATION, isMispJson, toGraphData } from './pivotick'
+import { isMispJson, toGraphData } from './pivotick'
 import { renderSiteHeader } from './siteHeader'
 import { getTheme, onThemeChange, setTheme } from './theme'
 
@@ -55,28 +55,30 @@ function nodePropertiesMap(node: any) {
 const NODE_TYPE_LABELS: Record<string, string> = {
   'misp-event': 'Event',
   'misp-attribute': 'Attribute',
+  'misp-attribute-group': 'Attributes',
   'misp-object': 'Object',
   'misp-galaxy-group': 'Galaxy clusters',
   'misp-galaxy': 'Galaxy',
   'misp-sighting-summary': 'Sightings',
   'misp-sighting-type': 'Sighting type',
-  'misp-tag': 'Tag'
+  'misp-tag': 'Tag',
+  'misp-tag-group': 'Tags'
 }
 
 // UI.legend can't sample a real colour off these nodes (see NODE_DEFAULTS'
 // own comment in import.ts), so its swatches are declared here instead, from
 // the one place that already knows each type's accentColor. misp-tag-group
-// and misp-attribute-group only exist in Collapsed view, standing in for
-// the real Tag/Attribute nodes below — not their own MISP concept, so left
-// out here (unlike misp-galaxy-group, which is always on). A plain Tag
-// keeps the same terracotta as the "Tags" group it collapses behind.
-const COLLAPSED_VIEW_ONLY_TYPES = new Set(['misp-tag-group', 'misp-attribute-group'])
-const nodeTypeLegendCatalog = [
-  ...Object.entries(NODE_DEFAULTS)
-    .filter(([type, style]) => style.accentColor && !COLLAPSED_VIEW_ONLY_TYPES.has(type))
-    .map(([type, style]) => ({ id: type, label: NODE_TYPE_LABELS[type] ?? type, color: style.accentColor as string })),
-  { id: 'misp-tag', label: NODE_TYPE_LABELS['misp-tag'], color: '#DB6A47' }
-]
+// and misp-attribute-group (Collapsed view's summary cards) are included
+// here too, not just the plain Tag/Attribute — each fixture's *actual*
+// on-screen nodes decide which of the two shows, via the presence check in
+// nodeTypeLegendEntries below, so the legend never goes blank for whichever
+// one Collapsed view hid nested. Both share their non-group counterpart's
+// accentColor (NODE_DEFAULTS), so a card and the group it collapses behind
+// always read as the same colour.
+const nodeTypeLegendCatalog = Object.entries(NODE_DEFAULTS)
+  .filter(([, style]) => style.accentColor)
+  .map(([type, style]) => ({ id: type, label: NODE_TYPE_LABELS[type] ?? type, color: style.accentColor as string }))
+  .concat({ id: 'misp-tag', label: NODE_TYPE_LABELS['misp-tag'], color: '#DB6A47' })
 
 // Re-derived on every legend rebuild (fixture switch, filter, expand/collapse)
 // so it only ever lists the types actually present in the *current* graph —
@@ -93,11 +95,10 @@ function nodeTypeLegendEntries(graph: { getNodes(): { getData(): Record<string, 
 const defaultFixture = fixtures.find(f => f.label === 'reel-events') ?? fixtures[0]
 let currentFixtureJson: unknown = defaultFixture.json
 
-// 'detailed' (today's default, everything flat) vs 'grouped' (MispEventImporter's
-// viewMode: each parent's Tags and Attributes collapse behind one summary "+"
-// apiece — Objects and the Event root are unaffected) — same fixture picker
-// row treatment as the theme toggle above.
-let currentViewMode: 'detailed' | 'grouped' = 'detailed'
+// MispEventImporter's three viewModes — see ConverterOptions.viewMode in
+// core/types.ts for what each one does. Same fixture picker row treatment
+// as the theme toggle above.
+let currentViewMode: 'detailed' | 'grouped' | 'relations' = 'detailed'
 
 // Every user-facing toggle explicitly on, so the demo shows the full UI —
 // see GraphOptions/GraphUI/RendererOptions in the vendored Pivotick build
@@ -126,8 +127,13 @@ function renderPivotick(): void {
     simulation: {
       enabled: true,
       useWorker: true,
-      fitViewOnExpandCollapse: true,
-      ...TUNED_SIMULATION
+      fitViewOnExpandCollapse: true
+      // No TUNED_SIMULATION override here on purpose — Pivotick's own
+      // physics defaults, untouched, per the user's explicit request. Its
+      // own d3-force defaults assume small native shapes, so our much
+      // bigger HTML cards (buildIconLabelCard/buildTagChip) may clump or
+      // overlap more than with pivotick.ts's TUNED_SIMULATION — a known,
+      // accepted tradeoff, not a bug, if that shows up.
     },
     layout: {
       type: 'force'
@@ -150,13 +156,26 @@ function renderPivotick(): void {
       // "coming soon" mode-rail slots — off by default, shown here since we
       // want every visible affordance on, even the disabled SOON badges.
       modeRail: { explore: true, enrich: true },
-      // Every MISP node carries a `type` (misp-event, misp-tag, ...) — key
-      // the canvas legend on it so it also doubles as a type filter. `entries`
-      // is a function (re-run on every rebuild) so it only lists types the
-      // *current* fixture actually has, each with its real swatch colour —
-      // without declaring these, every row would sample the same
-      // 'transparent' off the node's own (invisible) native shape.
-      legend: { key: 'type', title: 'Node type', entries: nodeTypeLegendEntries }
+      legend: {
+        position: 'bottom-left',
+        sections: [
+          // Every MISP node carries a `type` (misp-event, misp-tag, ...) — key
+          // the canvas legend on it so it also doubles as a type filter.
+          // `entries` is a function (re-run on every rebuild) so it only
+          // lists types the *current* fixture actually has, each with its
+          // real swatch colour — without declaring these, every row would
+          // sample the same 'transparent' off the node's own (invisible)
+          // native shape.
+          { key: 'type', title: 'Node type', entries: nodeTypeLegendEntries },
+          // Object Reference edges carry a `label` (the relationship_type —
+          // MISP's own vocabulary has 300+ of them, so there's nothing to
+          // hand-declare here) and their own hashed strokeColor (see
+          // relationshipColour.ts), so this section can auto-derive: it
+          // lists exactly the relationships the current graph's edges
+          // actually use, each swatch sampled from that real colour.
+          { scope: 'edge', key: 'label', title: 'Relationship' }
+        ]
+      }
     }
   })
 }
@@ -178,6 +197,7 @@ picker.innerHTML = `
     <select id="fixture-picker-viewmode-select">
       <option value="detailed">Simple view</option>
       <option value="grouped">Collapsed view</option>
+      <option value="relations">Relations view</option>
     </select>
     <div class="fixture-picker-row">
       <span id="fixture-picker-theme-label">Light theme</span>
@@ -225,7 +245,7 @@ select.addEventListener('change', () => {
 const viewModeSelect = picker.querySelector('#fixture-picker-viewmode-select') as HTMLSelectElement
 viewModeSelect.value = currentViewMode
 viewModeSelect.addEventListener('change', () => {
-  currentViewMode = viewModeSelect.value as 'detailed' | 'grouped'
+  currentViewMode = viewModeSelect.value as 'detailed' | 'grouped' | 'relations'
   renderPivotick()
 })
 

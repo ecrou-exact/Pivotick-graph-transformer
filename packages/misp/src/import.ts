@@ -6,6 +6,7 @@ import {
   NodeStyle,
   RawEdge,
   RawNode,
+  RawNote,
   buildIconLabelCard,
   buildTagChip,
   estimateCardSize,
@@ -27,6 +28,7 @@ import { MISP_ICONS } from './icons'
 import { MISP_OBJECT_NODE_DEFAULT } from './object/defaults'
 import { MISP_OBJECT_FIELDS } from './object/fields'
 import { formatMispObjectField } from './object/formatters'
+import { RELATIONSHIP_EDGE_COLOR } from './object/relationshipColour'
 import { MispObject } from './object/types'
 import { MISP_SIGHTING_NODE_DEFAULT, MISP_SIGHTING_TYPE_NODE_DEFAULT } from './sighting/defaults'
 import { SIGHTING_THUMB_DOWN_ICON, SIGHTING_THUMB_UP_ICON } from './sighting/icons'
@@ -35,6 +37,13 @@ import { MispSighting } from './sighting/types'
 import { MISP_TAG_GROUP_NODE_DEFAULT } from './tag/defaults'
 import { MISP_TAG_FIELDS } from './tag/fields'
 import { MispTag } from './tag/types'
+
+// Every non-relationship edge (has-tag, has-attribute, has-object, ...) —
+// plain structure, not a MISP relationship — gets this one neutral grey, so
+// RELATIONSHIP_EDGE_COLOR's blue (object-reference edges) actually reads as
+// a distinct *kind* of edge instead of blending into whatever Pivotick's
+// own default stroke happens to be.
+const STRUCTURAL_EDGE_COLOR = '#9CA3AF'
 
 // One node-style default per MISP concept, each living next to that
 // concept's other files (event/, attribute/, object/, ...) — merged here
@@ -133,38 +142,132 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       this.defaultStyle('misp-event', event.info, { theme: options?.theme }),
       options?.styleRules
     )
-    nodes.push({ id: event.uuid, data: eventData, style: eventStyle, expanded: false })
-
-    this.addTagsAndGalaxies(nodes, edges, event.uuid, event.Tag ?? [], event.Galaxy ?? [], dedup, options)
-
-    const attributes = event.Attribute ?? []
-    const attributeNodes = this.maybeGroup(nodes, edges, event.uuid, 'misp-attribute-group', 'Attributes', 'has-attributes', attributes.length, options)
-    for (const attribute of attributes) {
-      this.addAttribute(attributeNodes, edges, event.uuid, attribute, dedup, options)
+    const relations = options?.viewMode === 'relations'
+    // 'relations' has no root at all — see ConverterOptions.viewMode's own
+    // doc comment for why: the Object Reference graph is what's on screen,
+    // an Event owning things isn't part of that graph.
+    if (!relations) {
+      nodes.push({ id: event.uuid, data: eventData, style: eventStyle, expanded: false })
+      this.addTagsAndGalaxies(nodes, edges, event.uuid, event.Tag ?? [], event.Galaxy ?? [], dedup, options)
     }
 
-    for (const object of event.Object ?? []) {
-      this.addObject(nodes, edges, event.uuid, object, dedup, options)
+    // Only computed in 'relations' view: which event-level Attributes and
+    // Objects actually participate in the Object Reference graph (see
+    // computeConnectivity's own doc comment).
+    const connectivity = relations ? this.computeConnectivity(event) : undefined
+
+    const attributes = (event.Attribute ?? []).filter(
+      attribute => !connectivity || connectivity.referencedAttrUuids.has(attribute.uuid)
+    )
+    if (relations) {
+      // No owning Object to nest under, and no Event root to hang off in this
+      // view — left as bare top-level nodes, connected only by whichever
+      // Object's reference targets them (the loop below).
+      for (const attribute of attributes) {
+        this.addAttribute(nodes, edges, undefined, attribute, dedup, options)
+      }
+    } else {
+      const attributeNodes = this.maybeGroup(nodes, edges, event.uuid, 'misp-attribute-group', 'Attributes', 'has-attributes', attributes.length, options)
+      for (const attribute of attributes) {
+        this.addAttribute(attributeNodes, edges, event.uuid, attribute, dedup, options)
+      }
     }
 
-    for (const object of event.Object ?? []) {
+    const objects = (event.Object ?? []).filter(
+      object => !connectivity || connectivity.connectedObjUuids.has(object.uuid)
+    )
+    for (const object of objects) {
+      this.addObject(nodes, edges, relations ? undefined : event.uuid, object, dedup, options)
+    }
+
+    // Only objects actually added above can be a reference's source, so this
+    // never draws an edge from a node 'relations' left out — an Object with
+    // any (non-deleted) reference of its own is always in `connectivity`.
+    for (const object of objects) {
       for (const reference of object.ObjectReference ?? []) {
+        if (relations && this.isDeleted(reference)) continue
+        // MISP allows a reference with no relationship_type at all — it's
+        // still a real link, just not a *named* relationship, so it reads
+        // as a plain structural one (same grey as has-tag/has-object/...)
+        // rather than RELATIONSHIP_EDGE_COLOR's blue, which is reserved for
+        // a reference that actually says what it is.
+        const label = reference.relationship_type || undefined
         edges.push({
           id: `${object.uuid}-${reference.referenced_uuid}`,
           from: object.uuid,
           to: reference.referenced_uuid,
-          data: { label: reference.relationship_type, type: 'misp-object-reference' }
+          data: { label, type: 'misp-object-reference' },
+          // Marks this edge as *a relationship*, distinct from every other
+          // edge kind (has-tag, has-attribute, has-object, ...) this
+          // importer draws — see relationshipColour.ts's own comment.
+          style: { edge: { strokeColor: label ? RELATIONSHIP_EDGE_COLOR : STRUCTURAL_EDGE_COLOR } }
         })
       }
     }
 
-    return { nodes, edges }
+    // A view can legitimately produce an empty graph — most commonly
+    // 'relations' on data with no Object References at all — so an empty
+    // canvas reads as "it worked, there's just nothing to show" rather than
+    // looking broken. A Pivotick Note, not a fake node: it's a real message
+    // to the viewer, not a MISP entity, and Pivotick's own note surface
+    // already looks native instead of a hand-built card imitating one.
+    const notes: RawNote[] | undefined = nodes.length === 0
+      ? [{ content: 'Nothing to display', surface: 'terminal', width: 260, height: 90 }]
+      : undefined
+
+    return { nodes, edges, notes }
+  }
+
+  // Soft-deleted (tombstone) MISP records — never real, current relationships.
+  private isDeleted(record: { deleted?: boolean | number | string }): boolean {
+    return record.deleted === true || record.deleted === 1 || record.deleted === '1'
+  }
+
+  // 'relations' view's connectivity rule, ported from a real MISP-embedded
+  // Pivotick integration this importer doesn't otherwise share code with:
+  // an Object shows only when it references something itself, is the
+  // *target* of another Object's reference, or owns an Attribute that is —
+  // anything else is inventory with no relationships to draw, out of scope
+  // for this view. An event-level Attribute shows only when some Object's
+  // reference targets it directly (an Object's own Attributes always show
+  // once their Object does, unfiltered — see addObject).
+  private computeConnectivity(event: MispEventInput['Event']): {
+    referencedAttrUuids: Set<string>
+    connectedObjUuids: Set<string>
+  } {
+    const referencedAttrUuids = new Set<string>()
+    const connectedObjUuids = new Set<string>()
+    const attrOwner = new Map<string, string>() // child attribute uuid -> owning Object uuid
+
+    for (const object of event.Object ?? []) {
+      for (const attribute of object.Attribute ?? []) {
+        attrOwner.set(attribute.uuid, object.uuid)
+      }
+    }
+    for (const object of event.Object ?? []) {
+      for (const reference of object.ObjectReference ?? []) {
+        if (this.isDeleted(reference)) continue
+        connectedObjUuids.add(object.uuid)
+        if (String(reference.referenced_type) === '1') {
+          connectedObjUuids.add(reference.referenced_uuid)
+        } else {
+          referencedAttrUuids.add(reference.referenced_uuid)
+          const owner = attrOwner.get(reference.referenced_uuid)
+          if (owner) connectedObjUuids.add(owner)
+        }
+      }
+    }
+    return { referencedAttrUuids, connectedObjUuids }
   }
 
   private addAttribute(
     nodes: RawNode[],
     edges: RawEdge[],
-    parentId: string,
+    // Undefined in 'relations' view for a standalone event-level Attribute:
+    // there's no Event root to hang a has-attribute edge off in that view
+    // (see convert()) — it stays connected only via whichever Object's
+    // reference targets it.
+    parentId: string | undefined,
     attribute: MispAttribute,
     dedup: Dedup,
     options?: ConverterOptions
@@ -196,12 +299,17 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       options?.styleRules
     )
     nodes.push({ id: attribute.uuid, data, style, expanded: false })
-    edges.push({
-      id: `${parentId}-${attribute.uuid}`,
-      from: parentId,
-      to: attribute.uuid,
-      data: { type: 'has-attribute' }
-    })
+    if (parentId !== undefined) {
+      edges.push({
+        id: `${parentId}-${attribute.uuid}`,
+        from: parentId,
+        to: attribute.uuid,
+        data: { type: 'has-attribute' },
+        style: { edge: { strokeColor: STRUCTURAL_EDGE_COLOR } }
+      })
+    }
+
+    if (options?.viewMode === 'relations') return
 
     this.addTagsAndGalaxies(nodes, edges, attribute.uuid, attribute.Tag ?? [], attribute.Galaxy ?? [], dedup, options)
 
@@ -213,7 +321,10 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
   private addObject(
     nodes: RawNode[],
     edges: RawEdge[],
-    eventId: string,
+    // Undefined in 'relations' view — there's no Event root to hang a
+    // has-object edge off there (see convert()); the Object stays connected
+    // only via whatever Object References touch it.
+    eventId: string | undefined,
     object: MispObject,
     dedup: Dedup,
     options?: ConverterOptions
@@ -238,12 +349,29 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       this.defaultStyle('misp-object', object.name, { theme: options?.theme, iconOverride, badge: object['meta-category'] as string | undefined }),
       options?.styleRules
     )
+
+    if (options?.viewMode === 'relations') {
+      // Ported from a real MISP-embedded Pivotick integration (see
+      // ConverterOptions.viewMode's own doc comment): the Object *is* the
+      // expandable unit here, its Attributes nested behind its own native
+      // "+" (RawNode.children) rather than beside it through a separate
+      // "Attributes" card or has-attribute edges.
+      const children: RawNode[] = []
+      for (const attribute of object.Attribute ?? []) {
+        if (this.isDeleted(attribute)) continue
+        this.addAttribute(children, edges, undefined, attribute, dedup, options)
+      }
+      nodes.push({ id: object.uuid, data, style, expanded: false, children })
+      return
+    }
+
     nodes.push({ id: object.uuid, data, style, expanded: false })
     edges.push({
       id: `${eventId}-${object.uuid}`,
-      from: eventId,
+      from: eventId as string,
       to: object.uuid,
-      data: { type: 'has-object' }
+      data: { type: 'has-object' },
+      style: { edge: { strokeColor: STRUCTURAL_EDGE_COLOR } }
     })
 
     this.addTagsAndGalaxies(nodes, edges, object.uuid, object.Tag ?? [], object.Galaxy ?? [], dedup, options)
@@ -312,7 +440,8 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       id: `${parentId}-${tagNodeId}`,
       from: parentId,
       to: tagNodeId,
-      data: { type: 'has-tag' }
+      data: { type: 'has-tag' },
+      style: { edge: { strokeColor: STRUCTURAL_EDGE_COLOR } }
     })
   }
 
@@ -344,6 +473,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
 
     if (galaxies.length === 0) return
 
+    const grouped = options?.viewMode === 'grouped'
     const groupNodeId = `galaxy-clusters-${parentId}`
     const groupLabel = 'Galaxy clusters'
     const { data: groupData, style: groupStyle } = resolveNodeAppearance(
@@ -351,18 +481,31 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       this.defaultStyle('misp-galaxy-group', groupLabel, { theme: options?.theme }),
       options?.styleRules
     )
-    nodes.push({ id: groupNodeId, data: groupData, style: groupStyle, expanded: false })
+    // In `viewMode: 'grouped'`, the group's own native "+" nests the
+    // galaxy-type nodes (each in turn nesting its own cluster nodes below —
+    // see addGalaxyType/addGalaxyCluster) instead of hanging them beside it
+    // through has-galaxy/has-cluster edges — same treatment as
+    // maybeGroup gives Tags/Attributes, applied by hand here since a galaxy
+    // is itself a two-level group, not a flat list of leaves.
+    const groupChildren: RawNode[] = []
+    const galaxyTargetNodes = grouped ? groupChildren : nodes
+    nodes.push({
+      id: groupNodeId, data: groupData, style: groupStyle, expanded: false,
+      ...(grouped ? { children: groupChildren } : {})
+    })
     edges.push({
       id: `${parentId}-${groupNodeId}`,
       from: parentId,
       to: groupNodeId,
-      data: { type: 'has-galaxy-clusters' }
+      data: { type: 'has-galaxy-clusters' },
+      style: { edge: { strokeColor: STRUCTURAL_EDGE_COLOR } }
     })
 
     for (const galaxy of galaxies) {
-      this.addGalaxyType(nodes, edges, groupNodeId, galaxy, dedup, options)
+      const { children: clusterNodes, nodeId: typeNodeId } =
+        this.addGalaxyType(galaxyTargetNodes, edges, groupNodeId, galaxy, dedup, options)
       for (const cluster of galaxy.GalaxyCluster ?? []) {
-        this.addGalaxyCluster(nodes, edges, `galaxy-type-${galaxy.type}`, galaxy.name, cluster, dedup, options)
+        this.addGalaxyCluster(clusterNodes, edges, typeNodeId, galaxy.name, cluster, dedup, options)
       }
     }
   }
@@ -404,7 +547,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     )
     const children: RawNode[] = []
     nodes.push({ id: groupNodeId, data, style, expanded: false, children })
-    edges.push({ id: `${parentId}-${groupNodeId}`, from: parentId, to: groupNodeId, data: { type: edgeType } })
+    edges.push({ id: `${parentId}-${groupNodeId}`, from: parentId, to: groupNodeId, data: { type: edgeType }, style: { edge: { strokeColor: STRUCTURAL_EDGE_COLOR } } })
     return children
   }
 
@@ -436,7 +579,8 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       id: `${parentId}-${nodeId}`,
       from: parentId,
       to: nodeId,
-      data: { type: 'has-sightings' }
+      data: { type: 'has-sightings' },
+      style: { edge: { strokeColor: STRUCTURAL_EDGE_COLOR } }
     })
 
     // Same colours MISP itself uses for these three states.
@@ -477,10 +621,15 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       id: `${summaryNodeId}-${nodeId}`,
       from: summaryNodeId,
       to: nodeId,
-      data: { type: 'has-sighting-type' }
+      data: { type: 'has-sighting-type' },
+      style: { edge: { strokeColor: STRUCTURAL_EDGE_COLOR } }
     })
   }
 
+  // Returns where this galaxy's own cluster nodes should be pushed (its
+  // fresh `children`, grouped, or `nodes` unchanged, detailed — same
+  // contract as maybeGroup) plus the id addGalaxyCluster's edge/dedup keys
+  // need, since that id differs by view (see below).
   private addGalaxyType(
     nodes: RawNode[],
     edges: RawEdge[],
@@ -488,15 +637,28 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     galaxy: MispGalaxy,
     dedup: Dedup,
     options?: ConverterOptions
-  ): void {
-    const nodeId = `galaxy-type-${galaxy.type}`
-    // groupNodeId is unique per attaching entity already, so this edge
-    // never needs its own dedup — only the galaxy-type -> cluster edge
-    // below does (see the Dedup interface's comment).
-    edges.push({ id: `${groupNodeId}-${nodeId}`, from: groupNodeId, to: nodeId, data: { type: 'has-galaxy' } })
+  ): { children: RawNode[], nodeId: string } {
+    const grouped = options?.viewMode === 'grouped'
+    // Detailed view: one shared galaxy-type node, however many parents carry
+    // it. Grouped view: each parent's "Galaxy clusters" group needs its own
+    // copy, nested behind its own "+" — same per-parent scoping as addTag's
+    // (see its own comment for why sharing a nested node breaks collapse).
+    const dedupeKey = grouped ? `${groupNodeId}:${galaxy.type}` : galaxy.type
+    const nodeId = grouped ? `galaxy-type-${groupNodeId}-${galaxy.type}` : `galaxy-type-${galaxy.type}`
 
-    if (dedup.galaxyTypeIds.has(galaxy.type)) return
-    dedup.galaxyTypeIds.add(galaxy.type)
+    if (!grouped) {
+      // groupNodeId is unique per attaching entity already, so this edge
+      // never needs its own dedup — only the galaxy-type -> cluster edge
+      // below does (see the Dedup interface's comment).
+      edges.push({ id: `${groupNodeId}-${nodeId}`, from: groupNodeId, to: nodeId, data: { type: 'has-galaxy' }, style: { edge: { strokeColor: STRUCTURAL_EDGE_COLOR } } })
+    }
+
+    // Already added (by an earlier parent in detailed view, or — rare, the
+    // same galaxy type listed twice on one parent — in grouped view): reuse
+    // it, at the cost of a grouped-view duplicate landing at the top level
+    // instead of re-opening the original's own children.
+    if (dedup.galaxyTypeIds.has(dedupeKey)) return { children: nodes, nodeId }
+    dedup.galaxyTypeIds.add(dedupeKey)
 
     // A galaxy's colour is derived purely from its display *name* (not its
     // `type` key — MISP's own Overmind theme hashes "Attack Pattern", not
@@ -518,7 +680,14 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       this.defaultStyle('misp-galaxy', galaxy.name, { theme: options?.theme, iconOverride, accentColorOverride: palette.headerText }),
       options?.styleRules
     )
+
+    if (grouped) {
+      const children: RawNode[] = []
+      nodes.push({ id: nodeId, data, style, expanded: false, children })
+      return { children, nodeId }
+    }
     nodes.push({ id: nodeId, data, style, expanded: false })
+    return { children: nodes, nodeId }
   }
 
   private addGalaxyCluster(
@@ -530,16 +699,21 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     dedup: Dedup,
     options?: ConverterOptions
   ): void {
-    const nodeId = `galaxy-cluster-${cluster.id}`
-    const edgeId = `${galaxyTypeNodeId}-${nodeId}`
+    const grouped = options?.viewMode === 'grouped'
+    // Same per-parent scoping as addGalaxyType/addTag — see their comments.
+    const dedupeKey = grouped ? `${galaxyTypeNodeId}:${cluster.id}` : cluster.id
+    const nodeId = grouped ? `galaxy-cluster-${galaxyTypeNodeId}-${cluster.id}` : `galaxy-cluster-${cluster.id}`
 
-    if (!dedup.galaxyClusterEdgeIds.has(edgeId)) {
-      dedup.galaxyClusterEdgeIds.add(edgeId)
-      edges.push({ id: edgeId, from: galaxyTypeNodeId, to: nodeId, data: { type: 'has-cluster' } })
+    if (!grouped) {
+      const edgeId = `${galaxyTypeNodeId}-${nodeId}`
+      if (!dedup.galaxyClusterEdgeIds.has(edgeId)) {
+        dedup.galaxyClusterEdgeIds.add(edgeId)
+        edges.push({ id: edgeId, from: galaxyTypeNodeId, to: nodeId, data: { type: 'has-cluster' }, style: { edge: { strokeColor: STRUCTURAL_EDGE_COLOR } } })
+      }
     }
 
-    if (dedup.galaxyClusterIds.has(nodeId)) return
-    dedup.galaxyClusterIds.add(nodeId)
+    if (dedup.galaxyClusterIds.has(dedupeKey)) return
+    dedup.galaxyClusterIds.add(dedupeKey)
 
     // Same palette as the parent galaxy-type node — hashed from its
     // display *name*, not its `type` key (see addGalaxyType's comment).

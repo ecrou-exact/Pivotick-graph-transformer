@@ -69,10 +69,9 @@ const examples: Example[] = Array.from(document.querySelectorAll<HTMLElement>('.
 
 // Every mini preview is Pivotick in its "basic" shape — just render +
 // simulation + layout, none of the sidebar/tooltip/mode-rail/editors chrome
-// the Demo page's full UI turns on. Physics-wise these use Pivotick's own
-// named "loose" preset (LOOSE_SIMULATION) rather than the Demo page's much
-// stronger TUNED_SIMULATION — these examples are only 2-5 nodes, nowhere
-// near the dozens-of-nodes crowding TUNED_SIMULATION exists to fix.
+// the Demo page's full UI turns on. Physics-wise these use LOOSE_SIMULATION
+// (Pivotick's own named "loose" preset, translated to raw d3-force values) —
+// the Demo page itself leaves physics untouched (Pivotick's own defaults).
 function renderExample(example: Example): void {
   example.mount.innerHTML = ''
   const theme = getTheme()

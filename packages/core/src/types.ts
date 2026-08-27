@@ -26,12 +26,35 @@ export interface RawEdge {
   from: string | number
   to: string | number
   data?: Record<string, unknown>
-  style?: Partial<EdgeStyle>
+  // Nested, not a flat EdgeStyle — verified against the vendored bundle's
+  // Edge.getEdgeStyle(), which reads `this.style?.edge`, ignoring anything
+  // set directly on `style` itself (a flat `{ strokeColor }` here is
+  // silently never read). `label` styles an edge's text the same way.
+  style?: { edge?: Partial<EdgeStyle>, label?: Record<string, unknown> }
+}
+
+// Mirrors Pivotick's own NoteOptions (verified against the vendored bundle's
+// Note.ts) — a plain data shape, not the real `Note` class, since packages/
+// core/misp never import Pivotick itself (see CLAUDE.md's "never modify
+// Pivotick" rule: only the demo touches the vendored bundle). Passed through
+// as-is in GraphData.notes; the demo hands it straight to `new Pivotick`,
+// whose own normalizeNote() accepts a plain options object just like
+// RawNode/RawEdge — no `new Note(...)` construction needed on our side.
+export interface RawNote {
+  id?: string
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  content?: string
+  color?: string
+  surface?: 'jewel' | 'terminal'
 }
 
 export interface GraphData {
   nodes: RawNode[]
   edges: RawEdge[]
+  notes?: RawNote[]
 }
 
 // Verified field-by-field against Pivotick v1.5.0's mergeNodeStylingOptions()
@@ -64,6 +87,11 @@ export interface NodeStyle {
 
 export interface EdgeStyle {
   color?: string
+  // Pivotick's own field name for an edge's line colour (verified against
+  // the vendored bundle — RendererOptions' edgeStyleMap example and the
+  // legend's edge-scope colour sampling both read `strokeColor`, not
+  // `color`, off a resolved edge style).
+  strokeColor?: string
   [key: string]: unknown
 }
 
@@ -108,6 +136,17 @@ export interface ConverterOptions {
   // handful of clickable groups instead of every leaf at once. Objects and
   // Events are unaffected either way. Same styling either way too — this
   // only changes which nodes are nested vs top-level.
-  viewMode?: 'detailed' | 'grouped'
+  // 'relations': no Event root, no Tags/Galaxies/Sightings — only what
+  // participates in the Object Reference graph. An Object shows only when
+  // it references something, is referenced itself, or owns a referenced
+  // Attribute; an event-level Attribute shows only when some Object
+  // references it, as a bare top-level node. A shown Object nests all of
+  // its own Attributes behind its own native node-expansion "+"
+  // (RendererOptions.enableNodeExpansion, RawNode.children) instead of
+  // beside it — the Object itself is the expandable unit here, unlike
+  // 'grouped', which wraps Attributes in their own separate summary node.
+  // For when the relationships between entities are what matters, not the
+  // full inventory each one carries.
+  viewMode?: 'detailed' | 'grouped' | 'relations'
   [key: string]: unknown
 }

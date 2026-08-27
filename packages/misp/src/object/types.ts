@@ -9,6 +9,13 @@ export interface MispObjectReference {
   uuid: string
   referenced_uuid: string
   relationship_type: string
+  // '1' (or 1) when referenced_uuid is another Object; '0'/0 (or absent)
+  // when it's an Attribute — used by 'relations' view's connectivity check
+  // (see import.ts's computeConnectivity) to tell the two apart.
+  referenced_type?: string | number
+  // Present and truthy on a soft-deleted reference (a tombstone, not a real
+  // relationship) — 'relations' view excludes these from connectivity.
+  deleted?: boolean | number | string
 }
 
 export interface MispObject {
@@ -30,6 +37,9 @@ export interface MispObject {
   ObjectReference?: MispObjectReference[]
   Tag?: MispTag[]
   Galaxy?: MispGalaxy[]
+  // Present and truthy on a soft-deleted Object — 'relations' view (see
+  // import.ts's computeConnectivity) never shows one, referenced or not.
+  deleted?: boolean | number | string
   // Real MISP Object exports carry more fields (template_uuid,
   // template_version, event_id, deleted, ...) that vary by instance/
   // version. Only the fields above are surfaced in the properties panel

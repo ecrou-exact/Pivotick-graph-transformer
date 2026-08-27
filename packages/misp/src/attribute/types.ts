@@ -24,6 +24,9 @@ export interface MispAttribute {
   Tag?: MispTag[]
   Galaxy?: MispGalaxy[]
   Sighting?: MispSighting[]
+  // Present and truthy on a soft-deleted Attribute — 'relations' view (see
+  // import.ts's computeConnectivity) never shows one, referenced or not.
+  deleted?: boolean | number | string
   // Real MISP Attribute exports carry more fields (event_id, object_id,
   // deleted, disable_correlation, Galaxy, ShadowAttribute, ...) that vary
   // by instance/version. Only the fields above are surfaced in the
