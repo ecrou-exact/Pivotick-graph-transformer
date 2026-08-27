@@ -11,7 +11,7 @@ import {
   estimateCardSize,
   resolveNodeAppearance
 } from '../../core/src/index'
-import { MISP_ATTRIBUTE_NODE_DEFAULT } from './attribute/defaults'
+import { MISP_ATTRIBUTE_GROUP_NODE_DEFAULT, MISP_ATTRIBUTE_NODE_DEFAULT } from './attribute/defaults'
 import { MISP_ATTRIBUTE_FIELDS } from './attribute/fields'
 import { formatMispAttributeField } from './attribute/formatters'
 import { MispAttribute } from './attribute/types'
@@ -32,6 +32,7 @@ import { MISP_SIGHTING_NODE_DEFAULT, MISP_SIGHTING_TYPE_NODE_DEFAULT } from './s
 import { SIGHTING_THUMB_DOWN_ICON, SIGHTING_THUMB_UP_ICON } from './sighting/icons'
 import { SightingGroupSummary, summarizeSightings } from './sighting/summarize'
 import { MispSighting } from './sighting/types'
+import { MISP_TAG_GROUP_NODE_DEFAULT } from './tag/defaults'
 import { MISP_TAG_FIELDS } from './tag/fields'
 import { MispTag } from './tag/types'
 
@@ -47,7 +48,9 @@ import { MispTag } from './tag/types'
 export const NODE_DEFAULTS: Record<string, Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number }> = {
   'misp-event': MISP_EVENT_NODE_DEFAULT,
   'misp-attribute': MISP_ATTRIBUTE_NODE_DEFAULT,
+  'misp-attribute-group': MISP_ATTRIBUTE_GROUP_NODE_DEFAULT,
   'misp-object': MISP_OBJECT_NODE_DEFAULT,
+  'misp-tag-group': MISP_TAG_GROUP_NODE_DEFAULT,
   'misp-galaxy-group': MISP_GALAXY_CLUSTERS_NODE_DEFAULT,
   'misp-galaxy': MISP_GALAXY_NODE_DEFAULT,
   'misp-sighting-summary': MISP_SIGHTING_NODE_DEFAULT,
@@ -134,8 +137,10 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
 
     this.addTagsAndGalaxies(nodes, edges, event.uuid, event.Tag ?? [], event.Galaxy ?? [], dedup, options)
 
-    for (const attribute of event.Attribute ?? []) {
-      this.addAttribute(nodes, edges, event.uuid, attribute, dedup, options)
+    const attributes = event.Attribute ?? []
+    const attributeNodes = this.maybeGroup(nodes, edges, event.uuid, 'misp-attribute-group', 'Attributes', 'has-attributes', attributes.length, options)
+    for (const attribute of attributes) {
+      this.addAttribute(attributeNodes, edges, event.uuid, attribute, dedup, options)
     }
 
     for (const object of event.Object ?? []) {
@@ -243,8 +248,10 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
 
     this.addTagsAndGalaxies(nodes, edges, object.uuid, object.Tag ?? [], object.Galaxy ?? [], dedup, options)
 
-    for (const attribute of object.Attribute ?? []) {
-      this.addAttribute(nodes, edges, object.uuid, attribute, dedup, options)
+    const attributes = object.Attribute ?? []
+    const attributeNodes = this.maybeGroup(nodes, edges, object.uuid, 'misp-attribute-group', 'Attributes', 'has-attributes', attributes.length, options)
+    for (const attribute of attributes) {
+      this.addAttribute(attributeNodes, edges, object.uuid, attribute, dedup, options)
     }
   }
 
@@ -260,10 +267,19 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     // every id-less tag wrongly deduplicating onto whichever one rendered
     // first (they'd otherwise all share the key `undefined`).
     const dedupeKey = tag.id || tag.name
-    const tagNodeId = `tag-${dedupeKey}`
 
-    if (!tagIds.has(dedupeKey)) {
-      tagIds.add(dedupeKey)
+    // Detailed view: one shared Tag node, however many parents carry it —
+    // dedupeKey alone. Grouped view: each parent's "Tags" cluster needs its
+    // *own* copy, even of a tag another parent also carries — a node nested
+    // under one parent's collapse toggle doesn't answer to a different
+    // parent's, so sharing it would mean collapsing one group's Tags could
+    // still leave that same tag showing through another's.
+    const grouped = options?.viewMode === 'grouped'
+    const scopedKey = grouped ? `${parentId}:${dedupeKey}` : dedupeKey
+    const tagNodeId = grouped ? `tag-${parentId}-${dedupeKey}` : `tag-${dedupeKey}`
+
+    if (!tagIds.has(scopedKey)) {
+      tagIds.add(scopedKey)
 
       // Only the fields listed in MISP_TAG_FIELDS reach the node's `data`
       // (and therefore the properties panel/tooltip) — see tag/fields.ts
@@ -319,8 +335,11 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     dedup: Dedup,
     options?: ConverterOptions
   ): void {
-    for (const tag of tags) {
-      this.addTag(nodes, edges, parentId, tag, dedup.tagIds, options)
+    if (tags.length > 0) {
+      const tagNodes = this.maybeGroup(nodes, edges, parentId, 'misp-tag-group', 'Tags', 'has-tags', tags.length, options)
+      for (const tag of tags) {
+        this.addTag(tagNodes, edges, parentId, tag, dedup.tagIds, options)
+      }
     }
 
     if (galaxies.length === 0) return
@@ -346,6 +365,47 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
         this.addGalaxyCluster(nodes, edges, `galaxy-type-${galaxy.type}`, galaxy.name, cluster, dedup, options)
       }
     }
+  }
+
+  // In `viewMode: 'grouped'`, wraps a parent's Tags or Attributes (Objects
+  // and the Event root are unaffected) behind one collapsed summary node —
+  // Pivotick's own node-expansion "+"
+  // (RendererOptions.enableNodeExpansion), driven by RawNode.children, not
+  // by an edge — instead of hanging every one of them directly off the
+  // parent. Returns the array the caller should push its individual items
+  // into: the group's own nested `children` (grouped), or `nodes` itself,
+  // unchanged, in the default 'detailed' view.
+  //
+  // The parent -> group edge is real (not just the stand-in Pivotick's own
+  // cross-cluster handling would synthesize from the individual items' own
+  // edges to parentId, left untouched below) — belt and suspenders, since a
+  // group node the force simulation never sees a real link for would drift
+  // wherever collision leaves it rather than settling near its parent.
+  private maybeGroup(
+    nodes: RawNode[],
+    edges: RawEdge[],
+    parentId: string,
+    type: string,
+    label: string,
+    edgeType: string,
+    count: number,
+    options?: ConverterOptions
+  ): RawNode[] {
+    if (options?.viewMode !== 'grouped' || count === 0) return nodes
+
+    const groupNodeId = `${type}-${parentId}`
+    const { data, style } = resolveNodeAppearance(
+      { label, type, count },
+      this.defaultStyle(type, label, {
+        theme: options?.theme,
+        badge: `${count} ${label.toLowerCase()}`
+      }),
+      options?.styleRules
+    )
+    const children: RawNode[] = []
+    nodes.push({ id: groupNodeId, data, style, expanded: false, children })
+    edges.push({ id: `${parentId}-${groupNodeId}`, from: parentId, to: groupNodeId, data: { type: edgeType } })
+    return children
   }
 
   // One "Sightings" summary node per Attribute, then one child per

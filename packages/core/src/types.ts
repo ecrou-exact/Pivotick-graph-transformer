@@ -101,5 +101,13 @@ export interface ConverterOptions {
   // `data-theme` attribute on its own — passed through by the caller so the
   // node stays legible in both themes instead of being baked in once.
   theme?: 'dark' | 'light'
+  // 'detailed' (default): every Tag/Attribute hangs directly off its parent,
+  // flat. 'grouped': each parent's Tags and Attributes collapse behind one
+  // summary node apiece (Pivotick's own node-expansion "+" —
+  // RendererOptions.enableNodeExpansion), so a large event reads as a
+  // handful of clickable groups instead of every leaf at once. Objects and
+  // Events are unaffected either way. Same styling either way too — this
+  // only changes which nodes are nested vs top-level.
+  viewMode?: 'detailed' | 'grouped'
   [key: string]: unknown
 }

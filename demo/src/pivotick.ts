@@ -7,16 +7,29 @@ import { MispEventInput } from '../../packages/misp/src/index'
 // its own root. Shared by demo.html's interactive Demo, docs.html's
 // per-concept previews, and index.html's own small Tag preview, so they
 // never drift apart.
-export function toGraphData(json: unknown, theme: 'dark' | 'light'): GraphData {
+export function toGraphData(json: unknown, theme: 'dark' | 'light', viewMode?: 'detailed' | 'grouped'): GraphData {
   const importer = GraphRegistry.getImporter('misp')
   const listResponse = (json as { response?: { Event: MispEventInput['Event'] }[] }).response
   if (Array.isArray(listResponse)) {
     return listResponse.reduce<GraphData>((graph, entry) => {
-      const converted = importer.convert({ Event: entry.Event }, { theme })
+      const converted = importer.convert({ Event: entry.Event }, { theme, viewMode })
       return { nodes: [...graph.nodes, ...converted.nodes], edges: [...graph.edges, ...converted.edges] }
     }, { nodes: [], edges: [] })
   }
-  return importer.convert(json as MispEventInput, { theme })
+  return importer.convert(json as MispEventInput, { theme, viewMode })
+}
+
+// The same two accepted shapes as toGraphData above, checked without
+// converting — for the "paste your own JSON" modal to tell a malformed/
+// unrelated upload apart from a real MISP export before rendering it.
+export function isMispJson(json: unknown): boolean {
+  if (typeof json !== 'object' || json === null) return false
+  const importer = GraphRegistry.getImporter('misp')
+  const listResponse = (json as { response?: unknown[] }).response
+  if (Array.isArray(listResponse)) {
+    return listResponse.length > 0 && listResponse.every(entry => importer.detect(entry))
+  }
+  return importer.detect(json)
 }
 
 // Pivotick's own d3-force defaults (d3LinkDistance: 40, d3ManyBodyStrength:

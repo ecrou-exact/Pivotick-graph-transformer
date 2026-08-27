@@ -17,3 +17,17 @@ export const MISP_ATTRIBUTE_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof ty
   fontSize: 10,
   iconSize: 18
 }
+
+// The "Attributes" grouping node — one per parent that has any, standing in
+// for all of them when `ConverterOptions.viewMode` is 'grouped' (see
+// import.ts's maybeGroup). Same icon/accent as the individual Attribute
+// above, just at Object's size — it reads as one step up from a leaf.
+export const MISP_ATTRIBUTE_GROUP_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number } = {
+  shape: 'square',
+  color: 'transparent',
+  strokeColor: 'transparent',
+  icon: 'attribute',
+  accentColor: '#97CC04',
+  fontSize: 14,
+  iconSize: 26
+}

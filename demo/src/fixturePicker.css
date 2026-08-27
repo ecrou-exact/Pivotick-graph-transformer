@@ -61,7 +61,8 @@
   display: none;
 }
 
-#fixture-picker-select {
+#fixture-picker-select,
+#fixture-picker-viewmode-select {
   width: 100%;
   padding: 6px 8px;
   background: #12141a;
@@ -69,6 +70,10 @@
   border: 1px solid #3a3f47;
   border-radius: 6px;
   font: inherit;
+}
+
+#fixture-picker-viewmode-select {
+  margin-top: 8px;
 }
 
 .fixture-picker-row {
@@ -113,4 +118,114 @@
 
 #fixture-picker-theme-toggle[aria-checked="true"] .fixture-picker-theme-toggle-thumb {
   transform: translateX(16px);
+}
+
+#fixture-picker-paste-json {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px 8px;
+  background: #12141a;
+  color: inherit;
+  border: 1px solid #3a3f47;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+#fixture-picker-paste-json:hover {
+  background: #1c1f24;
+  border-color: #565c66;
+}
+
+/* The paste-JSON modal — same fixed dark palette as the picker above,
+   independent of Pivotick's own light/dark toggle (like the picker, this
+   is dev-tool chrome, not part of the graph it's configuring). */
+#json-upload-modal {
+  width: min(560px, calc(100vw - 32px));
+  padding: 16px 18px;
+  background: #1c1f24;
+  color: #e6e6e6;
+  border: 1px solid #3a3f47;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+}
+
+#json-upload-modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+#json-upload-modal h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+#json-upload-modal p {
+  margin: 0 0 10px;
+  color: #b5bac1;
+  line-height: 1.5;
+}
+
+#json-upload-modal code {
+  color: #e6e6e6;
+  background: #12141a;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+#json-upload-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  background: #12141a;
+  color: inherit;
+  border: 1px solid #3a3f47;
+  border-radius: 6px;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  resize: vertical;
+}
+
+#json-upload-error {
+  min-height: 1.5em;
+  color: var(--pvt-theme-primary, #eb2e53);
+}
+
+#json-upload-error:empty {
+  margin: 0;
+}
+
+#json-upload-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+#json-upload-actions button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+#json-upload-cancel {
+  background: none;
+  color: inherit;
+  border: 1px solid #3a3f47;
+}
+
+#json-upload-cancel:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#json-upload-load {
+  background: var(--pvt-theme-primary, #eb2e53);
+  color: #fff;
+  border: none;
+}
+
+#json-upload-load:hover {
+  filter: brightness(1.1);
 }

@@ -1,6 +1,6 @@
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
 import { NODE_DEFAULTS } from '../../packages/misp/src/index'
-import { TUNED_SIMULATION, toGraphData } from './pivotick'
+import { TUNED_SIMULATION, isMispJson, toGraphData } from './pivotick'
 import { renderSiteHeader } from './siteHeader'
 import { getTheme, onThemeChange, setTheme } from './theme'
 
@@ -65,15 +65,17 @@ const NODE_TYPE_LABELS: Record<string, string> = {
 
 // UI.legend can't sample a real colour off these nodes (see NODE_DEFAULTS'
 // own comment in import.ts), so its swatches are declared here instead, from
-// the one place that already knows each type's accentColor. Tags don't have
-// one fixed accentColor (each tag carries its own `colour`), so their entry
-// falls back to buildTagChip's own default swatch (#888888) — a stand-in,
-// not the colour of any one tag.
+// the one place that already knows each type's accentColor. misp-tag-group
+// and misp-attribute-group only exist in Collapsed view, standing in for
+// the real Tag/Attribute nodes below — not their own MISP concept, so left
+// out here (unlike misp-galaxy-group, which is always on). A plain Tag
+// keeps the same terracotta as the "Tags" group it collapses behind.
+const COLLAPSED_VIEW_ONLY_TYPES = new Set(['misp-tag-group', 'misp-attribute-group'])
 const nodeTypeLegendCatalog = [
   ...Object.entries(NODE_DEFAULTS)
-    .filter(([, style]) => style.accentColor)
+    .filter(([type, style]) => style.accentColor && !COLLAPSED_VIEW_ONLY_TYPES.has(type))
     .map(([type, style]) => ({ id: type, label: NODE_TYPE_LABELS[type] ?? type, color: style.accentColor as string })),
-  { id: 'misp-tag', label: NODE_TYPE_LABELS['misp-tag'], color: '#888888' }
+  { id: 'misp-tag', label: NODE_TYPE_LABELS['misp-tag'], color: '#DB6A47' }
 ]
 
 // Re-derived on every legend rebuild (fixture switch, filter, expand/collapse)
@@ -91,6 +93,12 @@ function nodeTypeLegendEntries(graph: { getNodes(): { getData(): Record<string, 
 const defaultFixture = fixtures.find(f => f.label === 'reel-events') ?? fixtures[0]
 let currentFixtureJson: unknown = defaultFixture.json
 
+// 'detailed' (today's default, everything flat) vs 'grouped' (MispEventImporter's
+// viewMode: each parent's Tags and Attributes collapse behind one summary "+"
+// apiece — Objects and the Event root are unaffected) — same fixture picker
+// row treatment as the theme toggle above.
+let currentViewMode: 'detailed' | 'grouped' = 'detailed'
+
 // Every user-facing toggle explicitly on, so the demo shows the full UI —
 // see GraphOptions/GraphUI/RendererOptions in the vendored Pivotick build
 // (Pivotick/Pivotick@1870d99, branch worktree-shape-edge-anchoring — not
@@ -103,7 +111,7 @@ function renderPivotick(): void {
   // No documented dispose/destroy on the vendored Pivotick — clearing the
   // container before re-instantiating is the safe way to swap fixtures.
   container.innerHTML = ''
-  new Pivotick(container, toGraphData(currentFixtureJson, getTheme()), {
+  new Pivotick(container, toGraphData(currentFixtureJson, getTheme(), currentViewMode), {
     isDirected: true,
     render: {
       type: 'svg',
@@ -167,17 +175,30 @@ picker.innerHTML = `
   </button>
   <div id="fixture-picker-body">
     <select id="fixture-picker-select"></select>
+    <select id="fixture-picker-viewmode-select">
+      <option value="detailed">Simple view</option>
+      <option value="grouped">Collapsed view</option>
+    </select>
     <div class="fixture-picker-row">
       <span id="fixture-picker-theme-label">Light theme</span>
       <button id="fixture-picker-theme-toggle" type="button" role="switch" aria-checked="true" aria-label="Toggle dark/light theme">
         <span class="fixture-picker-theme-toggle-thumb"></span>
       </button>
     </div>
+    <button id="fixture-picker-paste-json" type="button">Paste your own JSON…</button>
   </div>
 `
 document.body.appendChild(picker)
 
 const select = picker.querySelector('#fixture-picker-select') as HTMLSelectElement
+// Selected programmatically once a pasted JSON is loaded (see the modal
+// below) — never chosen from the dropdown itself, hence disabled/hidden.
+const customOption = document.createElement('option')
+customOption.value = '__custom__'
+customOption.textContent = 'Custom JSON'
+customOption.disabled = true
+customOption.hidden = true
+select.appendChild(customOption)
 const groups = new Map<string, HTMLOptGroupElement>()
 for (const fixture of fixtures) {
   let optgroup = groups.get(fixture.group)
@@ -198,6 +219,68 @@ select.addEventListener('change', () => {
   const fixture = fixtures.find(f => f.path === select.value)
   if (!fixture) return
   currentFixtureJson = fixture.json
+  renderPivotick()
+})
+
+const viewModeSelect = picker.querySelector('#fixture-picker-viewmode-select') as HTMLSelectElement
+viewModeSelect.value = currentViewMode
+viewModeSelect.addEventListener('change', () => {
+  currentViewMode = viewModeSelect.value as 'detailed' | 'grouped'
+  renderPivotick()
+})
+
+// "Paste your own JSON" modal — a plain <dialog> (native backdrop/centering,
+// Esc-to-cancel for free) rather than a hand-rolled overlay. Appended to
+// <body>, a sibling of the picker, so it isn't clipped by anything.
+const jsonModal = document.createElement('dialog')
+jsonModal.id = 'json-upload-modal'
+jsonModal.innerHTML = `
+  <form method="dialog">
+    <h2>Paste a MISP JSON export</h2>
+    <p>A single Event export (<code>{"Event": {...}}</code>) or a search/index response (<code>{"response": [...]}</code>).</p>
+    <textarea id="json-upload-textarea" rows="14" spellcheck="false" placeholder='{"Event": {"uuid": "...", "info": "...", ...}}'></textarea>
+    <p id="json-upload-error" role="alert"></p>
+    <div id="json-upload-actions">
+      <button id="json-upload-cancel" type="button">Cancel</button>
+      <button id="json-upload-load" type="submit">Load</button>
+    </div>
+  </form>
+`
+document.body.appendChild(jsonModal)
+
+const pasteJsonButton = picker.querySelector('#fixture-picker-paste-json') as HTMLButtonElement
+const jsonTextarea = jsonModal.querySelector('#json-upload-textarea') as HTMLTextAreaElement
+const jsonError = jsonModal.querySelector('#json-upload-error') as HTMLParagraphElement
+
+pasteJsonButton.addEventListener('click', () => {
+  jsonError.textContent = ''
+  jsonModal.showModal()
+  jsonTextarea.focus()
+})
+
+jsonModal.querySelector('#json-upload-cancel')!.addEventListener('click', () => jsonModal.close())
+
+// The form's own submit (not the button's click) so pressing Enter in the
+// textarea's surrounding form also works — prevented unconditionally since
+// an invalid paste must re-open on the same error, never close the modal.
+jsonModal.querySelector('form')!.addEventListener('submit', event => {
+  event.preventDefault()
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(jsonTextarea.value)
+  } catch (error) {
+    jsonError.textContent = `Not valid JSON: ${(error as Error).message}`
+    return
+  }
+  if (!isMispJson(parsed)) {
+    jsonError.textContent = 'Valid JSON, but not a MISP Event export — expected an "Event" key (with "uuid" and "info"), or a "response" list of them.'
+    return
+  }
+
+  currentFixtureJson = parsed
+  select.value = '__custom__'
+  jsonModal.close()
   renderPivotick()
 })
 

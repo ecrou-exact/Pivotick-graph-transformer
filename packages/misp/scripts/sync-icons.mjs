@@ -35,7 +35,8 @@ const CONCEPT_ICONS = {
   object: 'simple/object.svg',
   attribute: 'simple/attribute.svg',
   galaxy: 'simple/galaxy.svg',
-  sighting: 'simple/sighting.svg'
+  sighting: 'simple/sighting.svg',
+  tag: 'simple/tag.svg'
 }
 
 // misp-iconify folders where every file is one instance icon, auto-
