@@ -1,0 +1,126 @@
+{
+  "Event": {
+    "id": "2002",
+    "uuid": "bbbbbbb1-view-4bbb-8bbb-bbbbbbbbbbb1",
+    "info": "Malware dropped via document, calling home",
+    "date": "2026-02-11",
+    "published": true,
+    "timestamp": "1770800000",
+    "distribution": "1",
+    "Attribute": [
+      {
+        "id": "9201",
+        "uuid": "bbbbbbb2-view-4bbb-8bbb-bbbbbbbbbbb2",
+        "type": "ip-dst",
+        "category": "Network activity",
+        "value": "198.51.100.23",
+        "to_ids": true,
+        "timestamp": "1770800000",
+        "distribution": "5"
+      },
+      {
+        "id": "9202",
+        "uuid": "bbbbbbb3-view-4bbb-8bbb-bbbbbbbbbbb3",
+        "type": "comment",
+        "category": "Other",
+        "value": "Analyst note, not referenced by anything",
+        "to_ids": false,
+        "timestamp": "1770800000",
+        "distribution": "5"
+      }
+    ],
+    "Object": [
+      {
+        "id": "5201",
+        "uuid": "bbbbbbb4-view-4bbb-8bbb-bbbbbbbbbbb4",
+        "name": "file",
+        "meta-category": "file",
+        "description": "File object describing a file with meta-information.",
+        "timestamp": "1770800000",
+        "distribution": "5",
+        "Attribute": [
+          {
+            "id": "9203",
+            "uuid": "bbbbbbb5-view-4bbb-8bbb-bbbbbbbbbbb5",
+            "type": "filename",
+            "category": "Payload delivery",
+            "value": "invoice_Q3.docm",
+            "object_relation": "filename",
+            "to_ids": false,
+            "timestamp": "1770800000",
+            "distribution": "5"
+          },
+          {
+            "id": "9204",
+            "uuid": "bbbbbbb6-view-4bbb-8bbb-bbbbbbbbbbb6",
+            "type": "sha256",
+            "category": "Payload delivery",
+            "value": "8f14e45fceea167a5a36dedd4bea2543d1c5b6a6f0d1e2c3b4a59687d0efabc",
+            "object_relation": "sha256",
+            "to_ids": true,
+            "timestamp": "1770800000",
+            "distribution": "5"
+          }
+        ],
+        "ObjectReference": [
+          {
+            "uuid": "bbbbbbb7-view-4bbb-8bbb-bbbbbbbbbbb7",
+            "referenced_uuid": "bbbbbbb8-view-4bbb-8bbb-bbbbbbbbbbb8",
+            "referenced_type": "1",
+            "relationship_type": "connects-to"
+          },
+          {
+            "uuid": "bbbbbbb9-view-4bbb-8bbb-bbbbbbbbbbb9",
+            "referenced_uuid": "bbbbbbb2-view-4bbb-8bbb-bbbbbbbbbbb2",
+            "referenced_type": "0",
+            "relationship_type": "drops"
+          }
+        ]
+      },
+      {
+        "id": "5202",
+        "uuid": "bbbbbbb8-view-4bbb-8bbb-bbbbbbbbbbb8",
+        "name": "network-connection",
+        "meta-category": "network",
+        "description": "A local or remote network connection.",
+        "timestamp": "1770800000",
+        "distribution": "5",
+        "Attribute": [
+          {
+            "id": "9205",
+            "uuid": "bbbbbbba-view-4bbb-8bbb-bbbbbbbbbbba",
+            "type": "ip-dst",
+            "category": "Network activity",
+            "value": "198.51.100.23",
+            "object_relation": "ip-dst",
+            "to_ids": true,
+            "timestamp": "1770800000",
+            "distribution": "5"
+          }
+        ]
+      },
+      {
+        "id": "5203",
+        "uuid": "bbbbbbbc-view-4bbb-8bbb-bbbbbbbbbbbc",
+        "name": "vulnerability",
+        "meta-category": "vulnerability",
+        "description": "Unreferenced Object — nothing points at it, and it references nothing itself, so 'relations' view hides it entirely.",
+        "timestamp": "1770800000",
+        "distribution": "5",
+        "Attribute": [
+          {
+            "id": "9206",
+            "uuid": "bbbbbbbd-view-4bbb-8bbb-bbbbbbbbbbbd",
+            "type": "vulnerability",
+            "category": "External analysis",
+            "value": "CVE-2026-0001",
+            "object_relation": "id",
+            "to_ids": false,
+            "timestamp": "1770800000",
+            "distribution": "5"
+          }
+        ]
+      }
+    ]
+  }
+}

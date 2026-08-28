@@ -37,6 +37,12 @@
         <a href="#tag">Tag</a>
         <a href="#galaxy">Galaxy</a>
         <a href="#sighting">Sighting</a>
+
+        <p class="docs-sidebar-category">Views</p>
+        <a href="#view-detailed">Detailed</a>
+        <a href="#view-grouped">Grouped</a>
+        <a href="#view-relations">Relations</a>
+        <a href="#view-correlation">Correlation</a>
       </nav>
 
       <article class="docs-content">
@@ -195,6 +201,99 @@ new Pivotick(document.getElementById('app'), data, {
             <li>Each of the three only appears if its count is above zero.</li>
           </ul>
           <div class="docs-example" data-fixture="attribute-sighting">
+            <div class="docs-preview"></div>
+          </div>
+        </section>
+
+        <section class="docs-category-heading">
+          <p class="docs-eyebrow">viewMode</p>
+          <h1>Choosing how much of the graph to show</h1>
+          <p class="docs-lede">
+            Same MISP data every time — <code>options.viewMode</code> on the <code>convert()</code> call above is
+            what changes which nodes are nested, filtered, or left out.
+          </p>
+        </section>
+
+        <section id="view-detailed" class="docs-section">
+          <h2>Detailed (default)</h2>
+          <p>
+            Every Tag, Attribute, and Object hangs directly off its parent, flat — nothing nested, nothing
+            filtered. This is what every example in the MISP concept reference above already shows.
+          </p>
+          <div class="docs-snippet-wrap">
+            <button class="docs-copy-btn" type="button">Copy</button>
+            <pre class="docs-snippet"><code data-lang="ts">// viewMode omitted entirely — same result as passing 'detailed'
+const data = GraphRegistry.getImporter('misp').convert(mispEvent)</code></pre>
+          </div>
+          <div class="docs-example" data-fixture="view-detailed">
+            <div class="docs-preview"></div>
+          </div>
+        </section>
+
+        <section id="view-grouped" class="docs-section">
+          <h2>Grouped</h2>
+          <p>
+            Each parent's Tags and Attributes collapse behind one summary node apiece — Pivotick's own
+            node-expansion "+" (<code>RendererOptions.enableNodeExpansion</code>), so a busy Event reads as a
+            handful of clickable groups instead of every leaf at once. Objects and the Event root are unaffected; a
+            Galaxy's own "Galaxy clusters" grouping nests two levels deep the same way. Same Event as Detailed
+            above — only <code>viewMode</code> changed.
+          </p>
+          <div class="docs-snippet-wrap">
+            <button class="docs-copy-btn" type="button">Copy</button>
+            <pre class="docs-snippet"><code data-lang="ts">const data = GraphRegistry.getImporter('misp').convert(mispEvent, { viewMode: 'grouped' })</code></pre>
+          </div>
+          <div class="docs-example" data-fixture="view-grouped">
+            <div class="docs-preview"></div>
+          </div>
+        </section>
+
+        <section id="view-relations" class="docs-section">
+          <h2>Relations</h2>
+          <p>
+            No Event root, no Tags/Galaxies/Sightings — only what participates in the Object Reference graph. An
+            Object shows only when it references something, is referenced itself, or owns a referenced Attribute;
+            a bare event-level Attribute shows only when some Object references it. A shown Object nests all of
+            its own Attributes behind its own native "+" instead of beside it — the Object is the expandable unit
+            here, unlike Grouped's separate summary node.
+          </p>
+          <p>
+            Below: the <code>file</code> Object connects to <code>network-connection</code> and to the IP it
+            drops (an event-level Attribute, pulled in only because it's referenced); the unreferenced
+            <code>vulnerability</code> Object and the plain comment Attribute are both left out entirely.
+          </p>
+          <div class="docs-snippet-wrap">
+            <button class="docs-copy-btn" type="button">Copy</button>
+            <pre class="docs-snippet"><code data-lang="ts">const data = GraphRegistry.getImporter('misp').convert(mispEvent, { viewMode: 'relations' })</code></pre>
+          </div>
+          <div class="docs-example" data-fixture="view-relations">
+            <div class="docs-preview"></div>
+          </div>
+        </section>
+
+        <section id="view-correlation" class="docs-section">
+          <h2>Correlation</h2>
+          <p>
+            Not a <code>convert()</code> viewMode — its input is <em>every</em> Event at once, not one, so it's a
+            separate method: <code>correlateEvents(events, options)</code>. Two signals, both drawn: MISP's own
+            precomputed <code>RelatedEvent</code> (read straight from the export — this is what makes it work even
+            when <code>Attribute</code> is empty, a summary response rather than a full pull), and any Attribute
+            value shared by two or more different Events (honouring <code>disable_correlation</code>), which
+            becomes one shared hub node with an edge to every Event that carries it.
+          </p>
+          <p>
+            Below: two Events sharing the same <code>ip-dst</code> value link through a shared hub; the first
+            Event's own <code>RelatedEvent</code> also names a third, older Event — shown from just the summary
+            MISP sent along with it, since that's all a related Event ever carries.
+          </p>
+          <div class="docs-snippet-wrap">
+            <button class="docs-copy-btn" type="button">Copy</button>
+            <pre class="docs-snippet"><code data-lang="ts">import { MispEventImporter } from './vendor/pivotick-graph-transformer/packages/misp/src/index'
+
+const importer = GraphRegistry.getImporter('misp') as MispEventImporter
+const data = importer.correlateEvents([eventA, eventB], { viewMode: 'correlation' })</code></pre>
+          </div>
+          <div class="docs-example" data-fixture="view-correlation">
             <div class="docs-preview"></div>
           </div>
         </section>

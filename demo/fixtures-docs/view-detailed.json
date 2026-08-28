@@ -1,0 +1,73 @@
+{
+  "Event": {
+    "id": "2001",
+    "uuid": "aaaaaaa1-view-4aaa-8aaa-aaaaaaaaaaa1",
+    "info": "Phishing campaign against finance dept",
+    "date": "2026-02-10",
+    "published": true,
+    "timestamp": "1770700000",
+    "distribution": "1",
+    "Tag": [
+      { "id": "20", "name": "tlp:amber", "colour": "#ffc000", "exportable": true, "is_galaxy": false, "local_only": false, "local": false },
+      { "id": "21", "name": "type:phishing", "colour": "#7a3fd6", "exportable": true, "is_galaxy": false, "local_only": false, "local": false },
+      { "id": "22", "name": "source:community", "colour": "#2e67f8", "exportable": true, "is_galaxy": false, "local_only": false, "local": false }
+    ],
+    "Attribute": [
+      {
+        "id": "9101",
+        "uuid": "aaaaaaa2-view-4aaa-8aaa-aaaaaaaaaaa2",
+        "type": "email-src",
+        "category": "Payload delivery",
+        "value": "finance-support@secure-billing-portal.com",
+        "to_ids": true,
+        "timestamp": "1770700000",
+        "distribution": "5"
+      },
+      {
+        "id": "9102",
+        "uuid": "aaaaaaa3-view-4aaa-8aaa-aaaaaaaaaaa3",
+        "type": "url",
+        "category": "Payload delivery",
+        "value": "https://secure-billing-portal.com/invoice",
+        "to_ids": true,
+        "timestamp": "1770700000",
+        "distribution": "5"
+      }
+    ],
+    "Object": [
+      {
+        "id": "5101",
+        "uuid": "aaaaaaa4-view-4aaa-8aaa-aaaaaaaaaaa4",
+        "name": "domain-ip",
+        "meta-category": "network",
+        "description": "A domain and IP address seen as a tuple in a specific time frame.",
+        "timestamp": "1770700000",
+        "distribution": "5",
+        "Attribute": [
+          {
+            "id": "9103",
+            "uuid": "aaaaaaa5-view-4aaa-8aaa-aaaaaaaaaaa5",
+            "type": "domain",
+            "category": "Network activity",
+            "value": "secure-billing-portal.com",
+            "object_relation": "domain",
+            "to_ids": true,
+            "timestamp": "1770700000",
+            "distribution": "5"
+          },
+          {
+            "id": "9104",
+            "uuid": "aaaaaaa6-view-4aaa-8aaa-aaaaaaaaaaa6",
+            "type": "ip-dst",
+            "category": "Network activity",
+            "value": "203.0.113.77",
+            "object_relation": "ip",
+            "to_ids": true,
+            "timestamp": "1770700000",
+            "distribution": "5"
+          }
+        ]
+      }
+    ]
+  }
+}

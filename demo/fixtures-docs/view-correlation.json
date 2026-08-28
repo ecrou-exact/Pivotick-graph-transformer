@@ -1,0 +1,62 @@
+{
+  "response": [
+    {
+      "Event": {
+        "id": "2003",
+        "uuid": "ccccccc1-view-4ccc-8ccc-ccccccccccc1",
+        "info": "Incident: banking trojan, EU targets",
+        "date": "2026-02-12",
+        "published": true,
+        "timestamp": "1770900000",
+        "distribution": "1",
+        "Attribute": [
+          {
+            "id": "9301",
+            "uuid": "ccccccc2-view-4ccc-8ccc-ccccccccccc2",
+            "type": "ip-dst",
+            "category": "Network activity",
+            "value": "192.0.2.55",
+            "to_ids": true,
+            "timestamp": "1770900000",
+            "distribution": "5"
+          }
+        ],
+        "RelatedEvent": [
+          {
+            "Event": {
+              "id": "1994",
+              "uuid": "ccccccc9-view-4ccc-8ccc-ccccccccccc9",
+              "info": "Older campaign, same actor (not otherwise loaded here)",
+              "date": "2025-11-03",
+              "Org": { "id": "1", "name": "CIRCL", "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f", "local": true },
+              "Orgc": { "id": "1", "name": "CIRCL", "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f", "local": true }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "id": "2004",
+        "uuid": "ccccccc3-view-4ccc-8ccc-ccccccccccc3",
+        "info": "Incident: banking trojan, second wave",
+        "date": "2026-02-14",
+        "published": true,
+        "timestamp": "1771100000",
+        "distribution": "1",
+        "Attribute": [
+          {
+            "id": "9302",
+            "uuid": "ccccccc4-view-4ccc-8ccc-ccccccccccc4",
+            "type": "ip-dst",
+            "category": "Network activity",
+            "value": "192.0.2.55",
+            "to_ids": true,
+            "timestamp": "1771100000",
+            "distribution": "5"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -9,6 +9,9 @@ import objectAttributeFixture from '../fixtures-docs/object-attribute.json'
 import attributeGalaxyFixture from '../fixtures-docs/attribute-galaxy.json'
 import attributeSightingFixture from '../fixtures-docs/attribute-sighting.json'
 import attributeTagFixture from '../fixtures-docs/attribute-tag.json'
+import viewCorrelationFixture from '../fixtures-docs/view-correlation.json'
+import viewDetailedFixture from '../fixtures-docs/view-detailed.json'
+import viewRelationsFixture from '../fixtures-docs/view-relations.json'
 import { highlightAllSnippets } from './highlight'
 import { LOOSE_SIMULATION, toGraphData } from './pivotick'
 import { renderSiteHeader } from './siteHeader'
@@ -52,7 +55,22 @@ const FIXTURES: Record<string, unknown> = {
   'object-attribute': objectAttributeFixture,
   'attribute-tag': attributeTagFixture,
   'attribute-galaxy': attributeGalaxyFixture,
-  'attribute-sighting': attributeSightingFixture
+  'attribute-sighting': attributeSightingFixture,
+  // 'view-detailed' and 'view-grouped' intentionally share one fixture —
+  // the whole point of the pairing (see docs.html's Views section) is
+  // showing the *same* data with viewMode the only thing that changed.
+  'view-detailed': viewDetailedFixture,
+  'view-grouped': viewDetailedFixture,
+  'view-relations': viewRelationsFixture,
+  'view-correlation': viewCorrelationFixture
+}
+
+// Only the Views section's examples need a non-default viewMode — every
+// other key above falls through to 'detailed' via toGraphData's own default.
+const VIEW_MODES: Record<string, 'detailed' | 'grouped' | 'relations' | 'correlation'> = {
+  'view-grouped': 'grouped',
+  'view-relations': 'relations',
+  'view-correlation': 'correlation'
 }
 
 interface Example {
@@ -76,7 +94,8 @@ function renderExample(example: Example): void {
   example.mount.innerHTML = ''
   const theme = getTheme()
   const fixture = FIXTURES[example.key]
-  new Pivotick(example.mount, toGraphData(fixture, theme), {
+  const viewMode = VIEW_MODES[example.key]
+  new Pivotick(example.mount, toGraphData(fixture, theme, viewMode), {
     isDirected: true,
     render: {
       type: 'svg',
