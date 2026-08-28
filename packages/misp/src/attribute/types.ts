@@ -27,6 +27,10 @@ export interface MispAttribute {
   // Present and truthy on a soft-deleted Attribute — 'relations' view (see
   // import.ts's computeConnectivity) never shows one, referenced or not.
   deleted?: boolean | number | string
+  // Opts this Attribute out of MISP's own correlation engine — correlate.ts's
+  // cross-event grouping honours the same flag, so a value MISP itself
+  // wouldn't correlate (e.g. a noisy "text" comment) doesn't fake a link.
+  disable_correlation?: boolean
   // Real MISP Attribute exports carry more fields (event_id, object_id,
   // deleted, disable_correlation, Galaxy, ShadowAttribute, ...) that vary
   // by instance/version. Only the fields above are surfaced in the

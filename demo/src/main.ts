@@ -62,7 +62,8 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   'misp-sighting-summary': 'Sightings',
   'misp-sighting-type': 'Sighting type',
   'misp-tag': 'Tag',
-  'misp-tag-group': 'Tags'
+  'misp-tag-group': 'Tags',
+  'misp-correlation': 'Correlated indicator'
 }
 
 // UI.legend can't sample a real colour off these nodes (see NODE_DEFAULTS'
@@ -95,10 +96,13 @@ function nodeTypeLegendEntries(graph: { getNodes(): { getData(): Record<string, 
 const defaultFixture = fixtures.find(f => f.label === 'reel-events') ?? fixtures[0]
 let currentFixtureJson: unknown = defaultFixture.json
 
-// MispEventImporter's three viewModes — see ConverterOptions.viewMode in
-// core/types.ts for what each one does. Same fixture picker row treatment
-// as the theme toggle above.
-let currentViewMode: 'detailed' | 'grouped' | 'relations' = 'detailed'
+// MispEventImporter's viewModes — see ConverterOptions.viewMode in
+// core/types.ts for 'detailed'/'grouped'/'relations', and
+// MispEventImporter.correlateEvents' own comment for 'correlation' (routed
+// separately in toGraphData.ts — its input shape, every Event at once, is
+// fundamentally different from the other three). Same fixture picker row
+// treatment as the theme toggle above.
+let currentViewMode: 'detailed' | 'grouped' | 'relations' | 'correlation' = 'detailed'
 
 // Every user-facing toggle explicitly on, so the demo shows the full UI —
 // see GraphOptions/GraphUI/RendererOptions in the vendored Pivotick build
@@ -198,6 +202,7 @@ picker.innerHTML = `
       <option value="detailed">Simple view</option>
       <option value="grouped">Collapsed view</option>
       <option value="relations">Relations view</option>
+      <option value="correlation">Correlation view</option>
     </select>
     <div class="fixture-picker-row">
       <span id="fixture-picker-theme-label">Light theme</span>
@@ -245,7 +250,7 @@ select.addEventListener('change', () => {
 const viewModeSelect = picker.querySelector('#fixture-picker-viewmode-select') as HTMLSelectElement
 viewModeSelect.value = currentViewMode
 viewModeSelect.addEventListener('change', () => {
-  currentViewMode = viewModeSelect.value as 'detailed' | 'grouped' | 'relations'
+  currentViewMode = viewModeSelect.value as 'detailed' | 'grouped' | 'relations' | 'correlation'
   renderPivotick()
 })
 

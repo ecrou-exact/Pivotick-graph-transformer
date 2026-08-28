@@ -19,7 +19,7 @@ import { MispAttribute } from './attribute/types'
 import { MISP_EVENT_NODE_DEFAULT } from './event/defaults'
 import { MISP_EVENT_FIELDS } from './event/fields'
 import { formatMispEventField } from './event/formatters'
-import { MispEventInput } from './event/types'
+import { MispEvent, MispEventInput, MispRelatedEventSummary } from './event/types'
 import { GALAXY_METALLIC_SHEEN, galaxyPalette } from './galaxy/colour'
 import { MISP_GALAXY_CLUSTERS_NODE_DEFAULT, MISP_GALAXY_NODE_DEFAULT } from './galaxy/defaults'
 import { MISP_GALAXY_CLUSTER_FIELDS, MISP_GALAXY_FIELDS } from './galaxy/fields'
@@ -45,6 +45,27 @@ import { MispTag } from './tag/types'
 // own default stroke happens to be.
 const STRUCTURAL_EDGE_COLOR = '#9CA3AF'
 
+// correlateEvents' own edges (a RelatedEvent link, or an event -> shared-
+// indicator hub) — same amber as MISP_CORRELATION_NODE_DEFAULT's accent
+// below, so "this is about correlation" reads as one consistent colour.
+const CORRELATION_EDGE_COLOR = '#F59E0B'
+
+// The shared-indicator hub node correlateEvents() builds — not a MISP
+// concept with its own folder, just an Attribute value elevated to hub
+// status because it recurs across events. Vivid amber so it reads as the
+// one thing this view exists to highlight; icon falls back to the generic
+// `attribute` glyph (correlateEvents overrides it per the sample's real
+// `type`, same lookup addAttribute uses, whenever misp-iconify has one).
+const MISP_CORRELATION_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number } = {
+  shape: 'square',
+  color: 'transparent',
+  strokeColor: 'transparent',
+  icon: 'attribute',
+  accentColor: '#F59E0B',
+  fontSize: 11,
+  iconSize: 20
+}
+
 // One node-style default per MISP concept, each living next to that
 // concept's other files (event/, attribute/, object/, ...) — merged here
 // since this importer is the only thing that needs to look one up by node
@@ -63,7 +84,8 @@ export const NODE_DEFAULTS: Record<string, Partial<NodeStyle> & { icon?: keyof t
   'misp-galaxy-group': MISP_GALAXY_CLUSTERS_NODE_DEFAULT,
   'misp-galaxy': MISP_GALAXY_NODE_DEFAULT,
   'misp-sighting-summary': MISP_SIGHTING_NODE_DEFAULT,
-  'misp-sighting-type': MISP_SIGHTING_TYPE_NODE_DEFAULT
+  'misp-sighting-type': MISP_SIGHTING_TYPE_NODE_DEFAULT,
+  'misp-correlation': MISP_CORRELATION_NODE_DEFAULT
 }
 
 // Node/edge ids that must stay unique across the *whole* converted graph,
@@ -216,6 +238,140 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
       : undefined
 
     return { nodes, edges, notes }
+  }
+
+  // MISP's own correlation engine links events through shared indicator
+  // values — this builds that graph directly, across *every* event at once
+  // (unlike convert(), which handles one). A separate entry point rather
+  // than a convert() viewMode, since its input shape is fundamentally
+  // different (a list of Events, not one) — wired up by
+  // demo/src/pivotick.ts's toGraphData when viewMode is 'correlation'.
+  //
+  // Two correlation signals, both drawn:
+  //  1. RelatedEvent — MISP's own precomputed result, straight from the
+  //     export. Authoritative, and the *only* signal available on an export
+  //     like MISP's real ones sometimes are: RelatedEvent populated, but
+  //     Attribute empty (a summary response, not a full pull) — this reads
+  //     it in preference to re-deriving correlation client-side for exactly
+  //     that reason. The other Event may only be a short summary (uuid/info/
+  //     Org/Orgc, no Attribute/Object of its own) — still gets a node.
+  //  2. A shared Attribute value — when full Attribute detail *is* present,
+  //     honouring disable_correlation (the same signal MISP's own engine
+  //     respects) — becomes one shared hub node, with an edge to every event
+  //     that carries it. A value seen in only one event is inventory, not
+  //     correlation — left out, same "only what's relevant" philosophy as
+  //     'relations'. So are Tags/Galaxies/Sightings.
+  // An Event with neither never gets a node — nothing to say about it here.
+  correlateEvents(events: MispEventInput['Event'][], options?: ConverterOptions): GraphData {
+    const nodes: RawNode[] = []
+    const edges: RawEdge[] = []
+    const addedEventUuids = new Set<string>()
+    const fullEventsByUuid = new Map(events.map(event => [event.uuid, event]))
+
+    const addEventNode = (event: MispEvent | MispRelatedEventSummary): void => {
+      if (addedEventUuids.has(event.uuid)) return
+      addedEventUuids.add(event.uuid)
+      const displayFields: Record<string, unknown> = {}
+      for (const field of MISP_EVENT_FIELDS) {
+        const rawValue = (event as Record<string, unknown>)[field.source ?? field.key]
+        displayFields[field.key] = formatMispEventField(field.format, rawValue, event as MispEvent)
+      }
+      const { data, style } = resolveNodeAppearance(
+        { ...displayFields, label: event.info, type: 'misp-event' },
+        this.defaultStyle('misp-event', event.info, { theme: options?.theme }),
+        options?.styleRules
+      )
+      nodes.push({ id: event.uuid, data, style, expanded: false })
+    }
+
+    // A pair can list each other on both sides — sorted-pair dedup so it
+    // only draws once.
+    const relatedPairs = new Set<string>()
+    for (const event of events) {
+      for (const related of event.RelatedEvent ?? []) {
+        const target = fullEventsByUuid.get(related.Event.uuid) ?? related.Event
+        const pairKey = [event.uuid, target.uuid].sort().join('|')
+        if (relatedPairs.has(pairKey)) continue
+        relatedPairs.add(pairKey)
+
+        addEventNode(event)
+        addEventNode(target)
+        edges.push({
+          id: `related-${pairKey}`,
+          from: event.uuid,
+          to: target.uuid,
+          data: { type: 'related-event' },
+          style: { edge: { strokeColor: CORRELATION_EDGE_COLOR } }
+        })
+      }
+    }
+
+    // key: `${type}:${value}` -> every distinct event carrying it, plus one
+    // sample Attribute (any of them — they share type/value by definition)
+    // to build the shared hub's card from.
+    const occurrences = new Map<string, { eventUuids: Set<string>, sample: MispAttribute }>()
+    const collect = (eventUuid: string, attribute: MispAttribute): void => {
+      if (this.isDeleted(attribute) || attribute.disable_correlation) return
+      const key = `${attribute.type}:${attribute.value}`
+      const existing = occurrences.get(key)
+      if (existing) existing.eventUuids.add(eventUuid)
+      else occurrences.set(key, { eventUuids: new Set([eventUuid]), sample: attribute })
+    }
+    for (const event of events) {
+      for (const attribute of event.Attribute ?? []) collect(event.uuid, attribute)
+      for (const object of event.Object ?? []) {
+        for (const attribute of object.Attribute ?? []) collect(event.uuid, attribute)
+      }
+    }
+
+    let hubCount = 0
+    for (const { eventUuids, sample } of occurrences.values()) {
+      if (eventUuids.size < 2) continue
+
+      for (const eventUuid of eventUuids) addEventNode(fullEventsByUuid.get(eventUuid) as MispEvent)
+
+      const nodeId = `correlation-${hubCount++}`
+      // Same per-instance icon lookup as addAttribute — a correlated
+      // "ip-dst" hub gets the same glyph a plain ip-dst Attribute would.
+      const iconOverride = MISP_ICONS[`attributes/${sample.type}`] ? `attributes/${sample.type}` : undefined
+      const badge = `${sample.type} · ${eventUuids.size} events`
+      const { data, style } = resolveNodeAppearance(
+        { label: sample.value, type: 'misp-correlation', attributeType: sample.type, eventCount: eventUuids.size },
+        this.defaultStyle('misp-correlation', sample.value, { theme: options?.theme, iconOverride, badge }),
+        options?.styleRules
+      )
+      nodes.push({ id: nodeId, data, style, expanded: false })
+
+      for (const eventUuid of eventUuids) {
+        edges.push({
+          id: `${eventUuid}-${nodeId}`,
+          from: eventUuid,
+          to: nodeId,
+          data: { type: 'correlates-with' },
+          style: { edge: { strokeColor: STRUCTURAL_EDGE_COLOR } }
+        })
+      }
+    }
+
+    // Neither signal found anything: nothing correlates here, so this view
+    // shows nothing rather than a pile of disconnected Event nodes with
+    // nothing to say about them.
+    if (nodes.length === 0) {
+      return {
+        nodes: [],
+        edges: [],
+        notes: [{
+          content: events.length > 1
+            ? `No correlated attributes across these ${events.length} events`
+            : 'Nothing to correlate — only one event',
+          surface: 'terminal',
+          width: 300,
+          height: 90
+        }]
+      }
+    }
+
+    return { nodes, edges }
   }
 
   // Soft-deleted (tombstone) MISP records — never real, current relationships.

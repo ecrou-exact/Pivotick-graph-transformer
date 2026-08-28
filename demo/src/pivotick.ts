@@ -1,5 +1,5 @@
 import { GraphData, GraphRegistry } from '../../packages/core/src/index'
-import { MispEventInput } from '../../packages/misp/src/index'
+import { MispEventImporter, MispEventInput } from '../../packages/misp/src/index'
 
 // A loaded fixture is either a single MISP Event export (`{ Event }`) or a
 // MISP search/index response (`{ response: [{ Event }, ...] }`) — the
@@ -7,9 +7,25 @@ import { MispEventInput } from '../../packages/misp/src/index'
 // its own root. Shared by demo.html's interactive Demo, docs.html's
 // per-concept previews, and index.html's own small Tag preview, so they
 // never drift apart.
-export function toGraphData(json: unknown, theme: 'dark' | 'light', viewMode?: 'detailed' | 'grouped' | 'relations'): GraphData {
-  const importer = GraphRegistry.getImporter('misp')
+export function toGraphData(
+  json: unknown,
+  theme: 'dark' | 'light',
+  viewMode?: 'detailed' | 'grouped' | 'relations' | 'correlation'
+): GraphData {
+  const importer = GraphRegistry.getImporter('misp') as MispEventImporter
   const listResponse = (json as { response?: { Event: MispEventInput['Event'] }[] }).response
+
+  // 'correlation' needs every Event at once (see correlateEvents' own
+  // comment) — a single-Event upload still routes through it, just with
+  // nothing else to correlate against (correlateEvents handles that case's
+  // own note text).
+  if (viewMode === 'correlation') {
+    const events = Array.isArray(listResponse)
+      ? listResponse.map(entry => entry.Event)
+      : [(json as MispEventInput).Event]
+    return importer.correlateEvents(events, { theme, viewMode })
+  }
+
   if (Array.isArray(listResponse)) {
     const merged = listResponse.reduce<GraphData>((graph, entry) => {
       const converted = importer.convert({ Event: entry.Event }, { theme, viewMode })
