@@ -1,5 +1,5 @@
 // The pivot language every importer/exporter speaks. Mirrors Pivotick's own
-// RawNode / RawEdge / NodeStyle shapes, verified against the vendored v1.5.0
+// RawNode / RawEdge / NodeStyle shapes, verified against the vendored v1.6.0
 // release (demo/vendor/pivotick, see demo/scripts/sync-pivotick.mjs) so
 // consumers can pass this straight into `new Pivotick(container, data, options)`.
 //
@@ -57,8 +57,22 @@ export interface GraphData {
   notes?: RawNote[]
 }
 
-// Verified field-by-field against Pivotick v1.5.0's mergeNodeStylingOptions()
-// and defaultNodeStyle (index-Bzoqf7dC.js in the vendored bundle) — this is
+// New in v1.6.0 — a small indicator pinned to a node's rim, its own channel
+// alongside colour/shape/icon/picture (BadgeDrawer.drawBadge in the vendored
+// bundle). Position is optional: an unpositioned badge auto-fills whichever
+// corner is free, clockwise from 'ne' — a node with children (our own
+// grouped-view "+", RawNode.children) already reserves 'ne'/'se' for that
+// expand affordance, so an unpositioned badge here lands on 'sw' then 'nw'
+// without fighting it.
+export interface NodeBadge {
+  text?: string
+  title?: string
+  position?: 'ne' | 'se' | 'sw' | 'nw'
+  color?: string
+}
+
+// Verified field-by-field against Pivotick v1.6.0's mergeNodeStylingOptions()
+// and defaultNodeStyle (index-WSkuy_Tb.js in the vendored bundle) — this is
 // the exact set of fields it reads, not a guessed generic shape.
 export interface NodeStyle {
   // Any other string silently falls back to a circle (see genericNodeRender
@@ -82,6 +96,7 @@ export interface NodeStyle {
   imageFit?: 'icon' | 'cover' | 'frame'
   text?: string
   html?: (node: unknown) => string | HTMLElement
+  badges?: NodeBadge[]
   [key: string]: unknown
 }
 

@@ -499,25 +499,39 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     // matches one, otherwise NODE_DEFAULTS' generic `object` icon applies.
     const iconOverride = MISP_ICONS[`objects/${object.name}`] ? `objects/${object.name}` : undefined
 
+    const relations = options?.viewMode === 'relations'
+    // Built up-front (relations only) so its length can seed a rim badge on
+    // the Object's own style below, before resolveNodeAppearance runs — same
+    // "count of what's hidden behind the +" maybeGroup gives Tags/Attributes
+    // summary nodes, just anchored to the Object itself since it's the
+    // expandable unit here (see the comment below).
+    const relationsChildren: RawNode[] = []
+    if (relations) {
+      for (const attribute of object.Attribute ?? []) {
+        if (this.isDeleted(attribute)) continue
+        this.addAttribute(relationsChildren, edges, undefined, attribute, dedup, options)
+      }
+    }
+
     const { data, style } = resolveNodeAppearance(
       // `label` is required here — see the same note in convert() for Event.
       { ...displayFields, label: object.name, type: 'misp-object' },
-      this.defaultStyle('misp-object', object.name, { theme: options?.theme, iconOverride, badge: object['meta-category'] as string | undefined }),
+      {
+        ...this.defaultStyle('misp-object', object.name, { theme: options?.theme, iconOverride, badge: object['meta-category'] as string | undefined }),
+        ...(relationsChildren.length > 0
+          ? { badges: [{ text: String(relationsChildren.length), title: `${relationsChildren.length} hidden attribute${relationsChildren.length === 1 ? '' : 's'}` }] }
+          : {})
+      },
       options?.styleRules
     )
 
-    if (options?.viewMode === 'relations') {
+    if (relations) {
       // Ported from a real MISP-embedded Pivotick integration (see
       // ConverterOptions.viewMode's own doc comment): the Object *is* the
       // expandable unit here, its Attributes nested behind its own native
       // "+" (RawNode.children) rather than beside it through a separate
       // "Attributes" card or has-attribute edges.
-      const children: RawNode[] = []
-      for (const attribute of object.Attribute ?? []) {
-        if (this.isDeleted(attribute)) continue
-        this.addAttribute(children, edges, undefined, attribute, dedup, options)
-      }
-      nodes.push({ id: object.uuid, data, style, expanded: false, children })
+      nodes.push({ id: object.uuid, data, style, expanded: false, children: relationsChildren })
       return
     }
 
@@ -695,10 +709,17 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     const groupNodeId = `${type}-${parentId}`
     const { data, style } = resolveNodeAppearance(
       { label, type, count },
-      this.defaultStyle(type, label, {
-        theme: options?.theme,
-        badge: `${count} ${label.toLowerCase()}`
-      }),
+      {
+        ...this.defaultStyle(type, label, {
+          theme: options?.theme,
+          badge: `${count} ${label.toLowerCase()}`
+        }),
+        // A rim badge repeats the hidden count right on the "+" affordance
+        // itself (Pivotick auto-places it on the corner opposite the
+        // expand icon, see NodeBadge's comment) — legible before the card's
+        // own in-body count is even in view at a zoomed-out scale.
+        badges: [{ text: String(count), title: `${count} hidden ${label.toLowerCase()}` }]
+      },
       options?.styleRules
     )
     const children: RawNode[] = []
