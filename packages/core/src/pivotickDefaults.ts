@@ -20,7 +20,7 @@ export const RECOMMENDED_PIVOTICK_SIMULATION_OPTIONS = {
 // publishes for exactly this kind of retinting (same knob a consumer would
 // use to retint `--pvt-theme-primary`).
 //
-// Fixes two rough edges in v1.6.0's collapsed-node ("+") affordance:
+// Fixes three rough edges in v1.6.0's collapsed-node ("+") affordance:
 //
 // 1. A collapsed node draws a dashed ring on top of its own "+" icon, and
 //    a dashed "shadow link"/"synthetic" edge for any real edge touching
@@ -42,6 +42,13 @@ export const RECOMMENDED_PIVOTICK_SIMULATION_OPTIONS = {
 //    highlighted "+" node would otherwise show no ring at all.
 //    Re-declaring `stroke` on the combined selector (5 classes) restores
 //    it without reintroducing the dash.
+// 3. A *different* element from #1's ".pvt-edge-synthetic" — the "shadow
+//    edge" Pivotick draws for a real edge whose other end is hidden behind
+//    a collapsed group (`.pvt-shadow-edge`, `.shadow-edges` layer) — has its
+//    own hardcoded dasharray plus a marching-ants `animation`, unrelated to
+//    either CSS variable above. Same "plain rule at matching specificity"
+//    treatment; the animation is dropped too since it only moves a dash
+//    offset that no longer exists.
 export const PIVOTICK_STYLE_OVERRIDES = `
 .pivotick[data-theme='light'],
 .pivotick[data-theme='dark'] {
@@ -56,5 +63,9 @@ export const PIVOTICK_STYLE_OVERRIDES = `
 }
 .pvt-node.pvt-node-has-children:not(.pvt-node-expanded).pvt-node-highlighted > .node {
   stroke: var(--pvt-node-highlighted-stroke);
+}
+.pvt-shadow-edge {
+  stroke-dasharray: none;
+  animation: none;
 }
 `
