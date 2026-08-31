@@ -1,5 +1,5 @@
 import "d3-force";
-import { N as E, S as F, E as A, T as k, a as I } from "./index-Crgu-Sop.js";
+import { N as E, S as F, E as A, T as k, a as I } from "./index-WSkuy_Tb.js";
 const C = 1e4, S = 2e4, h = 0.15 * S;
 self.onmessage = (g) => {
   var D, t, n;

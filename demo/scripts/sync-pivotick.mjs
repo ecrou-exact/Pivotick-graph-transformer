@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 
-const PIVOTICK_VERSION = 'v1.5.0'
+const PIVOTICK_VERSION = 'v1.6.0'
 const RELEASE_URL = `https://github.com/Pivotick/Pivotick/releases/download/${PIVOTICK_VERSION}/pivotick-dist.zip`
 
 const demoDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
