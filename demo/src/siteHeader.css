@@ -31,59 +31,11 @@
   --site-header-bg: #1a1d22;
 }
 
-/* Pivotick draws a dashed ring around any collapsed node with children
-   (.pvt-node-has-children:not(.pvt-node-expanded) > .node) on top of its
-   own native "+" expand icon, and a dashed "shadow link" stand-in
-   (.pivotick-shadowlink-container path.pivotick-shadowlink) for any real
-   edge whose other end is hidden inside one of those collapsed nodes —
-   two more dashed affordances for the same "this hides something" fact
-   the ring already carries. --pvt-node-dash-stroke / --pvt-edge-stroke-
-   dasharray are Pivotick's own exposed theming variables for these (same
-   knob as --site-accent above being sourced from --pvt-theme-primary):
-   clearing them here hides both in every theme while leaving the "+" icon
-   and the shadow link's own edge fully intact, and Pivotick's vendored CSS
-   itself untouched. `none`, not blank, for the dasharray — an empty value
-   would fall through to the shorthand's initial value (also `none`), but
-   being explicit here is what actually reads as "solid line" on review.
-   No other edge in this repo sets a `dashed` style, so this only ever
-   touches the shadow link.
-   Pivotick redeclares both variables on its own container — not just
-   `:root` — via `.pivotick[data-theme=light]` / `.pivotick[data-theme=
-   dark]` (verified in the vendored pivotick.css), which outranks a plain
-   `:root` rule regardless of stylesheet order. Matching that selector
-   here is the only way to actually win the cascade. */
-.pivotick[data-theme='light'],
-.pivotick[data-theme='dark'] {
-  --pvt-node-dash-stroke: transparent;
-  --pvt-edge-stroke-dasharray: none;
-}
-
-/* The real edge Pivotick actually draws into a collapsed cluster (not the
-   shadow-link stand-in above, which is for an edge crossing the cluster
-   boundary to something *outside* it) gets its own hardcoded dash via
-   `.pvt-edge-synthetic` — not a CSS variable, so it can only be cleared by
-   matching the class itself at the same specificity, same as above. */
-.pvt-edge-group.pvt-edge-synthetic path {
-  stroke-dasharray: none;
-}
-
-/* Side effect of clearing --pvt-node-dash-stroke above: Pivotick's own
-   collapsed-node rule (.pvt-node.pvt-node-has-children:not(.pvt-node-
-   expanded)>.node, 4 classes deep) has higher specificity than either
-   state ring it can be combined with — .pvt-node-selected-highlight>.node
-   (2 classes) or .pvt-node-highlighted>.node (1) — so on a collapsed node
-   it always wins the `stroke` property, even selected/highlighted. With a
-   real dash colour that still painted *something*; now that it's
-   transparent, selecting or highlighting a "+" node showed no ring at all.
-   Re-declaring `stroke` here at higher specificity (adding the state class
-   to the same compound selector) restores it without touching the
-   dashed-ness itself or any vendored file. */
-.pvt-node.pvt-node-has-children:not(.pvt-node-expanded).pvt-node-selected-highlight > .node {
-  stroke: var(--pvt-node-selected-stroke);
-}
-.pvt-node.pvt-node-has-children:not(.pvt-node-expanded).pvt-node-highlighted > .node {
-  stroke: var(--pvt-node-highlighted-stroke);
-}
+/* Pivotick's own dashed-collapsed-node / selection-ring fixes now live in
+   packages/core's PIVOTICK_STYLE_OVERRIDES (see its own comment for what
+   and why) — injected once by renderSiteHeader() below, not duplicated
+   here as static CSS, so this repo's own demo and any other consumer read
+   the exact same rules. */
 
 #site-header {
   position: fixed;

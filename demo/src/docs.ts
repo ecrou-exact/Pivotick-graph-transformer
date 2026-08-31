@@ -1,4 +1,5 @@
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
+import { RECOMMENDED_PIVOTICK_SIMULATION_OPTIONS } from '../../packages/core/src/index'
 import '../../packages/misp/src/index'
 import eventFixture from '../fixtures-docs/event.json'
 import eventAttributeFixture from '../fixtures-docs/event-attribute.json'
@@ -107,8 +108,7 @@ function renderExample(example: Example): void {
     simulation: {
       enabled: true,
       useWorker: true,
-      // Off by default — see main.ts's renderPivotick() for why.
-      fitViewOnExpandCollapse: false,
+      ...RECOMMENDED_PIVOTICK_SIMULATION_OPTIONS,
       ...LOOSE_SIMULATION
     },
     layout: {

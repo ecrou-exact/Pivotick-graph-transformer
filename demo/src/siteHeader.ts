@@ -6,13 +6,26 @@
 // header markup below does not.
 import logoUrl from '../static/images/logo.jpeg'
 import { getTheme, onThemeChange, setTheme } from './theme'
+import { PIVOTICK_STYLE_OVERRIDES } from '../../packages/core/src/index'
 
 // Same top-nav shape Pivotick's own site (https://pivotick.github.io/Pivotick/)
 // uses: brand, an external link back to Pivotick itself, Docs/Demo (one
 // marked active), a GitHub link, and a theme toggle — shared by both pages
 // via ./theme.ts so this button and any other theme control on the same
 // page (e.g. the Demo page's fixture-picker switch) never disagree.
+// Guards against a second <style> tag if renderSiteHeader is ever called
+// twice on the same page — it never legitimately is, but injecting into
+// <head> is otherwise a silent, hard-to-notice duplicate.
+let pivotickStyleOverridesInjected = false
+
 export function renderSiteHeader(activePage: 'home' | 'demo' | 'docs'): void {
+  if (!pivotickStyleOverridesInjected) {
+    pivotickStyleOverridesInjected = true
+    const style = document.createElement('style')
+    style.textContent = PIVOTICK_STYLE_OVERRIDES
+    document.head.append(style)
+  }
+
   const header = document.createElement('header')
   header.id = 'site-header'
   header.innerHTML = `

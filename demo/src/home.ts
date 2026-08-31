@@ -1,4 +1,5 @@
 import { Pivotick } from '../vendor/pivotick/pivotick.es.js'
+import { RECOMMENDED_PIVOTICK_SIMULATION_OPTIONS } from '../../packages/core/src/index'
 import '../../packages/misp/src/index'
 import tagFixture from '../fixtures-docs/attribute-tag.json'
 import { LOOSE_SIMULATION, toGraphData } from './pivotick'
@@ -29,8 +30,7 @@ function renderTagPreview(): void {
     simulation: {
       enabled: true,
       useWorker: true,
-      // Off by default — see main.ts's renderPivotick() for why.
-      fitViewOnExpandCollapse: false,
+      ...RECOMMENDED_PIVOTICK_SIMULATION_OPTIONS,
       ...LOOSE_SIMULATION
     },
     layout: {
