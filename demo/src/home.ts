@@ -29,7 +29,8 @@ function renderTagPreview(): void {
     simulation: {
       enabled: true,
       useWorker: true,
-      fitViewOnExpandCollapse: true,
+      // Off by default — see main.ts's renderPivotick() for why.
+      fitViewOnExpandCollapse: false,
       ...LOOSE_SIMULATION
     },
     layout: {

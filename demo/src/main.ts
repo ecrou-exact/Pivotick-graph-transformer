@@ -131,7 +131,11 @@ function renderPivotick(): void {
     simulation: {
       enabled: true,
       useWorker: true,
-      fitViewOnExpandCollapse: true
+      // Off by default: recentering the whole canvas on every "+" click is
+      // disorienting once a graph has more than a couple of expandable
+      // groups — the node you just expanded ends up somewhere else instead
+      // of growing in place.
+      fitViewOnExpandCollapse: false
       // No TUNED_SIMULATION override here on purpose — Pivotick's own
       // physics defaults, untouched, per the user's explicit request. Its
       // own d3-force defaults assume small native shapes, so our much
