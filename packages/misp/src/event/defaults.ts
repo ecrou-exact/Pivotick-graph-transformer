@@ -10,16 +10,14 @@ import { MISP_ICONS } from '../icons'
 // Each concept folder (event/, attribute/, object/, ...) exports one such
 // default; import.ts merges them into the one lookup it needs by node type.
 export const MISP_EVENT_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number } = {
-  // Pivotick's own shape is always as wide as tall — the actual rectangle
-  // look is drawn by buildIconLabelCard() via `html`, so the native shape
-  // stays here only for the simulation's collision footprint, invisible.
-  // No `size` here on purpose — MispEventImporter computes it per node
-  // from the actual label via estimateCardSize(), it's not a constant.
-  // accentColor (not a real NodeStyle field) is the card's own border/text
-  // color, since strokeColor above is forced transparent.
-  shape: 'square',
-  color: 'transparent',
-  strokeColor: 'transparent',
+  // shape: 'none' — the actual rectangle look is drawn by
+  // buildIconLabelCard() via `html`; Pivotick's hitbox/edge-anchor tracks
+  // that real card shape directly (see NodeStyle's own comment), so there's
+  // no native shape to size/hide here. No `size` here on purpose —
+  // MispEventImporter computes it per node from the actual label via
+  // estimateCardSize(), it's not a constant. accentColor (not a real
+  // NodeStyle field) is the card's own border/text color.
+  shape: 'none',
   icon: 'event',
   accentColor: '#1892B1',
   // The Event is the graph's root — bigger text/icon than Object/Attribute

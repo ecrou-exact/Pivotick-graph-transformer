@@ -7,9 +7,7 @@ import { MISP_ICONS } from '../icons'
 // the galaxy-type/cluster nodes below it — it isn't itself a galaxy, just
 // where a MISP entity's galaxies are grouped.
 export const MISP_GALAXY_CLUSTERS_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number } = {
-  shape: 'square',
-  color: 'transparent',
-  strokeColor: 'transparent',
+  shape: 'none',
   icon: 'galaxy',
   accentColor: '#8B5CF6',
   fontSize: 12,
@@ -21,9 +19,7 @@ export const MISP_GALAXY_CLUSTERS_NODE_DEFAULT: Partial<NodeStyle> & { icon?: ke
 // galaxy/colour.ts and the `galaxies/<type>` icon lookup in import.ts) —
 // these are just the fallback when neither resolves.
 export const MISP_GALAXY_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number } = {
-  shape: 'square',
-  color: 'transparent',
-  strokeColor: 'transparent',
+  shape: 'none',
   icon: 'galaxy',
   accentColor: '#8B5CF6',
   fontSize: 12,

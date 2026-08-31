@@ -6,9 +6,7 @@ import { MISP_ICONS } from '../icons'
 // (auxiliary/meta information about its parent, not primary threat-intel
 // content, hence the smaller size tier).
 export const MISP_SIGHTING_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number } = {
-  shape: 'square',
-  color: 'transparent',
-  strokeColor: 'transparent',
+  shape: 'none',
   icon: 'sighting',
   accentColor: '#890096',
   fontSize: 12,
@@ -21,9 +19,7 @@ export const MISP_SIGHTING_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typ
 // import.ts); misp-iconify has no separate thumbs-up/down icon, so all
 // three reuse the generic `sighting` icon and differ by colour alone.
 export const MISP_SIGHTING_TYPE_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number } = {
-  shape: 'square',
-  color: 'transparent',
-  strokeColor: 'transparent',
+  shape: 'none',
   icon: 'sighting',
   accentColor: '#890096',
   fontSize: 10,

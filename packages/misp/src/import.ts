@@ -57,9 +57,7 @@ const CORRELATION_EDGE_COLOR = '#F59E0B'
 // `attribute` glyph (correlateEvents overrides it per the sample's real
 // `type`, same lookup addAttribute uses, whenever misp-iconify has one).
 const MISP_CORRELATION_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number } = {
-  shape: 'square',
-  color: 'transparent',
-  strokeColor: 'transparent',
+  shape: 'none',
   icon: 'attribute',
   accentColor: '#F59E0B',
   fontSize: 11,
@@ -595,9 +593,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
         // — MISP tags don't have an icon, just a name and a colour.
         { ...displayFields, label: tag.name, type: 'misp-tag' },
         {
-          shape: 'square',
-          color: 'transparent',
-          strokeColor: 'transparent',
+          shape: 'none',
           size: estimateCardSize(tag.name, { hasIcon: false, fontSize: 11, padding: 14 }),
           html: () => buildTagChip(tag.name, { background })
         },
@@ -905,9 +901,7 @@ export class MispEventImporter extends GraphImporter<MispEventInput> {
     const { data, style } = resolveNodeAppearance(
       { ...displayFields, label: cluster.value, type: 'misp-galaxy-cluster' },
       {
-        shape: 'square',
-        color: 'transparent',
-        strokeColor: 'transparent',
+        shape: 'none',
         size: estimateCardSize(cluster.value, { hasIcon: false, fontSize: 11, padding: 14 }),
         html: () => buildTagChip(cluster.value, {
           background: palette.badgeBg,

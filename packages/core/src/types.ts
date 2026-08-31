@@ -75,10 +75,16 @@ export interface NodeBadge {
 // and defaultNodeStyle (index-WSkuy_Tb.js in the vendored bundle) — this is
 // the exact set of fields it reads, not a guessed generic shape.
 export interface NodeStyle {
+  // 'none' (new in v1.6.0): no native shape drawn at all — an invisible
+  // rect whose hitbox/edge-anchor snaps exactly to the measured `html`
+  // card's own real (rectangular) bounds, with no minimum-growth threshold
+  // to clear first (see BadgeDrawer/fitCardToContent in the vendored
+  // bundle). `color`/`strokeColor` are forced transparent/none for it
+  // regardless of what's set — Pivotick never reads them for this shape.
   // Any other string silently falls back to a circle (see genericNodeRender
   // in the vendored bundle) — the `string & {}` keeps literal autocomplete
   // while still allowing that fallback deliberately.
-  shape?: 'circle' | 'square' | 'triangle' | 'hexagon' | (string & {})
+  shape?: 'circle' | 'square' | 'triangle' | 'hexagon' | 'none' | (string & {})
   size?: number
   color?: string
   strokeColor?: string

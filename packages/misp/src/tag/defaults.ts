@@ -8,9 +8,7 @@ import { MISP_ICONS } from '../icons'
 // rather than reusing any individual tag's — a terracotta, distinct from
 // Attribute's green and Object's brown.
 export const MISP_TAG_GROUP_NODE_DEFAULT: Partial<NodeStyle> & { icon?: keyof typeof MISP_ICONS, accentColor?: string, fontSize?: number, iconSize?: number } = {
-  shape: 'square',
-  color: 'transparent',
-  strokeColor: 'transparent',
+  shape: 'none',
   icon: 'tag',
   accentColor: '#DB6A47',
   fontSize: 12,

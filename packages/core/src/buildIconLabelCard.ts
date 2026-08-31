@@ -5,11 +5,10 @@ export interface IconLabelCardOptions {
   // Background of the small hexagon the icon sits in; the icon itself
   // should use `fill="currentColor"` so it picks up textColor's counterpart.
   iconBackground?: string
-  // Pivotick's own node shapes are always as wide as tall (size*2 x size*2)
-  // — there's no native rectangle. So this card draws its own rectangle
-  // (borderColor/background) centered inside whatever square footprint
-  // Pivotick gives the node; the node's own shape/color/strokeColor should
-  // be set to 'transparent' by the caller so it doesn't show behind this.
+  // Draws its own rectangle (borderColor/background) — the caller should
+  // set the node's own `shape: 'none'` (see NodeStyle's own comment) so
+  // Pivotick's real hitbox/edge-anchor tracks this card's actual measured
+  // bounds instead of a synthetic native shape drawn behind it.
   borderColor?: string
   background?: string
   // Small pill shown below the icon+label row (e.g. a MISP Object's
